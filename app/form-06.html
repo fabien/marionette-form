@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .control-label {
+                cursor: move;
+                cursor: grab;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.sortable',
+                'backbone.validation',
+                'select2'
+            ], function(Backbone, Marionette, Form) {
+                
+                _.extend(Backbone.NestedModel.prototype, Backbone.Validation.mixin);
+                
+                var JSONEditor = Form.View.extend({
+                    
+                    behaviors: {
+                        sortable: {
+                            behaviorClass: Marionette.SortableBehavior,
+                            handle: '.control-label'
+                        }
+                    },
+                    
+                    onInitialize: function(options) {
+                        this.listenTo(this.collection, 'reorder', this.triggerChange);
+                        this.listenTo(this.model, 'change update', this.updateFields);
+                        this.updateFields();
+                    },
+                    
+                    getData: function(asModel) {
+                        var copy = new this.modelConstructor();
+                        this.collection.each(function(model) {
+                            var field = this.children.findByModel(model);
+                            var key = field.getKey();
+                            if (key && !field.evaluateAttribute('omit')) {
+                                copy.set(key, field.getData());
+                            }
+                        }.bind(this));
+                        return asModel ? copy : copy.toJSON();
+                    },
+                    
+                    updateFields: function() {
+                        _.each(this.model.attributes, function(value, attr) {
+                            this.fieldFromAttribute(attr, value);
+                        }.bind(this));
+                    },
+                    
+                    createFieldForAttribute: function(attr, value) {
+                        // Hook method - return true if created here
+                    },
+                    
+                    fieldFromAttribute: function(attr, value, section) {
+                        if (this.createFieldForAttribute(attr, value)) return;
+                        if (_.isArray(value) && _.isObject(value[0])) {
+                            var itemConfig = { control: 'nested', fields: [] };
+                            _.each(value[0], function(item, key) {
+                                itemConfig.fields.push({ key: key, control: 'input', type: 'text', formatter: 'json' });
+                            });
+                            this.field(attr, { control: 'collection', item: itemConfig });
+                        } else if (_.isArray(value)) {
+                            var config = { control: 'tag', create: true, options: value, minlength: 0 };
+                            if (section) config.section = section;
+                            this.field(attr, config);
+                        } else if (_.isObject(value)) {
+                            if (this.getOption('headers')) {
+                                this.field(attr, {
+                                    label: this.formatLabel(attr), control: 'header',
+                                    section: attr, collapse: true
+                                });
+                            }
+                            _.each(value, function(val, key) {
+                                this.fieldFromAttribute(attr + '.' + key, val, attr);
+                            }.bind(this));
+                        } else if (_.isString(value) && value.length > 128) {
+                            this.field(attr, { control: 'textarea' });
+                        } else {
+                            var type = _.isNumber(value) ? 'number' : 'text';
+                            type = attr === 'email' ? 'email' : type;
+                            var config = { control: 'input', type: type, formatter: 'json' };
+                            if (section) config.section = section;
+                            this.field(attr, config);
+                        }
+                    },
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var currencies = [
+                    { id: 'EUR', text: 'Euro' },
+                    { id: 'USD', text: 'US Dollars' },
+                    { id: 'GBP', text: 'Pounds' }
+                ];
+                
+                var config = new Backbone.NestedModel({
+                    title: 'BigCorp Enterprises',
+                    description: 'Lorem ipsum ...',
+                    domain: 'big-corp.com',
+                    email: 'info@big-corp.com',
+                    tags: ['business', 'finance'],
+                    address: {
+                        company: 'Big Corp.',
+                        address1: '1751 rue Richardson',
+                        address2: 'Suite 3.105',
+                        city: 'Montréal',
+                        postalCode: 'H3K 1G6',
+                        province: 'QC',
+                        country: 'CA'
+                    },
+                    defaults: {
+                        colors: ['red', 'green'],
+                        maxUsers: 10,
+                    },
+                    items: [
+                        { id: 1, name: 'Item A' },
+                        { id: 2, name: 'Item B' },
+                        { id: 3, name: 'Item C' }
+                    ]
+                });
+                
+                var Editor = JSONEditor.extend({
+                    
+                    createFieldForAttribute: function(attr, value) {
+                        if (attr === 'description') return this.field(attr, { control: 'textarea' });
+                    }
+                    
+                });
+                
+                var form = new Editor({ model: config, headers: false });
+                
+                form.field('currencies', { control: 'select2', options: currencies, multiple: true });
+                form.field('theme', { control: 'select2', options: ['light', 'dark'] });
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                config.set('currencies', ['EUR']);
+                config.set('theme', 'dark');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>JSON Editor <small>with on-the-fly created fields</h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

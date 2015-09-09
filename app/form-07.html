@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group-item { display: inline-block; }
+            #profile-buttons .form-group-item { margin-right: 20px; }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'backbone.bootstrap-modal'
+            ], function(Backbone, Marionette, Form) {
+                
+                var DemoView = Marionette.ItemView.extend({
+                    
+                    template: '#demo-template'
+                    
+                });
+                
+                var SideView = Marionette.ItemView.extend({
+                    
+                    template: '#side-template',
+                    
+                    initViewFor: function(regionName) {
+                        console.log('Init view for: %s', regionName);
+                    }
+                    
+                });
+                
+                var AddressForm = Form.View.extend({
+                    
+                    layout: 'vertical',
+                    
+                    fields: [
+                        { key: 'address1', control: 'input' },
+                        { key: 'address2', control: 'input' },
+                        { key: 'city', control: 'input' },
+                        { key: 'postalCode', label: 'Postal Code', control: 'input' }
+                    ]
+                    
+                });
+                
+                var ProfileForm = Form.View.extend({
+                    
+                    prefix: 'profile-',
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Profile = Backbone.NestedModel.extend({});
+                
+                var profile = new Profile({
+                    name: { first: 'Fred', last: 'Flintstone' },
+                    address: {
+                        address1: '1751 rue Richardson',
+                        address2: 'Suite 3.105',
+                        city: 'Montréal',
+                        postalCode: 'H3K 1G6'
+                    },
+                });
+                
+                var form = new ProfileForm({ model: profile, layout: 'vertical' });
+                
+                form.registerView('demo', DemoView);
+                
+                form.collection.reset([
+                    {
+                        id: 'buttons',
+                        control: 'group',
+                        fields: [
+                            { control: 'button', label: 'Change Views', action: 'change:views' },
+                            { control: 'button', label: 'Open Modal', action: 'open:modal' },
+                        ]
+                    },
+                    { id: 'name.first', label: 'First name', control: 'input' },
+                    { id: 'name.middle', label: 'Middle name', control: 'input', omit: 'isBlank' },
+                    { id: 'name.last', label: 'Last name', control: 'input' },
+                    { id: 'view', label: 'Demo View', control: 'layout', view: 'demo', observe: 'name' },
+                    { 
+                        id: 'layout', control: 'layout', regions: ['main', 'secondary'],
+                        views: { main: 'demo', secondary: SideView }, observe: 'name',
+                        template: '#layout-control', rootKey: 'address'
+                    }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.on('control:action:change:views', function() {
+                    var field = form.getField('layout');
+                    if (field.toggled) { // using showView method
+                        field.showView('main', SideView);
+                        field.showView('secondary', DemoView);
+                    } else { // using attribute update (which will then call showView)
+                        field.model.set('views', { main: AddressForm, secondary: AddressForm });
+                    }
+                    field.toggled = !field.toggled;
+                });
+                
+                form.on('control:action:open:modal', function() {
+                    var key = 'address';
+                    var model = new Backbone.NestedModel(this.model.get(key));
+                    var dfd = AddressForm.showInModal({ model: model });
+                    dfd.then(function(modalForm, model) {
+                        console.log('Commit changes');
+                        form.model.set(key, model.toJSON());
+                    }, function(form) {
+                        console.log('Cancelled');
+                    });
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>using layout views</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="layout-control" type="text/template">
+        <div class="row">
+          <div class="col-sm-6">
+            <h3>Main <small>region</small></h3>
+            <div data-region="main"></div>
+          </div>
+          <div class="col-sm-6">
+            <h3>Secondary <small>region</small></h3>
+            <div data-region="secondary"></div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="demo-template" type="text/template">
+        <div class="form-control-static"><%= control.form.data.name.first %> <%= control.form.data.name.last %></div>
+        </script>
+        
+        <script id="side-template" type="text/template">
+        <div class="form-control immutable"><%= control.form.data.name.first %> <%= control.form.data.name.last %></div>
+        </script>
+    </body>
+</html>

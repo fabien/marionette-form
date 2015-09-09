@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'backbone.validation',
+                'select2',
+                'bootstrap-daterangepicker',
+                'bootstrap-filestyle'
+            ], function(Backbone, Marionette, Form) {
+                
+                _.extend(Backbone.NestedModel.prototype, Backbone.Validation.mixin);
+                
+                var ProfileForm = Form.View.extend({
+                    
+                    prefix: 'profile-',
+                    
+                    layout: 'vertical',
+                    
+                    template: '#form',
+                    
+                    insertHtml: true,
+                    
+                    onInitialize: function(options) {
+                        this.listenTo(this.model, 'change:address.country', this.onCountryChange);
+                        this.once('render', this.onCountryChange);
+                    },
+                    
+                    onCountryChange: function() {
+                        var country = this.getValueOf('address.country');
+                        var field = this.getField('address.province');
+                        var config = {};
+                        
+                        if (field && country === 'US') {
+                            config.options = 'states';
+                            config.disabled = false;
+                            config.omit = false;
+                        } else if (field && country === 'CA') {
+                            config.options = 'provinces';
+                            config.disabled = false;
+                            config.omit = false;
+                        } else {
+                            config.options = [];
+                            config.disabled = true;
+                            config.omit = true;
+                        }
+                        
+                        field.model.set(config);
+                    },
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Profile = Backbone.NestedModel.extend({
+                    validation: {
+                        firstName: {
+                            required: true
+                        },
+                        lastName: {
+                            required: true
+                        }
+                    }
+                });
+                
+                var provinces = new Backbone.Collection([
+                    { id: 'AB', text: 'Alberta' },
+                    { id: 'BC', text: 'British Columbia' },
+                    { id: 'MB', text: 'Manitoba' },
+                    { id: 'NB', text: 'New Brunswick' },
+                    { id: 'NL', text: 'Newfoundland and Labrador' },
+                    { id: 'NT', text: 'Northwest Territories' },
+                    { id: 'NS', text: 'Nova Scotia' },
+                    { id: 'NU', text: 'Nunavut' },
+                    { id: 'ON', text: 'Ontario' },
+                    { id: 'PE', text: 'Prince Edward Island' },
+                    { id: 'QC', text: 'Québec' },
+                    { id: 'SK', text: 'Saskatchewan' },
+                    { id: 'YT', text: 'Yukon' }
+                ]);
+                
+                var states = new Backbone.Collection([
+                    { id: 'CA', text: 'California' },
+                    { id: 'OR', text: 'Oregon' },
+                    { id: 'NY', text: 'New York'}
+                ]);
+                
+                // Register collections globally
+                
+                Form.registerCollection('provinces', provinces);
+                Form.registerCollection('states', states);
+                
+                var profile = new Profile({
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    address: {
+                        address1: '1751 rue Richardson',
+                        address2: 'Suite 3.105',
+                        city: 'Montréal',
+                        postalCode: 'H3K 1G6',
+                        province: 'QC',
+                        country: 'CA'
+                    }
+                });
+                
+                var form = new ProfileForm({ model: profile });
+                
+                form.collection.reset([
+                    { id: 'firstName', control: 'input', required: true },
+                    { id: 'lastName', control: 'input', required: true },
+                    { id: 'notes', control: 'textarea' },
+                    { id: 'address.address1', control: 'input' },
+                    { id: 'address.address2', control: 'input' },
+                    { id: 'address.city', control: 'input' },
+                    { id: 'address.postalCode', label: 'Postal Code', control: 'input' },
+                    { id: 'address.province', label: 'State/Province', control: 'select', select2: true },
+                    { id: 'address.country', label: 'Country', control: 'select', url: '/data/countries.json', labelKey: 'name', valueKey: 'code', select2: true }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with custom layout</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="form" type="text/template">
+        <div class="row">
+          <div data-control="firstname" class="col-sm-6"></div>
+          <div data-control="lastname" class="col-sm-6"></div>
+        </div>
+        <div class="row">
+          <div class="col-sm-6">
+            <div data-control="address-address1"></div>
+            <div data-control="address-address2"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="address-postalcode"></div>
+            <div data-control="address-city"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div data-control="address-province" class="col-sm-6"></div>
+          <div data-control="address-country" class="col-sm-6"></div>
+        </div>
+        <div class="row">
+          <div data-block="default" class="col-sm-12"></div>
+        </div>
+        </script>
+    </body>
+</html>

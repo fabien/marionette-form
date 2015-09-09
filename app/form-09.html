@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <link rel="stylesheet" href="/css/bootstrap-tree.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group-item { display: inline-block; }
+            #page-buttons .form-group-item { margin-right: 20px; }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'backbone.treeview',
+                'marionette.form.control.tree',
+                'select2'
+            ], function(Backbone, Marionette, Form, TreeView) {
+                
+                // Example: subclass a tree item view
+                
+                var TreeItemView = TreeView.Item.extend({
+                    
+                    getBodyPart: function() {
+                        return '<span>' + this.model.getTitle() + '</span>';
+                    },
+                    
+                    getRightPart: function() {
+                        var icon = this.model.get('checked') ? 'ok-circle' : 'record';
+                        return '<span class="glyphicon glyphicon-' + icon + '" aria-hidden="true"></span>';
+                    },
+                    
+                    setupClassNames: function() {
+                        TreeView.Item.prototype.setupClassNames.apply(this, arguments);
+                        if (this.model.parent()) this.$el.css('color', '#139BFE');
+                    }
+                    
+                });
+                
+                // Example: LogicControl subclass
+                
+                var Validator = Form.LogicControl.extend({
+                    
+                    formEvents: ['control:blur', 'control:change', 'validate'],
+                    
+                    onFormControlBlur: function(form, event) {
+                        this.validateControl(event.view);
+                    },
+                    
+                    onFormControlChange: function(form, event) {
+                        this.validateControl(event.view);
+                    },
+                    
+                    onFormValidate: function(key, options) {
+                        if (key) return; // skip, don't validate individually
+                        this.form.children.each(function(control) {
+                            if (control.evaluateAttribute('ignore')) return;
+                            this.validateControl(control);
+                        }.bind(this));
+                    },
+                    
+                    validateControl: function(control) {
+                        console.log('Control: %s - %s', control.id(), control.getKey());
+                        var key = control.getKey();
+                        if (_.isEmpty(this.getFormValue(key))) { // check for empty values
+                            this.form.setError(key, control.getLabel() + ' cannot be empty');
+                        } else {
+                            this.form.unsetError(key);
+                        }
+                    }
+                    
+                });
+                
+                var PageForm = Form.View.extend({
+                    
+                    prefix: 'page-',
+                    
+                    fields: [
+                        { key: 'title', control: 'input' },
+                        { key: 'body', control: 'textarea' },
+                        {
+                            id: 'tree',
+                            label: 'Nodes',
+                            key: 'nodes',
+                            control: 'tree',
+                            labelKey: 'label',
+                            collection: true,
+                            reorder: true,
+                            checkbox: true,
+                            omit: ['open'],
+                            itemView: 'tree-item',
+                            registerCollection: true
+                        },
+                        { key: '*', control: 'validator' }
+                    ],
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Page = Backbone.NestedModel.extend({});
+                
+                var page = new Page({
+                    title: 'Demo Page',
+                    body: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit ...',
+                    nodes: [
+                        { id: 1, label: 'Node A' },
+                        { id: 2, label: 'Node B' },
+                        { id: 3, label: 'Node C', open: true,
+                            nodes: [
+                                { id: 4, label: 'Node D' },
+                                { id: 5, label: 'Node E' }
+                            ]
+                        }
+                    ]
+                });
+                
+                var form = new PageForm({ model: page, layout: 'horizontal' });
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.registerView('tree-item', TreeItemView);
+                
+                form.registerControl('validator', Validator);
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                var nodes = form.getCollection('nodes');
+                var nodeE = nodes.findById(5);
+                
+                nodeE.set('label', 'Node E (changed)');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with reorderable tree editor</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="category" type="text/template">
+        <div class="<%= controlsClassName %><%= value.__resolving ? ' loading' : '' %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable" title="Category: <%= value.id %>">
+              <% if (value.__resolving) { %>
+              Loading ...
+              <% } else { %>
+              <%= value.formattedPath %>
+              <% } %>
+            </span>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+    </body>
+</html>

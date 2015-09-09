@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <link rel="stylesheet" href="/css/bootstrap-tree.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group-item { display: inline-block; }
+            #page-buttons .form-group-item { margin-right: 20px; }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.form.control.geo',
+                'select2',
+                'autoNumeric'
+            ], function(Backbone, Marionette, Form) {
+                
+                var AddressForm = Form.View.extend({
+                    
+                    prefix: 'address-',
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Address = Backbone.NestedModel.extend({});
+                
+                var address = new Address({
+                    locality: 'Brussels',
+                    country: 'BE',
+                    point: { lat: 52.3702160, lng: 4.8951680 },
+                    coordinates: [50.8503400, 4.3517100],
+                    routePoints: [
+                        { id: 1, lat: 51.2194475, lng: 4.4024643, title: 'Antwerpen' },
+                        { id: 2, lat: 50.8503400, lng: 4.3517100, title: 'Brussel' }
+                    ]
+                });
+                
+                var form = new AddressForm({ model: address });
+                
+                form.collection.reset([
+                    {
+                        id: 'map', key: 'point', label: 'Location', control: 'geo',
+                        center: { lat: 50.8503400, lng: 4.3517100 },
+                        map: true, editable: true, readonly: true
+                    },
+                    { key: 'point', label: 'Geo - object', control: 'geo' },
+                    { latKey: 'point.lat', lngKey: 'point.lng', label: 'Geo - keys', control: 'geo' },
+                    {
+                        key: 'coordinates', label: 'Location (with geolocation)', control: 'geo',
+                        map: true, zoom: 8, readonly: true, regionKey: 'country', format: 'array',
+                        geocode: ['street', 'locality', 'postalCode', 'country'],
+                        editable: true, controls: false, title: 'Address',
+                        helpMessage: 'Right-click to move point to a new position.'
+                    },
+                    { id: 'street', control: 'input' },
+                    { id: 'locality', control: 'input' },
+                    { id: 'postalCode', label: 'Postal Code', control: 'input' },
+                    { id: 'country', label: 'Country', control: 'select', url: '/data/countries.json', labelKey: 'name', valueKey: 'code', select2: true },
+                    { key: 'coordinates', label: 'Geo - array', control: 'geo', format: 'array' },
+                    {
+                        id: 'route', key: 'routePoints', label: 'Multiple Locations', control: 'geo',
+                        map: true, editable: true, controls: true,
+                        collection: true, registerCollection: 'route',
+                        zoom: 8, language: 'en', helpMessage: 'Right-click to add or delete points.'
+                    }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                // Reverse-geocoding - from location point to address
+                
+                form.on('control:set:point', _.debounce(function(control, point) {
+                    // set:point vs. update:point = single point vs. collection
+                    if (control.id() === 'address-map') return;
+                    if (control.__geocoding) return;
+                    control.__geocoding = true;
+                    control.geocode({ location: point.toPoint() }).done(function(results, req) {
+                        var options = { geocoded: true }; // don't trigger onAddressChange
+                        var address = this.parseResults(results);
+                        control.model.set('helpMessage', address.formatted);
+                        // Example: set address info from geocode results
+                        form.model.set('street', address.street, options);
+                        form.model.set('postalCode', address.postalCode, options);
+                        form.model.set('locality', address.locality, options);
+                        form.model.set('country', address.countryCode, options);
+                    }).fail(function(status, req) {
+                        console.log('Failed to reverse-geocode location: %s', status);
+                    }).always(function() {
+                        control.__geocoding = false;
+                    });
+                }, 500));
+                
+                form.on('control:add:point', function(control, point, collection, options) {
+                    if (options.init) return; // don't act on first/init point
+                    point.once('change:title', point.select.bind(point));
+                });
+                
+                form.on('control:add:point control:update:point', _.debounce(function(control, point, collection, options) {
+                    if (point.__geocoding || options.init) return;
+                    point.__geocoding = true;
+                    control.geocode({ location: point.toPoint() }).done(function(results, req) {
+                        var address = this.parseResults(results);
+                        control.model.set('helpMessage', address.formatted);
+                        point.set('title', address.formatted);
+                    }).always(function() {
+                        point.__geocoding = false;
+                    });
+                }, 500));
+                
+                form.on('control:select:point', function(control, point, isSelected) {
+                    if (isSelected) {
+                        control.model.set('helpMessage', point.get('title'));
+                    } else {
+                        control.model.set('helpMessage', '');
+                    }
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Collection handling
+                
+                var pointsCollection = form.getCollection('route');
+                
+                pointsCollection.on('init sync change update', function() {
+                    var map = form.getField('route');
+                    if (!map.polyline) {
+                        map.polyline = new google.maps.Polyline({
+                            geodesic: true,
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 1.0,
+                            strokeWeight: 2
+                        });
+                        map.polyline.setMap(map.map);
+                    }
+                    map.polyline.setPath(this.map(function(point) {
+                        return point.toPoint();
+                    }));
+                });
+                
+                pointsCollection.trigger('init');
+                
+                // setTimeout(function() {
+                //     var map = form.getField('map');
+                //     map.model.set('zoom', 10);
+                //     map.model.set('center', [52.3702160, 4.8951680]);
+                //     map.model.set('mapType', 'satellite');
+                // }, 2000);
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with Google Maps &amp; Geolocation</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

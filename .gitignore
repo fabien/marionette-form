@@ -1,3 +1,6 @@
+.DS_Store
+app/js/vendor
+
 # Logs
 logs
 *.log

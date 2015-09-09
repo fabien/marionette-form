@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            #info { margin-top: 40px; }
+            .list-controls button, #buttons .form-group-item button { width: 80px; }
+            .form-group-item { display: inline-block; }
+            #buttons .form-group-item { float: right; margin-left: 20px; }
+            .empty .form-control.immutable { opacity: 0.5 }
+            .loading .form-control.immutable { background-color: #FEFBF2; }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'select2',
+                'backbone.bootstrap-modal'
+            ], function(Backbone, Marionette, Form) {
+                
+                var Translations = Backbone.NestedModel.extend({
+                    
+                });
+                
+                var Country = Backbone.NestedModel.extend({
+                    
+                    idAttribute: 'code'
+                    
+                });
+                
+                Country.Collection = Backbone.Collection.extend({
+                    
+                    url: '/data/countries.json',
+                    
+                    model: Country,
+                    
+                    initialize: function() {
+                        this.cache = this.fetch().promise();
+                    }
+                    
+                });
+                
+                var Person = Backbone.NestedModel.extend({
+                    
+                    defaults: {
+                        starred: false
+                    }
+                    
+                });
+                
+                Person.Collection = Backbone.Collection.extend({ model: Person });
+                
+                // Views
+                
+                var ListItem = Marionette.ItemView.extend({
+                    
+                    tagName: 'tr',
+                    
+                    template: '#list-item',
+                    
+                });
+                
+                var ListView = Marionette.CollectionView.extend({
+                    
+                    tagName: 'table',
+                    
+                    className: 'table table-striped',
+                    
+                    childView: ListItem
+                    
+                });
+                
+                // Resolvers (example of globally registered)
+                
+                var countries = new Country.Collection();
+                
+                Form.registerResolver('country', function(model) {
+                    var dfd = $.Deferred();
+                    countries.cache.done(function() {
+                        var country = countries.get(model.id);
+                        if (country) {
+                            var data = country.toJSON();
+                            data.id = country.id;
+                            dfd.resolve(data);
+                        } else {
+                            dfd.reject('Invalid country code');
+                        }
+                    });
+                    return dfd.promise();
+                });
+                
+                // Forms
+                
+                var PersonForm = Form.View.extend({
+                    
+                    locale: 'en',
+                    
+                    initialize: function() {
+                        this.translations = new Translations();
+                    },
+                    
+                    fields: [
+                        // Display control with interpolated text and keys to observe
+                        {   
+                            id: 'username', control: 'dynamic', label: 'Name', observe: ['firstName', 'lastName'],
+                            text: '<%= form.data.firstName %> <%= form.data.lastName %>',
+                            section: 'main'
+                        },
+                        // Collection control with custom templates - from predefined custom control
+                        {
+                            key: 'friends', control: 'friends', sortable: true
+                        },
+                        // References control (auto-resolved from collection)
+                        {
+                            key: 'bestFriends', control: 'references',
+                            item: { control: 'view', template: '#friend' },
+                            resolver: 'friends', // collection
+                            emptyTemplate: '#no-friends',
+                            template: '#friends', sortable: true
+                        },
+                        // References control (custom resolving)
+                        {
+                            id: 'countries', key: 'countries', control: 'references',
+                            item: { control: 'view', template: '#country' },
+                            resolver: 'country', sortable: true
+                        },
+                        // Picker control with remote lookup (ignored)
+                        {
+                            key: 'select-country',
+                            label: false,
+                            control: 'remote-select',
+                            labelKey: 'name',
+                            valueKey: 'code',
+                            placeholder: 'Select a country',
+                            url: '/data/countries.json',
+                            ignore: true
+                        },
+                        { control: 'button', label: 'Save', action: 'save', buttonType: 'success' }
+                    ],
+                    
+                    getCollectionConstructor: function(childView) {
+                        var key = childView.getKey();
+                        if (key === 'friends' || key === 'bestFriends') {
+                            return Person.Collection;
+                        }
+                    },
+                    
+                    getFieldLabel: function(id, options) {
+                        return this.translations.get(this.locale + '.' + id);
+                    }
+                    
+                });
+                
+                var FriendForm = Form.View.extend({
+                    
+                    validateRequired: true, // form-level validation
+                    
+                    layout: 'vertical',
+                    
+                    fields: [
+                        { id: 'firstName', control: 'input', required: true },
+                        { id: 'lastName', control: 'input', required: true },
+                        { id: 'starred', control: 'boolean' }
+                    ]
+                    
+                });
+                
+                // Setup preset control (pass name as first arg to register globally)
+                
+                var FriendsControl = Form.CollectionControl.preset({
+                    control: 'collection',
+                    item: { control: 'view', template: '#friend' },
+                    emptyTemplate: '#no-friends',
+                    template: '#friends'
+                });
+                
+                function openDialog(model) {
+                    var title = model.isNew() ? 'New' : 'Edit';
+                    return FriendForm.showInModal({ model: model }, { title: title });
+                };
+                
+                // Implementation
+                
+                var person = new Person({
+                    id: 101,
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    bestFriends: [3, 1],
+                    friends: [
+                        { id: 1, firstName: 'Fred', lastName: 'Flintstone' },
+                        { id: 2, firstName: 'Wilma', lastName: 'Flintstone' },
+                        { id: 3, firstName: 'Barney', lastName: 'Rubble' }
+                    ],
+                    countries: ['BE', 'NL', 'ES']
+                });
+                
+                var form = new PersonForm({ model: person });
+                
+                // Use custom getFieldLabel implementation
+                
+                form.translations.set('nl.username', 'Naam');
+                form.translations.set('nl.friends', 'Vrienden');
+                form.translations.set('nl.bestfriends', 'Beste Vrienden');
+                form.translations.set('nl.countries', 'Landen');
+                
+                form.locale = 'nl';
+                
+                // Register control
+                
+                form.registerControl('friends', FriendsControl);
+                
+                // Rendering
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Changes and validation
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.on('validated:invalid', function() {
+                    console.warn('Form is invalid.', form.getErrors());
+                });
+                
+                // Resolving
+                
+                form.on('control:resolve:done', function(control, model) {
+                    console.log('Resolved %s - %s', control.getKey(), model.id);
+                });
+                
+                form.on('control:resolve:fail', function(control, model, err) {
+                    console.log('Failed to resolve %s - %s (%s)', control.getKey(), model.id, err || 'Error');
+                });
+                
+                // Country select
+                
+                form.on('control:set:value', function(control, key, value, options) {
+                    if (key !== 'select-country' || _.isEmpty(value)) return; // skip
+                    control.clearValue();
+                    var countries = form.getField('countries');
+                    if (countries) countries.addValue(value);
+                });
+                
+                // Form/control actions
+                
+                form.on('control:action:save', function(control, event) {
+                    if (this.isValid()) {
+                        console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                    } else {
+                        console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                    }
+                });
+                
+                form.on('control:action:add', function(control, event) {
+                    var model = new control.collection.model();
+                    openDialog(model).then(function(form, model) {
+                        if (model.hasChanged()) {
+                            model.set('id', parseInt(_.uniqueId(), 10));
+                            control.collection.add(model);
+                        }
+                    }, function(form) {
+                        console.log('Cancelled.');
+                    });
+                });
+                
+                // Item actions
+                
+                form.on('control:item:action:edit', function(control, item, event) {
+                    openDialog(item.itemModel).then(function(form, model) {
+                        if (model.hasChanged()) console.log('Save ...');
+                    }, function(form) {
+                        console.log('Cancelled.');
+                    });
+                });
+                
+                form.on('control:item:action:star', function(control, item, event) {
+                    item.itemModel.set('starred', !item.itemModel.get('starred'));
+                });
+                
+                form.on('control:reorder', function(control, model, collection, options) {
+                    console.log('Moved model %s from %i to %i', model.id, options.from, options.to);
+                    console.log('Reordered:', collection.pluck('id'));
+                });
+                
+                // Collection handling
+                
+                var friendsCollection = form.getCollection('friends');
+                
+                friendsCollection.on('add', function(model, collection) {
+                    console.log('Added friend: %s', model.get('firstName'));
+                });
+                
+                friendsCollection.on('remove', function(model, collection) {
+                    console.log('Removed friend: %s', model.get('firstName'));
+                });
+                
+                // Plain CollectionView integration
+                
+                // var listView = new ListView({ collection: friendsCollection, viewComparator: 'firstName' });
+                // listView.on('render', listView.reorder); // Example of using viewComparator
+                
+                var listView = new ListView({ collection: friendsCollection });
+                listView.listenTo(listView.collection, 'change', listView.render);
+                
+                listView.render();
+                listView.$el.appendTo('#list');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>collection controls</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        <div id="info" class="container">
+            <div class="row">
+                <label class="control-label col-sm-3 text-right">Friends</label>
+                <div id="list" class="col-sm-9">
+                </div>
+            </div>
+        </div>
+        
+        <script id="friends" type="text/template">
+        <div>
+          <label class="<%= labelClassName %>"><%= label %></label>
+          <div class="<%= controlsClassName %> nested-controls"></div>
+        </div>
+        <div class="list-controls">
+          <div class="col-sm-9 col-sm-offset-3">
+            <button type="button" data-action="add" class="btn btn-default pull-right"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add</button>
+          </div>
+        </div>
+        </script>
+        
+        <script id="friend" type="text/template">
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable drag-handle">
+              <%= value.firstName %> <%= value.lastName %>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-addon" data-action="star">
+              <span class="glyphicon glyphicon-star<%= value.starred ? '' : '-empty' %>" aria-hidden="true"></span>
+            </div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="edit" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="no-friends" type="text/template">
+        <p class="form-control immutable">Sorry, you have no friends!</p>
+        </script>
+        
+        <script id="country" type="text/template">
+        <div class="<%= controlsClassName %><%= value.__resolving ? ' loading' : '' %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+              <% if (value.__resolving) { %>
+              Loading ...
+              <% } else { %>
+              <%= value.name %>
+              <% } %>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="list-item" type="text/template">
+        <td><%= firstName %></td><td><%= lastName %></td><td><%= starred ? 'Yes' : 'No' %></td>
+        </script>
+        
+    </body>
+</html>

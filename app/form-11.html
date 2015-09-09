@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <link rel="stylesheet" href="/css/dropzone.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group-item { display: inline-block; }
+            #page-buttons .form-group-item { margin-right: 20px; }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'filesize',
+                'backbone.bootstrap-modal',
+                'marionette.form.control.dropzone',
+                'marionette.form.control.upload'
+            ], function(Backbone, Marionette, Form, filesize) {
+                
+                $(document).bind('drop dragover', function (e) {
+                    e.preventDefault();
+                });
+                
+                var mediaHost = 'http://localhost:5000';
+                
+                var Preview = Marionette.ItemView.extend({
+                    
+                    template: '#preview',
+                    
+                    templateHelpers: {
+                        formatSize: filesize,
+                        mediaHost: mediaHost
+                    }
+                    
+                });
+                
+                var PageForm = Form.View.extend({
+                    
+                    prefix: 'page-',
+                    
+                    fields: [
+                        { key: 'title', control: 'input' },
+                        { key: 'body', control: 'textarea' },
+                        {
+                            key: 'attachments', label: 'Dropzone', control: 'dropzone',
+                            accept: 'image/png, image/jpeg, image/gif',
+                            url: mediaHost, visible: '!isNew', omit: true,
+                            show: false, remove: false
+                        },
+                        {
+                            key: 'attachments', label: 'Upload', control: 'upload',
+                            accept: 'image/png, image/jpeg, image/gif',
+                            url: mediaHost, visible: '!isNew', omit: true
+                        },
+                        {
+                            key: 'attachments', control: 'collection', sortable: true,
+                            item: { control: 'view', template: '#attachment' }
+                        }
+                    ],
+                    
+                    templateHelpers: {
+                        formatSize: filesize
+                    },
+                    
+                    onControlItemActionPreview: function(control, item, event) {
+                        var model = item.itemModel;
+                        var filetype = model.get('filetype') || 'application/octet-stream';
+                        if (filetype.indexOf('image/') !== 0) return;
+                        var dialog = new Backbone.BootstrapModal({
+                            title: model.get('filename'),
+                            content: new Preview({ model: model }),
+                            allowCancel: false, animate: true
+                        });
+                        dialog.open();
+                    },
+                    
+                    onControlItemActionDestroy: function(control, item, event) {
+                        var model = item.itemModel;
+                        $.ajax({ url: mediaHost + model.get('url'), type: 'DELETE' }).done(function() {
+                            control.collection.remove(model);
+                        }).fail(function() {
+                            console.log('Failed to delete file: %s', model.id);
+                            control.collection.remove(model); // remove anyway
+                        });
+                    },
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Page = Backbone.NestedModel.extend({
+                    
+                    url: 'http://localhost:5000/api/pages'
+                    
+                });
+                
+                var page = new Page({
+                    id: 1,
+                    title: 'Demo Page',
+                    body: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit ...'
+                });
+                
+                page.set('attachments', [
+                    { id: 1, filename: 'sample.png', filesize: 79833, filetype: 'image/png', url: '/files/sample.png' }
+                ]);
+                
+                var form = new PageForm({ model: page, layout: 'horizontal' });
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.on('control:file:sending', function(control, file, xhr, formData) {
+                    if (this.model.id) formData.append('pageId', this.model.id);
+                });
+                
+                form.on('control:file:success', function(control, file, data) {
+                    console.log('Uploaded: %s', data.filename);
+                });
+                
+                form.on('control:reorder', function(control, model, collection, options) {
+                    console.log('Moved model %s from %i to %i', model.get('filename'), options.from, options.to);
+                    console.log('Reordered:', collection.pluck('id'));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                page.add('attachments', {
+                    id: 2, filename: 'document.txt', filesize: 446, filetype: 'text/plain', url: '/files/document.txt'
+                });
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with dropzone and file upload</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="attachment" type="text/template">
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+              <strong><%= value.filename %></strong> <span class="pull-right"><%= formatSize(value.filesize) %></span>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="preview" class="btn btn-default"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></button>
+              <button type="button" data-action="destroy" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="preview" type="text/template">
+        <img src="<%= mediaHost + url %>" alt="<%= filename %>, <%= formatSize(filesize) %>" class="img-responsive center-block" />
+        </script>
+    </body>
+</html>

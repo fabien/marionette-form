@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            textarea.fancy { background-color: #FEFBF2; }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'select2',
+                'bootstrap-daterangepicker',
+                'bootstrap-filestyle'
+            ], function(Backbone, Marionette, Form) {
+                
+                var PersonForm = Form.View.extend({
+                    
+                    prefix: 'person-',
+                    
+                    // layout: 'vertical',
+                    
+                    attributes: function() {
+                        var method = this.model.isNew() ? 'POST' : 'PUT';
+                        var action = _.result(this.model, 'url');
+                        return { action: action, method: method }
+                    },
+                    
+                    autoValidate: false,
+                    
+                    fields: [
+                        // Header with colllapse button
+                        {
+                            label: 'Main',
+                            smallLabel: 'section',
+                            control: 'header',
+                            section: 'main',
+                            collapse: true
+                        },
+                        // Immutable control (with optional formatter)
+                        { id: 'id', control: 'immutable', type: 'number', formatter: 'integer', section: 'main' },
+                        // Display control with interpolated text and keys to observe
+                        {   
+                            control: 'dynamic', label: 'Full name', observe: ['firstName', 'lastName'],
+                            text: '<%= form.data.firstName %> <%= form.data.lastName %>',
+                            section: 'main'
+                        },
+                        // Input controls, marked as required
+                        { id: 'firstName', control: 'input', required: true, section: 'main' },
+                        // Input control, with custom trigger events and debounce
+                        { id: 'lastName', control: 'input', required: true, section: 'main', trigger: 'change keyup', debounce: 250 },
+                        // Input control, with custom HTML5 type
+                        { key: 'email', label: 'E-mail', control: 'input', type: 'email', section: 'main' },
+                        // Input control with ignore: true
+                        { key: 'ignored', control: 'input', ignore: true, placeholder: 'input will be ignored', section: 'main' },
+                        // Single checkbox (boolean)
+                        { key: 'adult', label: 'Adult', control: 'checkbox', section: 'main' },
+                        // Multiple checkboxes from collection (array of selected values)
+                        {
+                            key: 'materials',
+                            control: 'multi-checkbox',
+                            options: 'materials',
+                            section: 'main'
+                        },
+                        // Input with array formatter
+                        {
+                            key: 'materials',
+                            control: 'input',
+                            options: 'materials',
+                            formatter: 'array',
+                            section: 'main'
+                        },
+                        // Multiple radio options from fixed dataset
+                        {
+                            key: 'salutation',
+                            label: 'Salutation',
+                            control: 'radio',
+                            options: [
+                                { id: 'Mr', text: 'Mr.' },
+                                { id: 'Mrs', text: 'Mrs.' },
+                                { id: 'Mme', text: 'Mme.' }
+                            ],
+                            section: 'main'
+                        },
+                        // Misc controls
+                        { key: 'profile', label: 'Profile', control: 'textarea', extraClasses: ['fancy'], helpMessage: 'Be creative!', section: 'main' },
+                        { control: 'help', text: 'Hint: please fill in all details.', section: 'main' },
+                        { control: 'spacer', section: 'main' },
+                        // Basic inputs, with nested keys
+                        { key: 'address.address1', control: 'input' },
+                        { key: 'address.address2', control: 'input' },
+                        { key: 'address.city', control: 'input' },
+                        { key: 'address.postalCode', label: 'Postal Code', control: 'input' },
+                        {
+                            key: 'address.province',
+                            control: 'select',
+                            options: 'provinces'
+                        },
+                        { key: 'address.notes', label: 'Address notes', control: 'textarea' },
+                        { control: 'spacer' },
+                        // Custom view from template (immutable)
+                        {
+                            key: '*',
+                            label: 'Display',
+                            control: 'view',
+                            template: '#display'
+                        },
+                        // Custom view with form binding
+                        {
+                            key: 'address',
+                            control: 'view',
+                            template: '#address',
+                            helpMessage: 'Please fill in your address details.'
+                        },
+                        { control: 'spacer' },
+                        // Collection control with custom templates
+                        {
+                            key: 'friends', control: 'collection',
+                            emptyTemplate: '#no-friends', sortable: true,
+                            item: { control: 'view', template: '#friend' }
+                        },
+                        // References control (auto-resolved from collection)
+                        {
+                            key: 'colors', control: 'references',
+                            resolver: 'colors', // collection
+                            item: { control: 'view', template: '#color' }
+                        },
+                        { control: 'spacer' },
+                        // Simple date control (using daterange picker)
+                        {
+                             key: 'dateOfBirth',
+                             control: 'date'
+                        },
+                        // Simple date-time control (using daterange picker)
+                        {
+                            key: 'completed',
+                            control: 'date-time'
+                        },
+                        // Daterange picker, with time and ranges, stored as array
+                        {
+                            key: 'publication',
+                            control: 'date-range',
+                            startKey: 'publication[0]',
+                            endKey: 'publication[1]',
+                            time: true,
+                            ranges: true
+                        },
+                        { control: 'spacer' },
+                        // Multiple select
+                        {
+                            key: 'colors',
+                            control: 'select',
+                            multiple: true,
+                            options: 'colors'
+                        },
+                        // Select with Select2 integration
+                        {
+                            id: 'color-select',
+                            key: 'colors',
+                            label: 'Color Select2',
+                            control: 'select',
+                            multiple: true,
+                            options: 'colors',
+                            select2: true,
+                            placeholder: 'Select a color'
+                        },
+                        // Select with tagging behavior
+                        {
+                            key: 'colors',
+                            label: 'Color Tags',
+                            control: 'tag',
+                            options: 'colors',
+                            placeholder: 'Select a color',
+                            create: true
+                        },
+                        // Lookup - static select
+                        {
+                            key: 'colors',
+                            label: 'Color names',
+                            control: 'lookup',
+                            options: 'colors'
+                        },
+                        // Display values (array)
+                        {
+                            key: 'colors',
+                            label: 'Color codes',
+                            control: 'immutable'
+                        },
+                        // Select with custom result template
+                        {
+                            key: 'backgroundColor',
+                            control: 'select2',
+                            options: 'colors',
+                            placeholder: 'Select a color',
+                            resultTemplate: '#select-result',
+                            selectionTemplate: '#select-result',
+                            extraClasses: 'color-select',
+                            select2: { dropdownCssClass: 'color-select' }
+                        },
+                        { control: 'spacer' },
+                        // Select fetching data using (collection) url
+                        {
+                            key: 'country',
+                            control: 'select',
+                            labelKey: 'name',
+                            valueKey: 'code',
+                            select2: {},
+                            placeholder: 'Select a country',
+                            url: '/data/countries.json'
+                        },
+                        // Select with client-side query capabilities
+                        {
+                            key: 'countryQuery',
+                            control: 'query-select',
+                            labelKey: 'name',
+                            valueKey: 'code',
+                            options: 'countries',
+                            placeholder: 'Select a country'
+                        },
+                        // Select with AJAX fetching (query on server)
+                        {
+                            key: 'countryRemote',
+                            control: 'remote-select',
+                            labelKey: 'name',
+                            valueKey: 'code',
+                            placeholder: 'Select a country',
+                            url: '/data/countries.json'
+                        },
+                        // Lookup - static select
+                        {
+                            key: 'country',
+                            label: 'Country code',
+                            control: 'immutable'
+                        },
+                        {
+                            key: 'country',
+                            label: 'Country name',
+                            control: 'lookup',
+                            labelKey: 'name',
+                            valueKey: 'code',
+                            options: 'countries'
+                        },
+                        { control: 'spacer' },
+                        // Nested keys
+                        { key: 'friends[0].firstName', label: 'Friend Firstname', control: 'input' },
+                        { key: 'friends[0].lastName', label: 'Friend Lastname', control: 'input' },
+                        // Nested field - single item
+                        {
+                            key: 'friends[0]',
+                            label: 'Friend',
+                            control: 'nested',
+                            fields: [
+                                { key: 'firstName', control: 'input' },
+                                { key: 'lastName', control: 'input' }
+                            ]
+                        },
+                        // Nested field - single item/object
+                        {
+                            key: 'address',
+                            control: 'nested',
+                            fields: [
+                                { key: 'city', control: 'input' },
+                                {
+                                    key: 'province',
+                                    control: 'select',
+                                    options: 'provinces'
+                                }
+                            ]
+                        },
+                        { control: 'spacer' },
+                        // Collection control with nested form controls
+                        {
+                            key: 'friends', control: 'collection',
+                            item: { insertHtml: true, template: '#name-template' },
+                            fields: [
+                                { id: 'firstName', control: 'input' },
+                                { id: 'lastName', control: 'input' }
+                            ]
+                        },
+                        // List control - renders a single input for each item
+                        { 
+                            key: 'notes', label: 'Notes', control: 'list',
+                            itemLabel: 'Note <%= index + 1 %>',
+                            itemControl: 'textarea',
+                            itemKey: 'body'
+                        },
+                        { control: 'spacer' },
+                        // Example of how values are coerced
+                        {
+                            key: 'jsonValue',
+                            label: 'JSON value',
+                            control: 'select',
+                            options: [
+                                { id: null, text: 'null' },
+                                { id: true, text: 'true' },
+                                { id: false, text: 'false' },
+                                { id: 0, text: '0' },
+                                { id: 1, text: '1' },
+                                { id: 99, text: '99' },
+                                { id: 'a string', text: 'a string' }
+                            ]
+                        },
+                        { control: 'spacer' },
+                        // File input (for HTTP multiplart form upload)
+                        {
+                            key: 'file',
+                            control: 'file',
+                            base64: false
+                        },
+                        // File input with Base64 data (default)
+                        {
+                            key: 'image',
+                            control: 'file',
+                            accept: 'image/png, image/jpeg, image/gif',
+                            filestyle: {
+                                iconName: 'glyphicon glyphicon-picture'
+                            }
+                        },
+                        // Image preview (display)
+                        {
+                            key: 'image',
+                            label: 'Preview',
+                            control: 'image'
+                        },
+                        { id: 'submit', control: 'button', label: 'Save', type: 'submit', buttonType: 'success' }
+                    ],
+                    
+                    initChildView: function(view) {
+                        // console.log('%s: %s', view.model.get('control'), view.getKey());
+                    },
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            // this.model.save();
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Person = Backbone.NestedModel.extend({
+                    
+                    url: 'http://eu.httpbin.org/put',
+                    
+                    validate: function(attrs, options) {
+                        var errors = {};
+                        if (_.isEmpty(attrs['firstName'])) {
+                            errors['firstName'] = { code: 'presence' , message: 'can\'t be blank' };
+                        }
+                        if (_.isEmpty(attrs['lastName'])) {
+                            errors['lastName'] = { code: 'presence' , message: 'can\'t be blank' };
+                        }
+                        if (!_.isEmpty(errors)) return errors;
+                    }
+                    
+                });
+                
+                var person = new Person({
+                    id: 101,
+                    salutation: 'Mr',
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    adult: true,
+                    email: 'info@andre-jones.com',
+                    address: {
+                        address1: '1751 rue Richardson',
+                        address2: 'Suite 3.105',
+                        city: 'Montréal',
+                        postalCode: 'H3K 1G6',
+                        province: 'QC'
+                    },
+                    materials: ['wood', 'metal'],
+                    colors: [1, 3],
+                    backgroundColor: 2,
+                    profile: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod.',
+                    dateOfBirth: '1979-09-11T02:00:00.000Z',
+                    jsonValue: 99,
+                    notes: [
+                        { id: 1, body: 'Note A' },
+                        { id: 2, body: 'Note B' }
+                    ],
+                    friends: [
+                        { id: 102, firstName: 'Fred', lastName: 'Flintstone' },
+                        { id: 103, firstName: 'Wilma', lastName: 'Flintstone' },
+                        { id: 104, firstName: 'Barney', lastName: 'Rubble' }
+                    ],
+                    country: 'BE',
+                    countryQuery: 'BE',
+                    publication: ['2015-09-11T08:00:00.000Z', '2015-09-17T22:00:00.000Z']
+                });
+                
+                person.on('change', function(model, options) {
+                    console.log(JSON.stringify(model.toJSON(), null, 2));
+                    if (model.has('file')) console.log(model.get('file'));
+                });
+                
+                var CountriesCollection = Backbone.Collection.extend({
+                    url: '/data/countries.json',
+                    model: Backbone.Model.extend({ idAttribute: 'code' })
+                });
+                
+                var countriesCollection = new CountriesCollection();
+                countriesCollection.fetch().done(function() {
+                    console.log('Fetched %i countries', countriesCollection.length);
+                });
+                
+                var materialsCollection = new Backbone.Collection([
+                    { id: 'wood', text: 'Wood' },
+                    { id: 'metal', text: 'Metal' },
+                    { id: 'plastic', text: 'Plastic' },
+                    { id: 'textile', text: 'Textile' }
+                ]);
+                
+                var colorsCollection = new Backbone.Collection([
+                    { id: 1, text: 'Red' },
+                    { id: 2, text: 'Green' },
+                    { id: 3, text: 'Blue' }
+                ]);
+                
+                var provinces = new Backbone.Collection([
+                    { id: 'AB', text: 'Alberta' },
+                    { id: 'BC', text: 'British Columbia' },
+                    { id: 'MB', text: 'Manitoba' },
+                    { id: 'NB', text: 'New Brunswick' },
+                    { id: 'NL', text: 'Newfoundland and Labrador' },
+                    { id: 'NT', text: 'Northwest Territories' },
+                    { id: 'NS', text: 'Nova Scotia' },
+                    { id: 'NU', text: 'Nunavut' },
+                    { id: 'ON', text: 'Ontario' },
+                    { id: 'PE', text: 'Prince Edward Island' },
+                    { id: 'QC', text: 'Québec' },
+                    { id: 'SK', text: 'Saskatchewan' },
+                    { id: 'YT', text: 'Yukon' }
+                ]);
+                
+                var form = new PersonForm({ model: person });
+                
+                form.registerCollection('materials', materialsCollection);
+                form.registerCollection('colors', colorsCollection);
+                form.registerCollection('provinces', provinces);
+                form.registerCollection('countries', countriesCollection);
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                form.on('control:set:value', function(control, key, value, options) {
+                    console.log('Set value - %s:', key, value);
+                });
+                
+                form.on('validated:invalid', function() {
+                    console.warn('Form is invalid.', form.getErrors());
+                });
+                
+                // console.log(form.getField('color-select').getSelected());
+                // console.log(form.getField('color-select').getSelection());
+                
+                // form.getField('firstName').model.set('readonly', 'isReadonly');
+                // form.getField('lastName').model.set('readonly', 'isReadonly');
+                // form.getField('firstName').model.set('required', false);
+                // form.getField('lastName').model.set('required', false);
+                // form.getField('address-city').model.set('required', true);
+                
+                var province = form.getField('address-province');
+                var materials = form.getField('materials');
+                var notes = form.getField('notes');
+                
+                var details = {
+                    codes: {
+                        firstName: ['presence'],
+                        lastName: ['uniqueness']
+                    },
+                    messages: {
+                        firstName: ['can\'t be blank'],
+                        lastName: ['already exists']
+                    }
+                };
+                
+                // form.setErrors(details, true);
+                // province.collection.reset();
+                
+                setTimeout(function() {
+                    // province.collection.reset([
+                    //     { id: 'SK', text: 'Saskatchewan' },
+                    //     { id: 'YT', text: 'Yukon' }
+                    // ]);
+                    
+                    // materialsCollection.reset([
+                    //     { id: 'metal', text: 'Metal' },
+                    //     { id: 'plastic', text: 'Plastic' }
+                    // ]);
+                    
+                    colorsCollection.add({ id: 4, text: 'Purple' });
+                    
+                    form.getCollection('friends').add({ id: 105, firstName: 'Betty', lastName: 'Rubble' });
+                    
+                    notes.collection.set([{ id: 2, body: 'Note B (updated)' }], { remove: false });
+                    notes.collection.add({ id: 3, body: 'Note C' });
+                }, 1500);
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>all controls</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="name-template" type="text/template">
+        <div class="<%= form.layout === "vertical" ? 'row' : '' %>">
+          <% var cls = form.layout === "vertical" ? 'col-xs-6' : 'col-xs-12' %>
+          <div data-control="firstname" class="<%= cls %>"></div>
+          <div data-control="lastname" class="<%= cls %>"></div>
+        </div>
+        </script>
+        
+        <script id="select-result" type="text/template">
+        <span style="background-color: <%= text %>">&nbsp;</span> <%= label %>
+        </script>
+        
+        <script id="address" type="text/template">
+        <label class="<%= labelClassName %>"><%= label %></label>
+        <div class="<%= controlsClassName %> nested-form">
+          <div class="form-group">
+            <input type="text" name="address1" class="form-control" placeholder="Address">
+          </div>
+          <div class="form-group">
+            <input type="text" name="address2" class="form-control" placeholder="Address">
+          </div>
+          <div class="form-group">
+            <input type="text" name="city" class="form-control" placeholder="City">
+          </div>
+          <div class="form-group">
+            <div class="row">
+              <div class="col-xs-6">
+                <input type="text" name="postalCode" class="form-control" placeholder="Postal Code">
+              </div>
+              <div class="col-xs-6">
+                <select name="province" class="form-control">
+                  <option value="AB">Alberta</option>
+                  <option value="BC">British Columbia</option>
+                  <option value="MB">Manitoba</option>
+                  <option value="NB">New Brunswick</option>
+                  <option value="NL">Newfoundland and Labrador</option>
+                  <option value="NT">Northwest Territories</option>
+                  <option value="NS">Nova Scotia</option>
+                  <option value="NU">Nunavut</option>
+                  <option value="ON">Ontario</option>
+                  <option value="PE">Prince Edward Island</option>
+                  <option value="QC" selected="selected">Québec</option>
+                  <option value="SK">Saskatchewan</option>
+                  <option value="YT">Yukon</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <textarea name="notes" class="form-control" maxlength="4096" placeholder="Notes"></textarea>
+          </div>
+          <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>
+        </div>
+        </script>
+        
+        <script id="display" type="text/template">
+        <label class="<%= labelClassName %>"><%= label %></label>
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+            <%= value.salutation %>. <%= value.firstName %> <%= value.lastName %>, <%= value.address.city %>
+            </span>
+            <div class="input-group-btn" role="group">
+              <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+              <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="friend" type="text/template">
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+              <%= value.firstName %> <%= value.lastName %>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="edit" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="no-friends" type="text/template">
+        <p class="form-control-static">Sorry, you have no friends!</p>
+        </script>
+        
+        <script id="color" type="text/template">
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+              <%= value.text %>
+            </span>
+            <div class="input-group-addon" style="background-color: <%= value.text %>">
+              <span class="glyphicon glyphicon-tint" aria-hidden="true" style="color: #fff"></span>
+            </div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+    </body>
+</html>

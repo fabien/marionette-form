@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group.disabled {
+                opacity: 0.5;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'backbone.validation',
+                'jquery.maskedinput',
+                'autoNumeric',
+                'select2',
+                'bootstrap-daterangepicker',
+                'bootstrap-filestyle'
+            ], function(Backbone, Marionette, Form) {
+                
+                _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
+                
+                var DemoView = Marionette.ItemView.extend({
+                    
+                    template: _.template('<h2><%= form.data.firstName %> <%= form.data.lastName %></h2>')
+                    
+                });
+                
+                var CustomControl = Form.extendView(DemoView);
+                
+                Form.registerControl('custom', CustomControl);
+                
+                var ProfileForm = Form.View.extend({
+                    
+                    prefix: 'profile-',
+                    
+                    layout: 'vertical',
+                    
+                    // Example of dynamically adding/updating fields:
+                    
+                    onChange: function() {
+                        var hasBirthDay = this.getValueOf('birthday');
+                        var field = this.getField('notes');
+                        if (field) {
+                            field.model.set('disabled', !hasBirthDay);
+                            field.model.set('omit', !hasBirthDay || field.isBlank());
+                        } else if (hasBirthDay) {
+                            var index = this.collection.length - 1;
+                            this.field('notes', { control: 'textarea', omit: 'isBlank' }, { at: index });
+                        }
+                    },
+                    
+                    onSubmit: function(form, control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Profile = Backbone.Model.extend({
+                    validation: {
+                        firstName: {
+                            required: true
+                        },
+                        lastName: {
+                            required: true
+                        }
+                    }
+                });
+                
+                var profile = new Profile({
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    phone: '(123) 456-7890',
+                    amount: 2845
+                });
+                
+                var form = new ProfileForm({ model: profile });
+                
+                form.collection.reset([
+                    { id: 'custom', key: '*', control: 'custom' },
+                    { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
+                    { id: 'lastName', control: 'input', required: true, omit: 'isBlank' },
+                    { id: 'phone', control: 'input', mask: '(999) 999-9999' },
+                    { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
+                    { id: 'birthday', control: 'checkbox', omit: true },
+                    { id: 'dateOfBirth', control: 'date', disabled: '!birthday', omit: '!birthday', observe: 'birthday' },
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with Backbone.Validation</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

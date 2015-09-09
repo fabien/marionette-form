@@ -1,0 +1,41 @@
+{
+  "name": "marionette-form",
+  "version": "0.0.0",
+  "authors": [
+    "Fabien Franzen <info@atelierfabien.be>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backbone-model-file-upload": "backbone-model-file-upload#*",
+    "backbone-nested-model": "~2.0.4",
+    "backbone-tree-model": "https://github.com/fabien/backbone-tree-model.git#*",
+    "backbone-tree-view": "https://github.com/fabien/backbone-tree-view.git#*",
+    "backbone.googlemaps": "https://github.com/fabien/backbone.googlemaps.git#*",
+    "backbone.syphon": "~0.6.2",
+    "backbone.validation": "https://github.com/thedersen/backbone.validation.git#*",
+    "blueimp-file-upload": "~9.11.2",
+    "bootstrap": "~3.3.5",
+    "bootstrap-datepicker": "~1.4.0",
+    "bootstrap-daterangepicker": "~2.0.9",
+    "bootstrap-filestyle": "~1.2.1",
+    "dragula.js": "dragula#~3.1.0",
+    "dropzone": "~4.0.1",
+    "jquery": "~2.1.4",
+    "marionette": "~2.4.2",
+    "requirejs": "~2.1.20",
+    "select2": "3.5.2",
+    "underscore": "~1.8.3"
+  },
+  "resolutions": {
+    "backbone": "~1.2.1",
+    "underscore": "~1.8.3",
+    "jquery": "~2.1.4"
+  }
+}
