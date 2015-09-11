@@ -1268,7 +1268,27 @@ define([
         
     });
     
-    var BaseControl = Marionette.Form.BaseControl = StaticControl.extend({
+    var HelpControl = Marionette.Form.HelpControl = StaticControl.extend({
+        
+        template: Templates.HelpControl
+        
+    });
+    
+    var SpacerControl = Marionette.Form.SpacerControl = StaticControl.extend({
+        
+        template: Templates.SpacerControl,
+        
+        controlDefaults: { rule: false }
+        
+    });
+    
+    var RuleControl = Marionette.Form.RuleControl = StaticControl.extend({
+        
+        template: Templates.RuleControl
+        
+    });
+    
+    var BaseControl = Marionette.Form.BaseControl = Control.extend({
         
         template: Templates.BaseControl,
         
@@ -1491,26 +1511,6 @@ define([
         }
         
     }, CollectionMixin));
-    
-    var HelpControl = Marionette.Form.HelpControl = StaticControl.extend({
-        
-        template: Templates.HelpControl
-        
-    });
-    
-    var SpacerControl = Marionette.Form.SpacerControl = ImmutableControl.extend({
-        
-        template: Templates.SpacerControl,
-        
-        controlDefaults: { rule: false }
-        
-    });
-    
-    var RuleControl = Marionette.Form.RuleControl = ImmutableControl.extend({
-        
-        template: Templates.RuleControl
-        
-    });
     
     // Text controls
     
@@ -3723,7 +3723,7 @@ define([
             var key = labelKey || _.keys(data)[0];
             var keys = [].concat(key || []);
             var values = _.datas(_.pick(data, keys));
-            return _.compact(values).join(', ');
+            return _.compact(values).join(' ');
         }
     };
     
