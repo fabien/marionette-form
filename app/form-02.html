@@ -235,11 +235,11 @@
                 // Resolving
                 
                 form.on('control:resolve:done', function(control, model) {
-                    console.log('Resolved %s - %s', control.getKey(), model.id);
+                    console.log('Resolved %s: %s', control.getKey(), model.id);
                 });
                 
                 form.on('control:resolve:fail', function(control, model, err) {
-                    console.log('Failed to resolve %s - %s (%s)', control.getKey(), model.id, err || 'Error');
+                    console.log('Failed to resolve %s: %s (%s)', control.getKey(), model.id, err || 'Error');
                 });
                 
                 // Country select

@@ -28,9 +28,11 @@
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
             var oldIndex = collection.indexOf(model);
+            var info = { from: oldIndex, to: newIndex };
             collection.remove(model);
             collection.add(model, { at: newIndex });
-            collection.trigger('reorder', model, collection, { from: oldIndex, to: newIndex });
+            collection.trigger('reorder', model, collection, info);
+            this.view.triggerMethod('sortable:reorder', model, collection, info);
         },
         
         onSortRemove: function(el, container) {
@@ -38,10 +40,20 @@
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
             if (model) collection.remove(model);
+            if (model) this.view.triggerMethod('sortable:remove', model, collection);
         },
         
         onRender: function() {
-            var options = _.omit(this.options, 'behaviorClass');
+            var options = _.omit(this.options, 'behaviorClass', 'dragMirrorContainer');
+            var dragMirrorContainer = this.view.getOption('dragMirrorContainer');
+            if (_.isUndefined(dragMirrorContainer)) {
+                dragMirrorContainer = this.view.getOption('childViewContainer');
+            }
+            if (_.isString(dragMirrorContainer)) {
+                options.mirrorContainer = this.$(dragMirrorContainer)[0];
+            } else if (dragMirrorContainer !== false) {
+                options.mirrorContainer = this.el;
+            }
             this.sortable = dragula(this.getSortableContainer().toArray(), _.extend({
                 isContainer: this.dragIsContainer.bind(this),
                 moves: this.dragMoves.bind(this),
@@ -50,7 +62,7 @@
             }, options));
             this.sortable.on('drop', this.onSortUpdate.bind(this));
             this.sortable.on('remove', this.onSortRemove.bind(this));
-            this.triggerMethod('init:sortable', this.sortable);
+            this.view.triggerMethod('init:sortable', this.sortable);
         },
         
         onDestroy: function() {

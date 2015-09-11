@@ -17,6 +17,7 @@
                 'backbone',
                 'backbone.marionette',
                 'marionette.form',
+                'marionette.form.control.code',
                 'select2',
                 'bootstrap-daterangepicker',
                 'bootstrap-filestyle'
@@ -329,6 +330,11 @@
                             key: 'image',
                             label: 'Preview',
                             control: 'image'
+                        },
+                        // Code editor
+                        {
+                            key: 'code',
+                            control: 'code'
                         },
                         { id: 'submit', control: 'button', label: 'Save', type: 'submit', buttonType: 'success' }
                     ],

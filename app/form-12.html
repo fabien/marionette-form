@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            #dialog-color .modal-body {
+                padding: 0;
+            }
+            #dialog-color .color-preview {
+                padding: 15px;
+            }
+            #dialog-color .controls {
+                padding: 15px;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'select2',
+                'marionette.form.view.json',
+                'marionette.form.control.modal',
+                'marionette.form.control.object',
+                'marionette.form.control.reference'
+            ], function(Backbone, Marionette, Form) {
+                
+                var ColorView = Marionette.ItemView.extend({
+                    
+                    template: '#color-view',
+                    
+                    ui: {
+                        input: 'input[name="color"]',
+                        preview: '.color-preview'
+                    },
+                    
+                    events: {
+                        'change @ui.input': 'onColorChange',
+                        'keyup @ui.input': 'onColorChange'
+                    },
+                    
+                    initialize: function() {
+                        var dfd = $.Deferred();
+                        setTimeout(dfd.resolve.bind(this), 500);
+                        this.deferred = dfd.promise();
+                        this.model = this.model || new Backbone.Model();
+                        this.listenTo(this.model, 'change:color', this.render);
+                        this.on('render', this.setColor);
+                    },
+                    
+                    commit: function() {
+                        this.setData(this.getColor());
+                        return true;
+                    },
+                    
+                    getData: function() {
+                        return this.model.get('color');
+                    },
+                    
+                    setData: function(value) {
+                        this.model.set('color', value);
+                    },
+                    
+                    getColor: function() {
+                        var color = this.ui.input.val();
+                        var padding = '000000';
+                        color = color.replace('#', '').slice(0, 6);
+                        return '#' + color + padding.slice(color.length);
+                    },
+                    
+                    setColor: function() {
+                        var color = this.getData();
+                        this.ui.input.val(color);
+                        this.ui.preview.css('backgroundColor', color);
+                    },
+                    
+                    onColorChange: function(event) {
+                        var color = this.getColor();
+                        if (this.ui.input.val().length > 7) {
+                            event.preventDefault();
+                            this.ui.input.val(color);
+                            return;
+                        }
+                        this.ui.preview.css('backgroundColor', color);
+                    }
+                    
+                });
+                
+                var PersonForm = Form.View.extend({
+                    
+                    fields: [
+                        {
+                            key: 'color', control: 'modal',
+                            modal: ColorView, synopsis: 'Hex: <%= value %>',
+                            editable: true, removable: true, confirm: false,
+                        },
+                        {
+                            key: 'address', control: 'object',
+                            synopsisKey: ['address1', 'address2', 'city', 'province'],
+                            editable: true, removable: true, confirm: true,
+                            fields: [
+                                { key: 'address1', control: 'input' },
+                                { key: 'address2', control: 'input' },
+                                { key: 'city', control: 'input' },
+                                { key: 'postalCode', label: 'Postal Code', control: 'input' },
+                                { key: 'province', control: 'select', options: 'provinces' }
+                            ]
+                        },
+                        {
+                            key: 'address', label: 'JSON', control: 'modal',
+                            modal: 'json'
+                        },
+                        {
+                            key: '*', label: 'Data', control: 'object',
+                            fields: [
+                                { key: 'id', control: 'integer' },
+                                { key: 'address.city', control: 'input' },
+                                { key: 'address.country', control: 'input' }
+                            ]
+                        },
+                        {
+                            key: '*', label: 'Debug', control: 'modal',
+                            editIcon: 'glyphicon glyphicon-cog'
+                        },
+                        { control: 'spacer' },
+                        {
+                            id: 'friend-ref', key: 'friendId', label: 'Friend', control: 'reference',
+                            fields: [
+                                {
+                                    key: 'id',
+                                    label: 'Reference',
+                                    control: 'select2',
+                                    labelKey: 'firstName',
+                                    placeholder: 'Select a friend',
+                                    collection: 'people'
+                                },
+                                { control: 'rule' },
+                                { key: 'firstName', control: 'immutable' },
+                                { key: 'lastName', control: 'immutable' }
+                            ],
+                            synopsis: '<%= value.firstName %> <%= value.lastName %>',
+                            resolver: 'people'
+                        },
+                        {
+                            id: 'select-friend',
+                            label: false,
+                            control: 'select2',
+                            labelKey: 'firstName',
+                            placeholder: 'Select a friend',
+                            collection: 'people',
+                            ignore: true
+                        },
+                        { control: 'spacer' },
+                        {
+                            id: 'friends-list', key: 'friends', label: 'Friends List',
+                            control: 'object-list', sortable: true,
+                            fields: [ // when creating
+                                { key: 'firstName', control: 'input', required: true },
+                                { key: 'lastName', control: 'input', required: true }
+                            ],
+                            item: {
+                                fields: [ // when updating
+                                    { key: 'id', control: 'immutable' },
+                                    { key: 'firstName', control: 'input', required: true },
+                                    { key: 'lastName', control: 'input', required: true }
+                                ]
+                            },
+                            removable: true, confirm: true,
+                            synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                        },
+                        { control: 'spacer' },
+                        {
+                            id: 'friends-collection', key: 'friends', label: 'Friends',
+                            control: 'collection', sortable: true,
+                            item: {
+                                control: 'object',
+                                fields: [
+                                    { key: 'id', control: 'immutable' },
+                                    { key: 'firstName', control: 'input', required: true },
+                                    { key: 'lastName', control: 'input', required: true }
+                                ],
+                                removable: true, confirm: true,
+                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                            }
+                        },
+                        {
+                            id: 'friends-json', key: 'friends', label: 'Friends (JSON)',
+                            control: 'collection', sortable: true,
+                            item: {
+                                control: 'modal', modal: 'json',
+                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                            }
+                        },
+                        { control: 'spacer' },
+                        {
+                            id: 'best-friends', key: 'bestFriends', control: 'references',
+                            sortable: true, resolver: 'friends', // collection
+                            item: {
+                                control: 'object',
+                                fields: [
+                                    { key: 'id', control: 'immutable' },
+                                    { key: 'firstName', control: 'input', required: true },
+                                    { key: 'lastName', control: 'input', required: true }
+                                ],
+                                removable: true, confirm: true,
+                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                            }
+                        },
+                        {
+                            id: 'select-best-friend',
+                            label: false,
+                            control: 'select2',
+                            labelKey: 'firstName',
+                            placeholder: 'Select a friend',
+                            collection: 'friends',
+                            ignore: true
+                        },
+                        { control: 'spacer' },
+                        { control: 'button', label: 'Save', action: 'save', buttonType: 'success' }
+                    ]
+                    
+                });
+                
+                var provinces = new Form.Collection([
+                    { id: 'AB', text: 'Alberta' },
+                    { id: 'BC', text: 'British Columbia' },
+                    { id: 'MB', text: 'Manitoba' },
+                    { id: 'NB', text: 'New Brunswick' },
+                    { id: 'NL', text: 'Newfoundland and Labrador' },
+                    { id: 'NT', text: 'Northwest Territories' },
+                    { id: 'NS', text: 'Nova Scotia' },
+                    { id: 'NU', text: 'Nunavut' },
+                    { id: 'ON', text: 'Ontario' },
+                    { id: 'PE', text: 'Prince Edward Island' },
+                    { id: 'QC', text: 'Québec' },
+                    { id: 'SK', text: 'Saskatchewan' },
+                    { id: 'YT', text: 'Yukon' }
+                ]);
+                
+                var PeopleCollection = Form.Collection.extend({
+                    url: '/data/people.json'
+                });
+                
+                var people = new PeopleCollection();
+                
+                // Implementation
+                
+                var person = new Form.Model({
+                    id: 101,
+                    color: '#ff0000',
+                    address: {
+                        address1: '1751 rue Richardson',
+                        address2: 'Suite 3.105',
+                        city: 'Montréal',
+                        postalCode: 'H3K 1G6',
+                        province: 'QC',
+                        country: 'CA'
+                    },
+                    friendId: 2,
+                    bestFriends: [3, 1],
+                    friends: [
+                        { id: 1, firstName: 'Fred', lastName: 'Flintstone' },
+                        { id: 2, firstName: 'Wilma', lastName: 'Flintstone' },
+                        { id: 3, firstName: 'Barney', lastName: 'Rubble' }
+                    ]
+                });
+                
+                var form = new PersonForm({ model: person });
+                
+                form.registerCollection('friends', true); // from data itself
+                form.registerCollection('people', people);
+                form.registerCollection('provinces', provinces);
+                
+                // Example - fetch later
+                
+                people.fetch();
+                
+                // Modal
+                
+                form.on('control:modal:view', function(control, view, options) {
+                    if (control.getId() === 'friends-list') {
+                        view.model.set('id', parseInt(_.uniqueId(), 10));
+                    }
+                });
+                
+                form.on('control:modal:load:start', function(control, dialog, view) {
+                    console.log('Async loading dialog for: %s ...', control.getKey());
+                });
+                
+                form.on('control:modal:load:stop', function(control, dialog, view) {
+                    console.log('... loaded dialog for: %s', control.getKey());
+                });
+                
+                form.on('control:modal:ok', function(control, dialog, view) {
+                    if (view instanceof Form.View && view.commit()) {
+                        var data = view.getData();
+                        console.log('Modal data from %s:', control.getId(), JSON.stringify(data, null, 4));
+                        if (_.isEmpty(data)) return dialog.preventClose(); // example
+                        if (control.getId() === 'friends-list') people.add(data);
+                    }
+                })
+                
+                // Best friends picker
+                
+                form.on('control:set:value', function(control, key, value, options) {
+                    if (key === 'select-best-friend') {
+                        if (!_.isNumber(value)) return; // skip
+                        control.clearValue();
+                        var field = form.getField('best-friends');
+                        if (field) field.addValue(value);
+                    } else if (key === 'select-friend') {
+                        if (!_.isNumber(value)) return; // skip
+                        control.clearValue();
+                        var field = form.getField('friend-ref');
+                        if (field) field.setValue(value);
+                    }
+                });
+                
+                // Resolving
+                
+                form.on('control:resolve:done', function(control, model) {
+                    console.log('Resolved %s: %s', control.getKey(), model.id);
+                });
+                
+                form.on('control:resolve:fail', function(control, model, err) {
+                    console.log('Failed to resolve %s: %s (%s)', control.getKey(), model.id, err || 'Error');
+                });
+                
+                // Rendering
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Changes and validation
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.on('validated:invalid', function() {
+                    console.warn('Form is invalid.', form.getErrors());
+                });
+                
+                form.on('control:reorder', function(control, model, collection, options) {
+                    if (control.getId() !== 'friends-list') return; // prevent multiple log entries
+                    console.log('Moved model %s from %i to %i', model.id, options.from, options.to);
+                    console.log('Reordered:', collection.pluck('id'));
+                });
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>modal controls</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        
+        <script id="color-view" type="text/template">
+            <div class="color-preview"><%= color %></div>
+            <div class="controls">
+                <input name="color" type="text" class="form-control" placeholder="#000000">
+            </div>
+        </script>
+        
+        
+        
+        
+        
+        <script id="friends" type="text/template">
+        <div>
+          <label class="<%= labelClassName %>"><%= label %></label>
+          <div class="<%= controlsClassName %> nested-controls"></div>
+        </div>
+        <div class="list-controls">
+          <div class="col-sm-9 col-sm-offset-3">
+            <button type="button" data-action="add" class="btn btn-default pull-right"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add</button>
+          </div>
+        </div>
+        </script>
+        
+        <script id="friend" type="text/template">
+        <div class="<%= controlsClassName %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable drag-handle">
+              <%= value.firstName %> <%= value.lastName %>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-addon" data-action="star">
+              <span class="glyphicon glyphicon-star<%= value.starred ? '' : '-empty' %>" aria-hidden="true"></span>
+            </div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="edit" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="no-friends" type="text/template">
+        <p class="form-control immutable">Sorry, you have no friends!</p>
+        </script>
+        
+        <script id="country" type="text/template">
+        <div class="<%= controlsClassName %><%= value.__resolving ? ' loading' : '' %>">
+          <div class="input-group">
+            <span role="control" class="<%= controlClassName %> immutable">
+              <% if (value.__resolving) { %>
+              Loading ...
+              <% } else { %>
+              <%= value.name %>
+              <% } %>
+            </span>
+            <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
+            <div class="input-group-btn" role="group">
+              <button type="button" data-action="remove" class="btn btn-default"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        </div>
+        </script>
+        
+        <script id="list-item" type="text/template">
+        <td><%= firstName %></td><td><%= lastName %></td><td><%= starred ? 'Yes' : 'No' %></td>
+        </script>
+        
+    </body>
+</html>

@@ -13,6 +13,8 @@
     "tests"
   ],
   "dependencies": {
+    "backbone": "~1.2.3",
+    "backbone-bootstrap-modal": "https://github.com/fabien/backbone.bootstrap-modal.git#9e7baab8bd102170342916e3e0eb2093a9c9c208",
     "backbone-model-file-upload": "backbone-model-file-upload#*",
     "backbone-nested-model": "~2.0.4",
     "backbone-tree-model": "https://github.com/fabien/backbone-tree-model.git#*",
@@ -34,7 +36,7 @@
     "underscore": "~1.8.3"
   },
   "resolutions": {
-    "backbone": "~1.2.1",
+    "backbone": "~1.2.3",
     "underscore": "~1.8.3",
     "jquery": "~2.1.4"
   }

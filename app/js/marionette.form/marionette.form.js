@@ -41,8 +41,6 @@ define([
         nestedControls: 'col-controls'
     };
     
-    console.log('TODO - render vs. updateView method (see custom controls too)')
-    
     var CollectionMixin = {
         
         collectionConstructor: NestedCollection,
@@ -141,6 +139,9 @@ define([
     
     Marionette.Form.CollectionMixin = CollectionMixin;
     
+    Marionette.Form.Model = NestedModel;
+    Marionette.Form.Collection = NestedCollection;
+    
     var Templates = Marionette.Form.Templates = {};
     
     Templates.Control = _.template([
@@ -152,7 +153,7 @@ define([
         '</div>'
     ].join('\n'));
     
-    Templates.ViewControl = Templates.LayoutControl = _.template([
+    Templates.BaseControl = Templates.LayoutControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>" data-region="main"></div>'
     ].join('\n'));
@@ -182,8 +183,10 @@ define([
     
     Templates.SpacerControl = _.template([
       '<label class="<%= labelClassName %>">&nbsp;</label>',
-      '<div class="<%= controlsClassName %>"></div>'
+      '<div class="<%= controlsClassName %>"><% if (rule) { %><hr /><% } %></div>'
     ].join('\n'));
+    
+    Templates.RuleControl = _.template(['<hr />'].join('\n'));
     
     Templates.InputControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
@@ -250,7 +253,7 @@ define([
         '<div class="<%= controlsClassName %> nested-controls"></div>'
     ].join('\n'));
     
-    Templates.EmptyListControl = _.template('<p class="form-control-static">No <%= parentLabel || "items" %></p>');
+    Templates.EmptyListControl = _.template('<span class="form-control immutable">No <%= parentLabel || "items" %></span>');
     
     Templates.NestedControl = _.template([
         '<div class="<%= controlsClassName %> nested-controls"></div>'
@@ -530,6 +533,22 @@ define([
         delete __collections[name];
     };
     
+    // Views
+    
+    var DebugView = Marionette.Form.DebugView = Marionette.ItemView.extend({
+        
+        template: _.template('<pre><%= JSON.stringify(obj, null, 4) %></pre>'),
+        
+        initialize: function() {
+            this.model = this.model || new NestedModel();
+        },
+        
+        setData: function(value) {
+            this.model.set('value', value);
+        }
+        
+    });
+    
     // Controls
     
     function extendView(View, protoDef, viewConstructor) {
@@ -588,6 +607,8 @@ define([
                 var events = {};
                 events['keydown :input'] = 'onKeyDown';
                 events['click [data-action]'] = 'onAction';
+                var labelClick = this.triggerMethod.bind(this, 'label:click');
+                events['click label.control-label'] = labelClick;
                 _.extend(events, _.result(this, 'controlEvents'));
                 return events;
             },
@@ -608,7 +629,7 @@ define([
                     throw new Error('Cannot create Control without Form View');
                 }
                 
-                this.defaults = _.extend({}, _.result(this, 'defaults'), options.defaults);
+                this.defaults = _.extend({}, _.result(this, 'defaults'), _.result(this, 'controlDefaults'), options.defaults);
                 this.definition = _.extend({}, _.result(this, 'definition'), options.definition);
                 
                 this.form = options.form;
@@ -631,6 +652,10 @@ define([
                 this.on('focus', this.clearError);
                 this.on('change', this.clearError);
                 this.on('blur', this.renderError);
+                
+                if (this.hasAttribute('default')) {
+                    this.setValue(this.getAttribute('default'), { silent: true });
+                }
                 
                 this.observeKey(this.getKey());
                 
@@ -668,7 +693,7 @@ define([
                 });
                 
                 var templateAttribute = this.getOption('templateAttribute') || 'template';
-                this.setTemplate(this.getAttribute(templateAttribute));
+                this.setTemplate(this.getAttribute(templateAttribute) || this.template);
                 
                 this.listenTo(this.model, 'change:label', function(model, label) {
                     this.labelTemplate = _.template(label);
@@ -697,16 +722,30 @@ define([
                 }
             },
             
-            setTemplate: function(template, raw) {
+            lookupTemplate: function(template, raw) {
+                var isString = _.isString(template);
                 if (raw) {
-                    this.template = _.template(template || '');
-                } else if (_.isString(template)) {
+                    template = _.template(String(template || ''));
+                } else if (isString && template.indexOf('#') === 0) {
+                    template = Marionette.TemplateCache.get(template);
+                } else if (isString && template.indexOf('@') === 0) {
                     try {
-                        this.template = resolveNameToClass(template, 'Template');
+                        template = resolveNameToClass(template, 'Template');
                     } catch(e) {
-                        this.template = template; // #selector
+                        template = _.template('Template not found: ' + template);
                     }
+                } else if (isString) {
+                    template = _.template(template || '');
                 } else if (_.isFunction(template)) {
+                    template = template;
+                }
+                return template;
+            },
+            
+            setTemplate: function(template, raw) {
+                if (raw || _.isString(template)) {
+                    this.template = this.lookupTemplate(template, raw);
+                } else if (_.isFunction(template) && this.template !== template) {
                     this.template = template;
                 }
             },
@@ -805,11 +844,19 @@ define([
                 });
             },
             
+            resetValue: function(options) {
+                this.setValue(this.getAttribute('default'), options);
+            },
+            
+            forceValue: function(value, options) {
+                this.setValue(value, _.extend({ viewCid: false }, options));
+            },
+            
             clearValue: function(options) {
                 if (this.ui.control && this.ui.control.is(':input')) {
                     this.ui.control.val(this.getAttribute('default'));
                 } else {
-                    this.setValue(this.getAttribute('default'), options);
+                    this.resetValue(options);
                 }
             },
             
@@ -818,9 +865,7 @@ define([
             },
             
             setFormValue: function(key, value, options) {
-                if (key === '*') {
-                    // do nothing
-                } else if (this.evaluateAttribute('ignore')) {
+                if (this.evaluateAttribute('ignore')) {
                     this.triggerMethod('set:value', key, value, options);
                 } else {
                     return this.form.setValueOf(key, value, options);
@@ -867,6 +912,10 @@ define([
                 return this.defaults[attr];
             },
             
+            hasAttribute: function(attr) {
+                return this.model.has(attr);
+            },
+            
             getAttribute: function(attr) {
                 if (this.model.has(attr)) return this.model.get(attr);
                 return this.getDefault(attr);
@@ -904,6 +953,7 @@ define([
                 data.form = this.form.serializeData();
                 data.value = this.serializeValue();
                 data.formatter = this.formatter;
+                data.nested = this.parent instanceof Marionette.View;
                 data = _.defaults(data, this.defaults);
                 return data;
             },
@@ -915,6 +965,7 @@ define([
                 data.form = this.form.serializeData();
                 data.value = this.serializeValue();
                 data.formatter = this.formatter;
+                data.nested = this.parent instanceof Marionette.View;
                 data = _.defaults(data, this.defaults);
                 data.label = this.getLabel(); // enforce
                 return data;
@@ -1119,7 +1170,10 @@ define([
             },
             
             ensureDefaultValue: function() {
-                if (!this.hasValue()) this.setValue(this.getValue(), { silent: true });
+                if (!this.hasValue()) {
+                    var defaultValue = this.getValue();
+                    this.setValue(defaultValue, { silent: true });
+                }
             },
             
             mutex: function(callback) {
@@ -1190,15 +1244,19 @@ define([
         
     });
     
-    var ImmutableControl = Marionette.Form.ImmutableControl = Control;
+    var ImmutableControl = Marionette.Form.ImmutableControl = Control.extend({
+        
+        defaults: { ignore: true, omit: true },
+        
+        ensureDefaultValue: function() {}
+        
+    });
     
-    var StaticControl = Marionette.Form.StaticControl = Control.extend({
+    var StaticControl = Marionette.Form.StaticControl = ImmutableControl.extend({
         
         template: Templates.StaticControl,
         
-        defaults: { label: '&nbsp;', text: '' },
-        
-        ensureDefaultValue: function() {}
+        defaults: { label: '&nbsp;', text: '', ignore: true, omit: true }
         
     });
     
@@ -1210,12 +1268,9 @@ define([
         
     });
     
-    var ViewControl = Marionette.Form.ViewControl = StaticControl.extend({
+    var BaseControl = Marionette.Form.BaseControl = StaticControl.extend({
         
-        // Uses https://github.com/marionettejs/backbone.syphon
-        // to enable two-way binding of inputs.
-        
-        template: Templates.ViewControl,
+        template: Templates.BaseControl,
         
         defaults: { helpMessage: '' },
         
@@ -1242,16 +1297,9 @@ define([
         
         commit: function() {}, // disabled
         
-        updateView: function() {
-            var data = this.serializeValue();
-            Backbone.Syphon.deserialize(this, data);
-        },
+        updateView: function() {},
         
-        handleChange: function() {
-            var data = Backbone.Syphon.serialize(this);
-            _.defaults(data, this.serializeValue());
-            this.setValue(data);
-        },
+        handleChange: function() {},
         
         _renderTemplate: function() {
             var viewClass = this.getAttribute('view') || this.getOption('viewConstructor');
@@ -1277,6 +1325,24 @@ define([
             } else {
                 return StaticControl.prototype._renderTemplate.apply(this, arguments);
             }
+        }
+        
+    });
+    
+    var ViewControl = Marionette.Form.ViewControl = BaseControl.extend({
+        
+        // Uses https://github.com/marionettejs/backbone.syphon
+        // to enable two-way binding of inputs.
+        
+        updateView: function() {
+            var data = this.serializeValue();
+            Backbone.Syphon.deserialize(this, data);
+        },
+        
+        handleChange: function() {
+            var data = Backbone.Syphon.serialize(this);
+            _.defaults(data, this.serializeValue());
+            this.setValue(data);
         }
         
     });
@@ -1432,8 +1498,18 @@ define([
         
     });
     
-    var SpacerControl = Marionette.Form.SpacerControl = Control.extend({
-        template: Templates.SpacerControl
+    var SpacerControl = Marionette.Form.SpacerControl = ImmutableControl.extend({
+        
+        template: Templates.SpacerControl,
+        
+        controlDefaults: { rule: false }
+        
+    });
+    
+    var RuleControl = Marionette.Form.RuleControl = ImmutableControl.extend({
+        
+        template: Templates.RuleControl
+        
     });
     
     // Text controls
@@ -2076,6 +2152,17 @@ define([
         
     });
     
+    // Integer
+    
+    var IntegerControl = Marionette.Form.IntegerControl = InputControl.extend({
+        
+        controlDefaults: {
+            type: 'number',
+            formatter: 'integer'
+        }
+        
+    });
+    
     // Checkbox (single)
     
     var BooleanControl = Marionette.Form.BooleanControl = InputControl.extend({
@@ -2282,6 +2369,7 @@ define([
             config.label = this.getItemLabel();
             config.index = index;
             config.itemId = model.id;
+            config.nested = true;
             _.extend(config, this.getAttribute('item'));
             var field = new Field(config);
             var options = _.extend({ model: field, form: this.form, parent: this }, childViewOptions);
@@ -2295,7 +2383,7 @@ define([
         initChildView: function(view) {},
         
         getControlConfig: function() {
-            return this.model.toJSON();
+            return _.defaults({}, this.model.toJSON(), this.defaults);
         },
         
         getItemKey: function(config, index) {
@@ -2337,10 +2425,30 @@ define([
             return Marionette.CompositeView.prototype.getChildViewContainer.apply(this, arguments);
         },
         
+        updateChildView: function(childView, data) {
+            if (childView.itemModel && _.isObject(data)) childView.itemModel.set(data);
+        },
+        
+        destroyChildView: function(childView) {
+            if (childView.itemModel) this.collection.remove(childView.itemModel);
+        },
+        
+        resetChildView: function(childView) {
+            var model = childView.itemModel;
+            if (model && this.collection.contains(model)) {
+                var keys = _.keys(_.omit(model.attributes, model.idAttribute));
+                var attrs = {};
+                _.each(keys, function(key) { attrs[key] = void 0; });
+                model.set(attrs, { unset: true });
+            }
+        },
+        
         // child/item view actions
         
         onItemActionRemove: function(childView, event) {
-            if (childView.itemModel) this.collection.remove(childView.itemModel);
+            if (!_.isFunction(childView.onActionRemove)) {
+                this.destroyChildView(childView);
+            }
         },
         
         bindCollection: function(collection) {
@@ -2476,7 +2584,7 @@ define([
         },
         
         resolvedReference: function(model) {
-            if (!_.isObject(model)) return; // model or plain object
+            if (!_.isObject(model)) return; // not a model or plain object
             var options = { __internal: true };
             var m = this.collection.get(model.id);
             var childView = this.children.find(function(v) {
@@ -2903,13 +3011,15 @@ define([
         
         constructor: function(options) {
             options = _.extend({}, options);
-            var opts = _.omit(options, 'fields', 'errors', 'classes', 'collections');
+            var opts = _.omit(options, 'fields', 'errors', 'classes', 'collections', 'formDelegate');
             
             var defaultClasses = _.extend({}, Marionette.Form.classes);
             
             if (options.layout === 'vertical' || this.getOption('layout') === 'vertical') {
                 _.extend(defaultClasses, verticalFormClasses);
             }
+            
+            if (_.isObject(options.formDelegate)) this.formDelegate = options.formDelegate;
             
             this.classes = _.extend({}, defaultClasses, _.result(this, 'classes'), options.classes);
             
@@ -2973,6 +3083,31 @@ define([
             this.listenTo(this.errors, 'change', this.onErrorsChange);
             
             this.triggerMethod('initialize', options);
+            
+            this.observeWindowResize();
+        },
+        
+        observeWindowResize: function() {
+            var eventName = 'resize.form-' + this.cid;
+            $(window).on(eventName, _.debounce(this.updateLayout.bind(this), 50));
+            function updateLayout() { _.defer(this.updateLayout.bind(this), arguments[0]); };
+            this.on('destroy', function() { $(window).off(eventName); });
+            this.on('control:render', updateLayout);
+        },
+        
+        updateLayout: function() {
+            var elem = arguments[0] instanceof Backbone.View ? arguments[0] : this;
+            elem.$('.form-control.immutable').each(function() {
+                var $el = $(this);
+                if ($el.parent().is('.input-group')) {
+                    var containerWidth = $el.closest('.col-controls').width();
+                    var width = 0;
+                    $el.siblings('.input-group-addon, .input-group-btn').each(function() {
+                        width += $(this).outerWidth();
+                    });
+                    $el.css('maxWidth', (containerWidth - width) + 'px');
+                }
+            });
         },
         
         getValueOf: function(key) {
@@ -2989,7 +3124,15 @@ define([
         },
         
         setValueOf: function(key, value, options) {
-            this.model.set(key, value, options);
+            if (key === '*') {
+                if (_.isObject(value)) this.model.set(value, options);
+            } else {
+                this.model.set(key, value, options);
+            }
+        },
+        
+        unsetValueOf: function(key, options) {
+            this.model.unset(key, options);
         },
         
         hasChanged: function(key) {
@@ -3025,7 +3168,7 @@ define([
         },
         
         getControl: function(name) {
-            var controlClass = this.registry[name];
+            var controlClass = this.registry[name] || this.callDelegate('getControl', name);
             if (controlClass) return controlClass;
             return resolveNameToClass(name, 'Control');
         },
@@ -3079,6 +3222,10 @@ define([
             return asModel ? copy : copy.toJSON();
         },
         
+        setData: function(data, options) {
+            this.model.set(data, options);
+        },
+        
         getUrl: function() {
             if (this.model.isNew()) return _.result(this.model, 'url');
             return _.result(this.model, 'url') + '/' + this.model.id;
@@ -3088,6 +3235,11 @@ define([
             this.model.trigger('change', this.model, {});
         },
         
+        callDelegate: function(methodName) {
+            var method = this.formDelegate && this.formDelegate[methodName];
+            if (_.isFunction(method)) return method.apply(this.formDelegate, _.rest(arguments));
+        },
+        
         // Views
         
         registerView: function(name, viewClass) {
@@ -3095,7 +3247,8 @@ define([
         },
         
         getRegisteredView: function(name) {
-            return this.viewRegistry[name] || resolveNameToClass(name, 'View');
+            var View = this.callDelegate('getRegisteredView', name);
+            return View || this.viewRegistry[name] || resolveNameToClass(name, 'View');
         },
         
         // Controls
@@ -3107,11 +3260,13 @@ define([
         // Collections
         
         getCollectionConstructor: function(childView) {
-            // Hook method
+            // Hook method - only calls delegate
+            return this.callDelegate('getCollectionConstructor', childView);
         },
         
         getCollection: function(name) {
-            var collection = this.collections[name] || __collections[name];
+            var collection = this.callDelegate('getCollection', name);
+            collection = collection || this.collections[name] || __collections[name];
             if (!collection) {
                 throw new Error('Invalid collection: ' + name);
             }
@@ -3119,6 +3274,7 @@ define([
         },
         
         hasCollection: function(name) {
+            if (this.callDelegate('hasCollection', name)) return true;
             return _.has(this.collections, name) || _.has(__collections, name);
         },
         
@@ -3128,6 +3284,8 @@ define([
                 collections[name] = collection;
             } else if (_.isArray(collection)) {
                 collections[name] = new NestedCollection(collection);
+            } else if (collection === true) {
+                collections[name] = this.bindCollection(name);
             } else {
                 collections[name] = new NestedCollection();
             }
@@ -3140,6 +3298,8 @@ define([
         },
         
         bindCollection: function(key, options) {
+            var collection = this.callDelegate('bindCollection', key, options);
+            if (collection) return collection;
             options = _.extend({}, options);
             var formatter = this.getFormatter(options.formatter, options);
             var collectionConstructor = options.collection || this.getOption('collectionConstructor');
@@ -3149,7 +3309,7 @@ define([
             } else if (!_.isArray(this.model.get(key))) {
                 throw new Error('Cannot bind to key: ' + key);
             }
-            var collection = new collectionConstructor(this.model.get(key));
+            collection = new collectionConstructor(this.model.get(key));
             collection.listenTo(this.model, 'change:' + key, function(model, values, options) {
                 if (options.bound) return; // self-inflicted change - skip
                 options.bound = true;
@@ -3169,7 +3329,8 @@ define([
         // Resolvers
         
         getResolver: function(name) {
-            var resolver = this.resolvers[name] || __resolvers[name];
+            var resolver = this.callDelegate('getResolver', name);
+            resolver = resolver || this.resolvers[name] || __resolvers[name];
             if (!resolver) {
                 throw new Error('Invalid resolver: ' + name);
             }
@@ -3177,6 +3338,7 @@ define([
         },
         
         hasResolver: function(name) {
+            if (this.callDelegate('hasResolver', name)) return true;
             return _.has(this.resolvers, name) || _.has(__resolvers, name);
         },
         
@@ -3409,7 +3571,7 @@ define([
                 var model = options.model;
                 options.model = model.clone();
             } else {
-                var model = new NestedModel();
+                var model = new Marionette.Form.Model();
             }
             var form = new this(options);
             var dialog = new Backbone.BootstrapModal(_.extend({
@@ -3419,7 +3581,9 @@ define([
             dialog.on('all', function(eventName) {
                 form.triggerMethod('modal:' + eventName, _.rest(arguments));
             });
-            dialog.on('shown', function() { form.setFocus(); });
+            dialog.on('shown', function() {
+                form.$(':input:enabled:visible:first').focus();
+            });
             dialog.on('cancel', dfd.reject.bind(dfd, form));
             dialog.open(function() {
                 if (form.commit()) {
@@ -3540,6 +3704,27 @@ define([
             bool = false;
         }
         return negate ? !bool : bool;
+    };
+    
+    function pickAttributes(model, attrs) {
+        var attributes = {};
+        _.each(_.flatten(_.rest(arguments)), function(attr) {
+            if (!model.has(attr)) return;
+            attributes[attr] = model.get(attr);
+        });
+        return attributes;
+    };
+    
+    function formatDataLabel(data, labelKey, template) {
+        data = _.isObject(data) ? data : {};
+        if (_.isFunction(template)) {
+            return template(data);
+        } else {
+            var key = labelKey || _.keys(data)[0];
+            var keys = [].concat(key || []);
+            var values = _.datas(_.pick(data, keys));
+            return _.compact(values).join(', ');
+        }
     };
     
     function camelize(str) {
