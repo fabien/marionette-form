@@ -221,7 +221,7 @@ define([
             if (this.modal) return; // singleton - only one dialog at a time
             var view = this.createModalView(); 
             this.modal = this.openModalWithView(view, function(dialog) {
-                this.updateValueFromModalView(dialog, view);
+                dialog.once('close', this.updateValueFromModalView.bind(this, dialog, view));
             }.bind(this)).always(function() {
                 delete this.modal;
             }.bind(this));
@@ -238,7 +238,7 @@ define([
             var removeView = this.getAttribute('removeView') || 'confirm-remove';
             var view =  this.createModalView(removeView);
             this.modal = this.openModalWithView(view, options, function(dialog) {
-                this.unsetValue();
+                dialog.once('close', this.unsetValue.bind(this));
             }.bind(this)).always(function() {
                 delete this.modal;
             }.bind(this));

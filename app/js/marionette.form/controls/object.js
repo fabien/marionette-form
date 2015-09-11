@@ -12,20 +12,18 @@ define([
         '  <label class="<%= labelClassName %>"><%= label %></label>',
         '  <div class="<%= controlsClassName %> nested-controls"></div>',
         '</div>',
+        '<% if (create) { %>',
         '<div class="list-controls">',
         '  <div class="col-sm-9 col-sm-offset-3">',
         '    <button type="button" data-action="add" class="btn btn-default pull-right"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add</button>',
         '  </div>',
-        '</div>'
+        '</div>',
+        '<% } %>'
     ].join('\n'));
     
     var ObjectControl = Form.ObjectControl = Form.ModalControl.extend({
         
         modalView: Form.View,
-        
-        constructor: function(options) {
-            Form.ModalControl.prototype.constructor.apply(this, arguments);
-        },
         
         modalViewOptions: function() {
             var options = Form.ModalControl.prototype.modalViewOptions.apply(this, arguments);
@@ -44,6 +42,10 @@ define([
         defaultControl: ObjectControl,
         
         modalView: Form.View,
+        
+        controlDefaults: {
+            create: true
+        },
         
         getModalTitle: function() {
             return this.getLabel();

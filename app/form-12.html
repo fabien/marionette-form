@@ -138,6 +138,7 @@
                                     label: 'Reference',
                                     control: 'select2',
                                     labelKey: 'firstName',
+                                    format: '<%= firstName ? firstName[0] + ". " : "" %><%= lastName %>',
                                     placeholder: 'Select a friend',
                                     collection: 'people'
                                 },
@@ -161,7 +162,7 @@
                         { control: 'spacer' },
                         {
                             id: 'friends-list', key: 'friends', label: 'Friends List',
-                            control: 'object-list', sortable: true,
+                            control: 'object-list', sortable: true, create: true,
                             fields: [ // when creating
                                 { key: 'firstName', control: 'input', required: true },
                                 { key: 'lastName', control: 'input', required: true }
@@ -286,7 +287,7 @@
                 // Modal
                 
                 form.on('control:modal:view', function(control, view, options) {
-                    if (control.getId() === 'friends-list') {
+                    if (control.getId() === 'friends-list' && view.model.isNew()) {
                         view.model.set('id', parseInt(_.uniqueId(), 10));
                     }
                 });
@@ -303,10 +304,20 @@
                     if (view instanceof Form.View && view.commit()) {
                         var data = view.getData();
                         console.log('Modal data from %s:', control.getId(), JSON.stringify(data, null, 4));
-                        if (_.isEmpty(data)) return dialog.preventClose(); // example
                         if (control.getId() === 'friends-list') people.add(data);
                     }
-                })
+                });
+                
+                form.on('control:item:modal:ok', function(control, item, dialog, view) {
+                    if (view instanceof Form.View && view.commit()) {
+                        var data = view.getData();
+                        console.log('Modal data from %s:', control.getId(), JSON.stringify(data, null, 4));
+                        if (control.getId() === 'friends-list') {
+                            var person = people.get(data.id);
+                            person && person.set(data);
+                        }
+                    }
+                });
                 
                 // Best friends picker
                 
