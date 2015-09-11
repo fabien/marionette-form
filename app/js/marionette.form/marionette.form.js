@@ -1435,7 +1435,7 @@ define([
         this.on('render', this.renderViews);
     });
     
-    var HeaderControl = Marionette.Form.HeaderControl = ViewControl.extend({
+    var HeaderControl = Marionette.Form.HeaderControl = BaseControl.extend({
         
         template: Templates.HeaderControl,
         
@@ -1451,7 +1451,7 @@ define([
         
     });
     
-    var LookupControl = Marionette.Form.LookupControl = ViewControl.extend(_.extend({
+    var LookupControl = Marionette.Form.LookupControl = BaseControl.extend(_.extend({
         
         // Lookup display (label) values for reference/id value.
         

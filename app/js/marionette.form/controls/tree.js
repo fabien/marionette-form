@@ -7,7 +7,7 @@ define([
     'backbone.treeview'
 ], function($, _, Backbone, Marionette, Form, TreeView) {
     
-    var TreeControl = Form.TreeControl = Form.ViewControl.extend(_.defaults({
+    var TreeControl = Form.TreeControl = Form.BaseControl.extend(_.defaults({
         
         collectionConstructor: TreeView.Collection,
         
@@ -91,7 +91,7 @@ define([
         
         getData: function() {
             if (this.getAttribute('collection') === true) return this.getValue();
-            return Form.ViewControl.prototype.getData.apply(this, arguments);
+            return Form.BaseControl.prototype.getData.apply(this, arguments);
         },
         
         getValue: function(fromModel) {
@@ -108,7 +108,7 @@ define([
         render: function() {
             var options = _.last(arguments) || {};
             if (!this.isRendered) {
-                Form.ViewControl.prototype.render.apply(this, arguments);
+                Form.BaseControl.prototype.render.apply(this, arguments);
                 this.updateSelection(options);
             } else if (options.viewCid !== this.cid) {
                 this.setSelection(this.getValue(true), options);

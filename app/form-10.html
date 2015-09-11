@@ -109,6 +109,7 @@
                         form.model.set('country', address.countryCode, options);
                     }).fail(function(status, req) {
                         console.log('Failed to reverse-geocode location: %s', status);
+                        control.model.set('helpMessage', 'Failed to reverse-geocode location.');
                     }).always(function() {
                         control.__geocoding = false;
                     });
@@ -126,6 +127,9 @@
                         var address = this.parseResults(results);
                         control.model.set('helpMessage', address.formatted);
                         point.set('title', address.formatted);
+                    }).fail(function(status, req) {
+                        console.log('Failed to reverse-geocode location: %s', status);
+                        control.model.set('helpMessage', 'Failed to reverse-geocode location.');
                     }).always(function() {
                         point.__geocoding = false;
                     });

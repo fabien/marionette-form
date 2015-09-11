@@ -150,7 +150,7 @@ define([
         
     });
     
-    var GeoControl = Form.GeoControl = Form.ViewControl.extend(_.defaults({
+    var GeoControl = Form.GeoControl = Form.BaseControl.extend(_.defaults({
         
         template: Form.Templates.GeoControl,
         
@@ -174,7 +174,7 @@ define([
         overlayOptions: {},
         
         constructor: function(options) {
-            Form.ViewControl.prototype.constructor.apply(this, arguments);
+            Form.BaseControl.prototype.constructor.apply(this, arguments);
             
             this.onMapClickRight = _.debounce(this.onMapClickRight.bind(this), 250);
             
@@ -329,7 +329,7 @@ define([
                 });
             } else {
                 value = this.formatter.toRaw(value);
-                return Form.ViewControl.prototype.setValue.call(this, value, options);
+                return Form.BaseControl.prototype.setValue.call(this, value, options);
             }
         },
         
@@ -503,7 +503,7 @@ define([
         render: function() {
             var options = _.last(arguments) || {};
             if (!this.isRendered) {
-                Form.ViewControl.prototype.render.apply(this, arguments);
+                Form.BaseControl.prototype.render.apply(this, arguments);
                 if (this.getAttribute('map')) this.renderMap();
             } else {
                 if (this.getAttribute('map')) this.renderMap();
