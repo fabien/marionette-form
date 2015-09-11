@@ -18,6 +18,7 @@
                 'backbone.marionette',
                 'marionette.form',
                 'marionette.form.control.code',
+                'marionette.form.control.urlify',
                 'select2',
                 'bootstrap-daterangepicker',
                 'bootstrap-filestyle'
@@ -58,6 +59,10 @@
                         { id: 'firstName', control: 'input', required: true, section: 'main' },
                         // Input control, with custom trigger events and debounce
                         { id: 'lastName', control: 'input', required: true, section: 'main', trigger: 'change keyup', debounce: 250 },
+                        // Input control subclass: urlify from given keys
+                        { key: 'userName', control: 'urlify', required: true, section: 'main', readonly: true, from: ['firstName', 'lastName'] },
+                        // Input control subclass: urlify while typing
+                        { key: 'userName', control: 'urlify', label: 'Account', required: true, section: 'main' },
                         // Input control, with custom HTML5 type
                         { key: 'email', label: 'E-mail', control: 'input', type: 'email', section: 'main' },
                         // Input control with ignore: true
@@ -374,6 +379,7 @@
                 
                 var person = new Person({
                     id: 101,
+                    userName: 'andre-jones',
                     salutation: 'Mr',
                     firstName: 'Andre',
                     lastName: 'Jones',
