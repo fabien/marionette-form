@@ -4,10 +4,6 @@
     }
 }
 
-.col-controls {
-    overflow: hidden;
-}
-
 .form-editable .control-label {
     cursor: move;
     cursor: grab;
