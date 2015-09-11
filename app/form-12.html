@@ -153,6 +153,7 @@
                             label: false,
                             control: 'select2',
                             labelKey: 'firstName',
+                            format: '<%= firstName %> <%= lastName %>',
                             placeholder: 'Select a friend',
                             collection: 'people',
                             ignore: true
@@ -217,7 +218,7 @@
                             id: 'select-best-friend',
                             label: false,
                             control: 'select2',
-                            labelKey: 'firstName',
+                            labelKey: ['firstName', 'lastName'],
                             placeholder: 'Select a friend',
                             collection: 'friends',
                             ignore: true

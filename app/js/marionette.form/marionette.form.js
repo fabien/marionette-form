@@ -695,6 +695,9 @@ define([
                 var templateAttribute = this.getOption('templateAttribute') || 'template';
                 this.setTemplate(this.getAttribute(templateAttribute) || this.template);
                 
+                var formatTemplate = this.getAttribute('format') || this.getOption('format');
+                this.formatTemplate = formatTemplate ? this.lookupTemplate(formatTemplate) : null;
+                
                 this.listenTo(this.model, 'change:label', function(model, label) {
                     this.labelTemplate = _.template(label);
                     this.render();
@@ -1481,25 +1484,29 @@ define([
             ViewControl.prototype.constructor.apply(this, arguments);
             this.collection = this.collection || this.getCollection(options);
             this.listenTo(this.collection, 'sync change update', this.render);
+            this.maxValues = this.getAttribute('maxValues') || this.getOption('maxValues') || 100;
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         },
         
         _serializeData: function(data) {
-            var maxValues = this.getAttribute('maxValues') || this.getOption('maxValues') || 100;
-            var labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
-            var valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
+            var maxValues = this.maxValues;
+            var labelKey = this.labelKey;
+            var valueKey = this.valueKey;
+            var template = this.formatTemplate;
             var collection = this.collection;
             var refs = data.references = [].concat(data.value || []);
             if (valueKey === 'id') {
                 var values = _.map(refs, function(id) {
                     var item = collection.get(id);
-                    return item && item.get(labelKey);
+                    if (item) return formatDataLabel(item.toJSON(), labelKey, template);
                 });
             } else {
                 var values = _.map(refs, function(id) {
                     var where = {};
                     where[valueKey] = id;
                     var item = collection.findWhere(where);
-                    return item && item.get(labelKey);
+                    if (item) return formatDataLabel(item.toJSON(), labelKey, template);
                 });
             }
             values = _.compact(values);
@@ -1676,7 +1683,8 @@ define([
         },
         
         getLabel: function() {
-            return this.model.get(this.control.labelKey);
+            return formatDataLabel(this.model.toJSON(),
+                this.control.labelKey, this.control.formatTemplate);
         },
         
         getValue: function() {
@@ -1833,8 +1841,10 @@ define([
         formatData: function(models) {
             var labelKey = this.labelKey;
             var valueKey = this.valueKey;
+            var template = this.formatTemplate;
             return _.map(models, function(model) {
-                return { id: model.get(valueKey), text: model.get(labelKey) };
+                var label = formatDataLabel(model.toJSON(), labelKey, template);
+                return { id: model.get(valueKey), text: label };
             });
         },
         
@@ -1935,7 +1945,7 @@ define([
         },
         
         getItemLabel: function(object) {
-            return object[this.labelKey];
+            return formatDataLabel(object, this.labelKey, this.formatTemplate);
         },
         
         getItemValue: function(object) {
@@ -3722,7 +3732,7 @@ define([
         } else {
             var key = labelKey || _.keys(data)[0];
             var keys = [].concat(key || []);
-            var values = _.datas(_.pick(data, keys));
+            var values = _.values(_.pick(data, keys));
             return _.compact(values).join(' ');
         }
     };
