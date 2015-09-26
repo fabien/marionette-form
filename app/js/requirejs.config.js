@@ -10,15 +10,16 @@ requirejs.config({
         'select2': 'vendor/select2/select2',
         'moment': 'vendor/moment/moment',
         'underscore': 'vendor/underscore/underscore',
-        'jquery': 'vendor/jquery/dist/jquery',
-        'jquery.maskedinput': 'lib/jquery.maskedinput',
-        'jquery.fileupload': 'vendor/blueimp-file-upload/js/jquery.fileupload',
-        'jquery.iframe-transport': 'vendor/blueimp-file-upload/js/jquery.iframe-transport',
-        'jquery.ui.widget': 'vendor/blueimp-file-upload/js/vendor/jquery.ui.widget',
         'bootstrap': 'vendor/bootstrap/dist/js/bootstrap',
         'bootstrap-filestyle': 'vendor/bootstrap-filestyle/src/bootstrap-filestyle',
         'bootstrap-datepicker': 'vendor/bootstrap-datepicker/dist/js/bootstrap-datepicker',
         'bootstrap-daterangepicker': 'vendor/bootstrap-daterangepicker/daterangepicker',
+        'jquery': 'vendor/jquery/dist/jquery',
+        'jquery.fileupload': 'vendor/blueimp-file-upload/js/jquery.fileupload',
+        'jquery.iframe-transport': 'vendor/blueimp-file-upload/js/jquery.iframe-transport',
+        'jquery.ui.widget': 'vendor/blueimp-file-upload/js/vendor/jquery.ui.widget',
+        'jquery.maskedinput': 'lib/jquery.maskedinput',
+        'jquery.quickselect': 'lib/jquery.quickselect',
         'backbone': 'lib/backbone.extended',
         'backbone.original': 'vendor/backbone/backbone',
         'backbone.validation': 'vendor/backbone.validation/dist/backbone-validation-amd',
@@ -61,6 +62,9 @@ requirejs.config({
             exports: '_'
         },
         select2: {
+            deps: ['jquery']
+        },
+        'jquery.quickselect': {
             deps: ['jquery']
         },
         'bootstrap-filestyle': {

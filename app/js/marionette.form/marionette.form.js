@@ -1806,6 +1806,8 @@ define([
         constructor: function(options) {
             SelectionControl.prototype.constructor.apply(this, arguments);
             this.listenTo(this.model, 'change:select2', this.render);
+            this.listenTo(this.model, 'change:quickSelect', this.render);
+            this.listenTo(this.collection, 'change:primary', this.render);
         },
         
         getValue: function(fromModel) {
@@ -1832,9 +1834,17 @@ define([
         },
         
         onRenderControl: function() {
-            var options = this.getAttribute('select2') || this.getOption('select2');
-            options = _.isObject(options) ? options : ((options === true) ? {} : null);
-            if (options) attachSelect2.call(this, options);
+            var options;
+            if (options = this.getPluginOptions('quickSelect')) {
+                attachQuickSelect.call(this, options);
+            } else if (options = this.getPluginOptions('select2')) {
+                attachSelect2.call(this, options);
+            }
+        },
+        
+        getPluginOptions: function(type) {
+            var options = this.getAttribute(type) || this.getOption(type);
+             return _.isObject(options) ? options : ((options === true) ? {} : null);
         }
         
     });
@@ -3672,6 +3682,36 @@ define([
         this.ui.control.select2(options);
         this.ui.control.select2('enable', !this.getAttribute('disabled'));
         this.ui.control.select2('readonly', !!this.getAttribute('readonly'));
+        this.triggerMethod('render:select', this.ui.control);
+    };
+    
+    function attachQuickSelect(options) {
+        if (!$.fn.quickselect) return console.warn('QuickSelect is not available');
+        var defaults = {
+            selectDefaultText: this.getAttribute('placeholder'),
+            activeButtonClass: 'btn-primary active',
+            buttonClass: 'btn btn-default',
+            wrapperClass: 'btn-group'
+        };
+        _.defaults(options, _.result(this, 'quickSelect'), defaults);
+        if (_.isEmpty(options.selectDefaultText)) delete options.selectDefaultText;
+        
+        var primaryValues = [].concat(_.result(this, 'primaryValues') || []);
+        primaryValues = primaryValues.concat(this.getOption('primaryValues') || []);
+        primaryValues = primaryValues.concat(this.getAttribute('primaryValues') || []);
+        primaryValues = _.uniq(primaryValues);
+        
+        if (_.isEmpty(primaryValues)) {
+            this.collection.each(function(model) {
+                if (!model.get('primary')) return;
+                primaryValues.push(model.get(this.valueKey));
+            }.bind(this))
+        }
+        
+        options.breakOutValues = _.uniq(primaryValues);
+        
+        this.triggerMethod('before:render:select', options);
+        this.ui.control.quickselect(options);
         this.triggerMethod('render:select', this.ui.control);
     };
     

@@ -364,3 +364,26 @@ form .nested-controls.row > .col {
     filter: alpha(opacity=20);
 }
 
+/* eggboxio/quick-select */
+
+.quickselect__btn {
+    cursor: pointer;
+}
+
+.quickselect__more {
+    position: relative;
+}
+
+.quickselect__select {
+    /* Fix for Chrome's select box height bug: */
+    -webkit-appearance: menulist-button;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    color: #333;
+}

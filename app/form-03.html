@@ -24,6 +24,7 @@
                 'jquery.maskedinput',
                 'autoNumeric',
                 'select2',
+                'jquery.quickselect',
                 'bootstrap-daterangepicker',
                 'bootstrap-filestyle'
             ], function(Backbone, Marionette, Form) {
@@ -86,16 +87,26 @@
                     firstName: 'Andre',
                     lastName: 'Jones',
                     phone: '(123) 456-7890',
+                    currency: 'EUR',
                     amount: 2845
                 });
                 
                 var form = new ProfileForm({ model: profile });
+                
+                form.registerCollection('currencies', [
+                    { id: 'EUR', text: 'Euro', primary: true },
+                    { id: 'USD', text: 'US Dollar', primary: true },
+                    { id: 'GBP', text: 'GB Pound Sterling' },
+                    { id: 'CAD', text: 'Canadian Dollar' },
+                    { id: 'YEN', text: 'Japanese Yen' }
+                ]);
                 
                 form.collection.reset([
                     { id: 'custom', key: '*', control: 'custom' },
                     { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
                     { id: 'lastName', control: 'input', required: true, omit: 'isBlank' },
                     { id: 'phone', control: 'input', mask: '(999) 999-9999' },
+                    { id: 'currency', control: 'select', collection: 'currencies', quickSelect: true, placeholder: 'Other &hellip;' },
                     { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
                     { id: 'birthday', control: 'checkbox', omit: true },
                     {
