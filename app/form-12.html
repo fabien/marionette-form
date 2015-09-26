@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
         <link rel="stylesheet" href="/css/select2.css" type="text/css">
@@ -256,7 +257,7 @@
                 
                 var person = new Form.Model({
                     id: 101,
-                    color: '#ff0000',
+                    color: '#66CCFF',
                     address: {
                         address1: '1751 rue Richardson',
                         address2: 'Suite 3.105',
@@ -346,6 +347,13 @@
                 });
                 
                 // Rendering
+                
+                form.on('control:render', function(control) {
+                    if (control.getId() === 'color') {
+                        var value = control.getValue(true);
+                        control.$('[data-action="edit"]').css('backgroundColor', value);
+                    }
+                });
                 
                 form.render();
                 form.$el.appendTo('#layout');
