@@ -4,6 +4,10 @@
     }
 }
 
+form .nested-controls.row > .col {
+    margin-bottom: 0 !important;
+}
+
 .form-editable .control-label {
     cursor: move;
     cursor: grab;
@@ -24,6 +28,7 @@
     background-color: #fff !important;
 }
 
+.synopsis,
 .form-control.immutable {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -49,13 +54,13 @@
 
 .control-header .section-caret:after {
     font-family: 'Glyphicons Halflings';
-    content: "\e160";
+    content: "\e253";
     float: right;
     color: grey;
 }
 
 .control-header.collapsed .section-caret:after {
-    content: "\e159";
+    content: "\e252";
 }
 
 .form-header {
@@ -161,6 +166,169 @@
 
 .upload-control {
     overflow: hidden;
+}
+
+/* filter controls */
+
+.filter-list > :first-child {
+    margin-top: 10px;
+}
+
+.control-filter .nested-controls-wrapper {
+    border-top: 2px solid #eee;
+    padding: 5px 0;
+}
+
+.form-group .sub-label {
+    float: right;
+    cursor: pointer;
+}
+
+.form-horizontal .form-group .sub-label,
+.form-group.collapsed .sub-label {
+    display: none;
+}
+
+.filter-item .toggle-collapse {
+    float: right;
+    font-size: 60%;
+    line-height: 200%;
+    padding: 0 10px;
+}
+
+.filter-set .toggle-collapse:after {
+    font-family: 'Glyphicons Halflings';
+    content: "\e253";
+}
+
+.filter-set.collapsed-set .toggle-collapse:after {
+    content: "\e252";
+}
+
+.form-group.collapsible .filter-label,
+.form-group.collapsible .filter-label label,
+.form-group.collapsible .form-control-static {
+    cursor: pointer;
+}
+
+.control-filter.disabled .filter-label,
+.control-filter.disabled .col-controls,
+.control-filter-set.disabled .filter-label,
+.control-filter-set.disabled .col-controls {
+    opacity: 0.5;
+}
+
+.control-filter .form-control,
+.control-filter-set .form-control {
+    margin: 5px 0;
+}
+
+.form-group .filter-list .help-block {
+    margin-top: 10px;
+}
+
+.form-group .synopsis {
+    margin-bottom: 0;
+}
+
+.form-group .filter-item {
+    transition: opacity 0.25s ease-in-out;
+    padding: 5px 0;
+    opacity: 1.0;
+}
+
+.form-group .filter-item.match {
+    font-weight: bold;
+}
+
+.form-group .filter-item.no-match,
+.form-group .filter-item.disabled {
+    opacity: 0.5;
+}
+
+.form-group .filter-item.disabled,
+.form-group .filter-item.disabled .icon {
+    cursor: default;
+}
+
+.form-group .filter-item,
+.form-group .filter-item .icon,
+.form-group .filter-item.selected {
+    cursor: pointer;
+}
+
+.form-group .filter-item .icon {
+    color: #bbb;
+}
+
+.form-group .filter-item-header .icon,
+.form-group .filter-item.selected > .icon {
+    color: #333;
+}
+
+.form-group .filter-item.partial-selection .filter-item-header .icon {
+    opacity: 0.5;
+}
+
+.form-group .filter-set {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-top: 2px solid #ddd;
+}
+
+.form-group .filter-item-header span {
+    font-weight: bold;
+}
+
+.form-group .filter-items {
+    padding-top: 5px;
+}
+
+.form-group select.mobile-trigger {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+/* scroll pane */
+
+.form-group .scrollable .scroll {
+    overflow: hidden;
+    overflow-y: scroll;
+    max-height: 160px;
+    border-top: 2px solid #ddd;
+}
+
+.form-group .scroll :first-child {
+    border-top: 0;
+}
+
+/* block style layout */
+
+.form-blocks {
+    border-top: 2px solid #333;
+}
+
+.form-blocks .form-group,
+.form-blocks .form-horizontal .form-group {
+    padding: 10px 0;
+    margin: 0;
+    border-bottom: 2px solid #333;
+}
+
+.form-blocks .form-control {
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    padding-left: 0;
+}
+
+.form-blocks .form-control-static {
+    padding-bottom: 0;
+    min-height: auto;
 }
 
 /* dragula */

@@ -43,7 +43,8 @@ requirejs.config({
         'marionette.form.control.tree': 'marionette.form/controls/tree',
         'marionette.form.control.geo': 'marionette.form/controls/geo',
         'marionette.form.control.dropzone': 'marionette.form/controls/dropzone',
-        'marionette.form.control.upload': 'marionette.form/controls/upload'
+        'marionette.form.control.upload': 'marionette.form/controls/upload',
+        'marionette.form.control.filter': 'marionette.form/controls/filter'
     },
     shim: {
         autoNumeric: {

@@ -1,0 +1,692 @@
+[
+    {
+        "text": "Art",
+        "categories": [
+            {
+                "text": "Ceramics",
+                "id": "art-ceramics"
+            },
+            {
+                "text": "Conceptual Art",
+                "id": "art-conceptual-art"
+            },
+            {
+                "text": "Digital Art",
+                "id": "art-digital-art"
+            },
+            {
+                "text": "Illustration",
+                "id": "art-illustration"
+            },
+            {
+                "text": "Installations",
+                "id": "art-installations"
+            },
+            {
+                "text": "Mixed Media",
+                "id": "art-mixed-media"
+            },
+            {
+                "text": "Painting",
+                "id": "art-painting"
+            },
+            {
+                "text": "Performance Art",
+                "id": "art-performance-art"
+            },
+            {
+                "text": "Public Art",
+                "id": "art-public-art"
+            },
+            {
+                "text": "Sculpture",
+                "id": "art-sculpture"
+            },
+            {
+                "text": "Textiles",
+                "id": "art-textiles"
+            },
+            {
+                "text": "Video Art",
+                "id": "art-video-art"
+            }
+        ],
+        "id": "art"
+    },
+    {
+        "text": "Comics",
+        "categories": [
+            {
+                "text": "Anthologies",
+                "id": "comics-anthologies"
+            },
+            {
+                "text": "Comic Books",
+                "id": "comics-comic-books"
+            },
+            {
+                "text": "Events",
+                "id": "comics-events"
+            },
+            {
+                "text": "Graphic Novels",
+                "id": "comics-graphic-novels"
+            },
+            {
+                "text": "Webcomics",
+                "id": "comics-webcomics"
+            }
+        ],
+        "id": "comics"
+    },
+    {
+        "text": "Crafts",
+        "categories": [
+            {
+                "text": "Candles",
+                "id": "crafts-candles"
+            },
+            {
+                "text": "Crochet",
+                "id": "crafts-crochet"
+            },
+            {
+                "text": "DIY",
+                "id": "crafts-diy"
+            },
+            {
+                "text": "Embroidery",
+                "id": "crafts-embroidery"
+            },
+            {
+                "text": "Glass",
+                "id": "crafts-glass"
+            },
+            {
+                "text": "Knitting",
+                "id": "crafts-knitting"
+            },
+            {
+                "text": "Letterpress",
+                "id": "crafts-letterpress"
+            },
+            {
+                "text": "Pottery",
+                "id": "crafts-pottery"
+            },
+            {
+                "text": "Printing",
+                "id": "crafts-printing"
+            },
+            {
+                "text": "Quilts",
+                "id": "crafts-quilts"
+            },
+            {
+                "text": "Stationery",
+                "id": "crafts-stationery"
+            },
+            {
+                "text": "Taxidermy",
+                "id": "crafts-taxidermy"
+            },
+            {
+                "text": "Weaving",
+                "id": "crafts-weaving"
+            },
+            {
+                "text": "Woodworking",
+                "id": "crafts-woodworking"
+            }
+        ],
+        "id": "crafts"
+    },
+    {
+        "text": "Dance",
+        "categories": [
+            {
+                "text": "Performances",
+                "id": "dance-performances"
+            },
+            {
+                "text": "Residencies",
+                "id": "dance-residencies"
+            },
+            {
+                "text": "Spaces",
+                "id": "dance-spaces"
+            },
+            {
+                "text": "Workshops",
+                "id": "dance-workshops"
+            }
+        ],
+        "id": "dance"
+    },
+    {
+        "text": "Design",
+        "categories": [
+            {
+                "text": "Architecture",
+                "id": "design-architecture"
+            },
+            {
+                "text": "Civic Design",
+                "id": "design-civic-design"
+            },
+            {
+                "text": "Graphic Design",
+                "id": "design-graphic-design"
+            },
+            {
+                "text": "Interactive Design",
+                "id": "design-interactive-design"
+            },
+            {
+                "text": "Product Design",
+                "id": "design-product-design"
+            },
+            {
+                "text": "Typography",
+                "id": "design-typography"
+            }
+        ],
+        "id": "design"
+    },
+    {
+        "text": "Fashion",
+        "categories": [
+            {
+                "text": "Accessories",
+                "id": "fashion-accessories"
+            },
+            {
+                "text": "Apparel",
+                "id": "fashion-apparel"
+            },
+            {
+                "text": "Childrenswear",
+                "id": "fashion-childrenswear"
+            },
+            {
+                "text": "Couture",
+                "id": "fashion-couture"
+            },
+            {
+                "text": "Footwear",
+                "id": "fashion-footwear"
+            },
+            {
+                "text": "Jewelry",
+                "id": "fashion-jewelry"
+            },
+            {
+                "text": "Pet Fashion",
+                "id": "fashion-pet-fashion"
+            },
+            {
+                "text": "Ready-to-wear",
+                "id": "fashion-ready-to-wear"
+            }
+        ],
+        "id": "fashion"
+    },
+    {
+        "text": "Film & Video",
+        "categories": [
+            {
+                "text": "Action",
+                "id": "film-and-video-action"
+            },
+            {
+                "text": "Animation",
+                "id": "film-and-video-animation"
+            },
+            {
+                "text": "Comedy",
+                "id": "film-and-video-comedy"
+            },
+            {
+                "text": "Documentary",
+                "id": "film-and-video-documentary"
+            },
+            {
+                "text": "Drama",
+                "id": "film-and-video-drama"
+            },
+            {
+                "text": "Experimental",
+                "id": "film-and-video-experimental"
+            },
+            {
+                "text": "Family",
+                "id": "film-and-video-family"
+            },
+            {
+                "text": "Fantasy",
+                "id": "film-and-video-fantasy"
+            },
+            {
+                "text": "Festivals",
+                "id": "film-and-video-festivals"
+            },
+            {
+                "text": "Horror",
+                "id": "film-and-video-horror"
+            },
+            {
+                "text": "Movie Theaters",
+                "id": "film-and-video-movie-theaters"
+            },
+            {
+                "text": "Music Videos",
+                "id": "film-and-video-music-videos"
+            },
+            {
+                "text": "Narrative Film",
+                "id": "film-and-video-narrative-film"
+            },
+            {
+                "text": "Romance",
+                "id": "film-and-video-romance"
+            },
+            {
+                "text": "Science Fiction",
+                "id": "film-and-video-science-fiction"
+            },
+            {
+                "text": "Shorts",
+                "id": "film-and-video-shorts"
+            },
+            {
+                "text": "Television",
+                "id": "film-and-video-television"
+            },
+            {
+                "text": "Thrillers",
+                "id": "film-and-video-thrillers"
+            },
+            {
+                "text": "Webseries",
+                "id": "film-and-video-webseries"
+            }
+        ],
+        "id": "film-and-video"
+    },
+    {
+        "text": "Food",
+        "categories": [
+            {
+                "text": "Bacon",
+                "id": "food-bacon"
+            },
+            {
+                "text": "Community Gardens",
+                "id": "food-community-gardens"
+            },
+            {
+                "text": "Cookbooks",
+                "id": "food-cookbooks"
+            },
+            {
+                "text": "Drinks",
+                "id": "food-drinks"
+            },
+            {
+                "text": "Events",
+                "id": "food-events"
+            },
+            {
+                "text": "Farmer's Markets",
+                "id": "food-farmer-s-markets"
+            },
+            {
+                "text": "Farms",
+                "id": "food-farms"
+            },
+            {
+                "text": "Food Trucks",
+                "id": "food-food-trucks"
+            },
+            {
+                "text": "Restaurants",
+                "id": "food-restaurants"
+            },
+            {
+                "text": "Small Batch",
+                "id": "food-small-batch"
+            },
+            {
+                "text": "Spaces",
+                "id": "food-spaces"
+            },
+            {
+                "text": "Vegan",
+                "id": "food-vegan"
+            }
+        ],
+        "id": "food"
+    },
+    {
+        "text": "Games",
+        "categories": [
+            {
+                "text": "Gaming Hardware",
+                "id": "games-gaming-hardware"
+            },
+            {
+                "text": "Live Games",
+                "id": "games-live-games"
+            },
+            {
+                "text": "Mobile Games",
+                "id": "games-mobile-games"
+            },
+            {
+                "text": "Playing Cards",
+                "id": "games-playing-cards"
+            },
+            {
+                "text": "Puzzles",
+                "id": "games-puzzles"
+            },
+            {
+                "text": "Tabletop Games",
+                "id": "games-tabletop-games"
+            },
+            {
+                "text": "Video Games",
+                "id": "games-video-games"
+            }
+        ],
+        "id": "games"
+    },
+    {
+        "text": "Journalism",
+        "categories": [
+            {
+                "text": "Audio",
+                "id": "journalism-audio"
+            },
+            {
+                "text": "Photo",
+                "id": "journalism-photo"
+            },
+            {
+                "text": "Print",
+                "id": "journalism-print"
+            },
+            {
+                "text": "Video",
+                "id": "journalism-video"
+            },
+            {
+                "text": "Web",
+                "id": "journalism-web"
+            }
+        ],
+        "id": "journalism"
+    },
+    {
+        "text": "Music",
+        "categories": [
+            {
+                "text": "Blues",
+                "id": "music-blues"
+            },
+            {
+                "text": "Chiptune",
+                "id": "music-chiptune"
+            },
+            {
+                "text": "Classical Music",
+                "id": "music-classical-music"
+            },
+            {
+                "text": "Country & Folk",
+                "id": "music-country-and-folk"
+            },
+            {
+                "text": "Electronic Music",
+                "id": "music-electronic-music"
+            },
+            {
+                "text": "Faith",
+                "id": "music-faith"
+            },
+            {
+                "text": "Hip-Hop",
+                "id": "music-hip-hop"
+            },
+            {
+                "text": "Indie Rock",
+                "id": "music-indie-rock"
+            },
+            {
+                "text": "Jazz",
+                "id": "music-jazz"
+            },
+            {
+                "text": "Kids",
+                "id": "music-kids"
+            },
+            {
+                "text": "Latin",
+                "id": "music-latin"
+            },
+            {
+                "text": "Metal",
+                "id": "music-metal"
+            },
+            {
+                "text": "Pop",
+                "id": "music-pop"
+            },
+            {
+                "text": "Punk",
+                "id": "music-punk"
+            },
+            {
+                "text": "R&B",
+                "id": "music-randb"
+            },
+            {
+                "text": "Rock",
+                "id": "music-rock"
+            },
+            {
+                "text": "World Music",
+                "id": "music-world-music"
+            }
+        ],
+        "id": "music"
+    },
+    {
+        "text": "Photography",
+        "categories": [
+            {
+                "text": "Animals",
+                "id": "photography-animals"
+            },
+            {
+                "text": "Fine Art",
+                "id": "photography-fine-art"
+            },
+            {
+                "text": "Nature",
+                "id": "photography-nature"
+            },
+            {
+                "text": "People",
+                "id": "photography-people"
+            },
+            {
+                "text": "Photobooks",
+                "id": "photography-photobooks"
+            },
+            {
+                "text": "Places",
+                "id": "photography-places"
+            }
+        ],
+        "id": "photography"
+    },
+    {
+        "text": "Publishing",
+        "categories": [
+            {
+                "text": "Academic",
+                "id": "publishing-academic"
+            },
+            {
+                "text": "Anthologies",
+                "id": "publishing-anthologies"
+            },
+            {
+                "text": "Art Books",
+                "id": "publishing-art-books"
+            },
+            {
+                "text": "Calendars",
+                "id": "publishing-calendars"
+            },
+            {
+                "text": "Children's Books",
+                "id": "publishing-children-s-books"
+            },
+            {
+                "text": "Fiction",
+                "id": "publishing-fiction"
+            },
+            {
+                "text": "Literary Journals",
+                "id": "publishing-literary-journals"
+            },
+            {
+                "text": "Nonfiction",
+                "id": "publishing-nonfiction"
+            },
+            {
+                "text": "Periodicals",
+                "id": "publishing-periodicals"
+            },
+            {
+                "text": "Poetry",
+                "id": "publishing-poetry"
+            },
+            {
+                "text": "Radio & Podcasts",
+                "id": "publishing-radio-and-podcasts"
+            },
+            {
+                "text": "Translations",
+                "id": "publishing-translations"
+            },
+            {
+                "text": "Young Adult",
+                "id": "publishing-young-adult"
+            },
+            {
+                "text": "Zines",
+                "id": "publishing-zines"
+            }
+        ],
+        "id": "publishing"
+    },
+    {
+        "text": "Technology",
+        "categories": [
+            {
+                "text": "3D Printing",
+                "id": "technology-3d-printing"
+            },
+            {
+                "text": "Apps",
+                "id": "technology-apps"
+            },
+            {
+                "text": "Camera Equipment",
+                "id": "technology-camera-equipment"
+            },
+            {
+                "text": "DIY Electronics",
+                "id": "technology-diy-electronics"
+            },
+            {
+                "text": "Fabrication Tools",
+                "id": "technology-fabrication-tools"
+            },
+            {
+                "text": "Flight",
+                "id": "technology-flight"
+            },
+            {
+                "text": "Gadgets",
+                "id": "technology-gadgets"
+            },
+            {
+                "text": "Hardware",
+                "id": "technology-hardware"
+            },
+            {
+                "text": "Makerspaces",
+                "id": "technology-makerspaces"
+            },
+            {
+                "text": "Robots",
+                "id": "technology-robots"
+            },
+            {
+                "text": "Software",
+                "id": "technology-software"
+            },
+            {
+                "text": "Sound",
+                "id": "technology-sound"
+            },
+            {
+                "text": "Space Exploration",
+                "id": "technology-space-exploration"
+            },
+            {
+                "text": "Wearables",
+                "id": "technology-wearables"
+            },
+            {
+                "text": "Web",
+                "id": "technology-web"
+            }
+        ],
+        "id": "technology"
+    },
+    {
+        "text": "Theater",
+        "categories": [
+            {
+                "text": "Experimental",
+                "id": "theater-experimental"
+            },
+            {
+                "text": "Festivals",
+                "id": "theater-festivals"
+            },
+            {
+                "text": "Immersive",
+                "id": "theater-immersive"
+            },
+            {
+                "text": "Musical",
+                "id": "theater-musical"
+            },
+            {
+                "text": "Plays",
+                "id": "theater-plays"
+            },
+            {
+                "text": "Spaces",
+                "id": "theater-spaces"
+            }
+        ],
+        "id": "theater"
+    }
+]

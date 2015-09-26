@@ -658,6 +658,7 @@ define([
                 }
                 
                 this.observeKey(this.getKey());
+                this.observeKey(this.getKey(), this.triggerMethod.bind(this, 'value:change'));
                 
                 this.listenTo(this.model, 'change:key', function(model, key) {
                     this.stopObservingKey(model.previous('key'));
@@ -790,6 +791,11 @@ define([
                 this.ui.control[bool === false ? 'blur' : 'focus']();
             },
             
+            setVisible: function(bool) {
+                this.setAttribute('visible', bool);
+                this.setAttribute('omit', !bool);
+            },
+            
             getId: function() {
                 return _.result(this, 'id');
             },
@@ -851,6 +857,10 @@ define([
                 this.setValue(this.getAttribute('default'), options);
             },
             
+            unsetValue: function(options) {
+                this.form.unsetValueOf(this.getKey(), options);
+            },
+            
             forceValue: function(value, options) {
                 this.setValue(value, _.extend({ viewCid: false }, options));
             },
@@ -887,6 +897,18 @@ define([
                 var value = this.getValue(true);
                 if (_.isEmpty(value)) return true;
                 return Boolean((value || '').match(/^\s*$/));
+            },
+            
+            isEnabled: function() {
+                return !this.evaluateAttribute('disabled');
+            },
+            
+            isVisible: function() {
+                return this.evaluateAttribute('visible');
+            },
+            
+            isReadonly: function() {
+                return this.evaluateAttribute('readonly');
             },
             
             isRequired: function() {
@@ -1249,7 +1271,7 @@ define([
     
     var ImmutableControl = Marionette.Form.ImmutableControl = Control.extend({
         
-        defaults: { ignore: true, omit: true },
+        definition: { ignore: true, omit: true },
         
         ensureDefaultValue: function() {}
         
@@ -1259,7 +1281,7 @@ define([
         
         template: Templates.StaticControl,
         
-        defaults: { label: '&nbsp;', text: '', ignore: true, omit: true }
+        defaults: { label: '&nbsp;', text: '' }
         
     });
     
@@ -1474,20 +1496,22 @@ define([
         
     });
     
-    var LookupControl = Marionette.Form.LookupControl = BaseControl.extend(_.extend({
+    var LookupControl = Marionette.Form.LookupControl = ImmutableControl.extend(_.extend({
         
         // Lookup display (label) values for reference/id value.
         
         template: Templates.Control,
         
         constructor: function(options) {
-            ViewControl.prototype.constructor.apply(this, arguments);
+            ImmutableControl.prototype.constructor.apply(this, arguments);
             this.collection = this.collection || this.getCollection(options);
-            this.listenTo(this.collection, 'sync change update', this.render);
+            this.listenTo(this.collection, 'reset sync change update', this.render);
             this.maxValues = this.getAttribute('maxValues') || this.getOption('maxValues') || 100;
             this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         },
+        
+        ensureDefaultValue: function() {},
         
         _serializeData: function(data) {
             var maxValues = this.maxValues;
@@ -1634,8 +1658,8 @@ define([
         },
         
         bindCollection: function(collection) {
-            this.listenTo(collection, 'sync change update', this.render);
-            this.listenTo(collection, 'reset', this.ensureValue);
+            this.listenTo(collection, 'reset sync change update', this.ensureValue);
+            this.listenTo(collection, 'reset sync change update', this.render);
         },
         
         unbindCollection: function(collection) {
@@ -1789,12 +1813,20 @@ define([
                 return this.form.model.get(this.getKey());
             } else if (this.ui.control.is(':input')) {
                 var value = this.ui.control.val();
+                var coercedValue;
                 if (_.isArray(value)) {
-                    return _.map(value, function(v) {
+                    coercedValue = _.map(value, function(v) {
                         return this.coerceValue(v);
                     }.bind(this));
                 } else {
-                    return this.coerceValue(value);
+                    coercedValue = this.coerceValue(value);
+                }
+                if (this.getAttribute('multiple')) {
+                    return [].concat(coercedValue || []);
+                } else if (_.isArray(coercedValue)) {
+                    return _.first(coercedValue);
+                } else {
+                    return coercedValue;
                 }
             }
         },
@@ -1914,7 +1946,7 @@ define([
             this.matcher = this.getOption('matcher') || $.fn.select2.defaults.matcher;
             
             this.collection = this.collection || this.getCollection(this.getCollectionData());
-            if (this.collection) this.listenTo(this.collection, 'sync change update', this.render);
+            if (this.collection) this.listenTo(this.collection, 'reset sync change update', this.render);
             
             this.on('before:render:select', this._setupSelect);
         },
@@ -2463,7 +2495,7 @@ define([
         
         bindCollection: function(collection) {
             this.listenTo(collection, 'change update', this.updateValue); // first
-            this.listenTo(collection, 'sync change update', this.render);
+            this.listenTo(collection, 'reset sync change update', this.render);
             this.listenTo(collection, 'reorder', this.triggerMethod.bind(this, 'reorder'));
         },
         
@@ -3009,8 +3041,6 @@ define([
         
         tagName: 'form',
         
-        className: getClassName('form'),
-        
         template: _.template(''),
         
         defaultControl: 'immutable',
@@ -3095,6 +3125,12 @@ define([
             this.triggerMethod('initialize', options);
             
             this.observeWindowResize();
+        },
+        
+        className: function() {
+            var className = this.getClassName(null, 'form');
+            var formClassName = _.result(this, 'formClassName') || this.getOption('formClassName');
+            return _.isEmpty(formClassName) ? className : (className + ' ' + formClassName);
         },
         
         observeWindowResize: function() {
@@ -3222,6 +3258,7 @@ define([
         getData: function(asModel) {
             var copy = new this.modelConstructor(this.model.toJSON());
             this.children.each(function(field) {
+                if (field.evaluateAttribute('ignore')) return; // skip
                 var key = field.getKey();
                 if (key && copy.has(key) && field.evaluateAttribute('omit')) {
                     copy.unset(key);
@@ -3325,7 +3362,7 @@ define([
                 options.bound = true;
                 this.set(formatter.fromRaw(values, collection), options);
             });
-            this.listenTo(collection, 'sync change update', function() {
+            this.listenTo(collection, 'reset sync change update', function() {
                 var options = _.last(arguments) || {};
                 if (options.bound) return; // self-inflicted change - skip
                 options.bound = true;
@@ -3638,10 +3675,6 @@ define([
         this.triggerMethod('render:select', this.ui.control);
     };
     
-    function getClassName(key) {
-        return function() { return this.getClassName(null, key); };
-    };
-    
     function normalizeError(message, code) {
         if (_.isObject(message)) {
             return _.defaults(message, { code: 'invalid' });
@@ -3705,11 +3738,11 @@ define([
             bool = !!context[condition](data);
         } else if (_.isString(condition) && context.form
             && _.isFunction(context.form[condition])) {
-            bool = !!context.form[condition](data);
+            bool = !!context.form[condition](data, context);
         } else if (_.isString(condition) && context.form) {
             bool = !!context.form.getValueOf(condition);
         } else if (_.isFunction(condition)) {
-            bool = !!condition(data);
+            bool = !!condition(data, context);
         } else {
             bool = false;
         }

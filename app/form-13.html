@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.form.control.filter'
+            ], function(Backbone, Marionette, Form) {
+                
+                var FilterForm = Form.View.extend({
+                    
+                    fields: [
+                        // A single control
+                        {
+                            control: 'filter-set', key: 'categories', collection: 'categories', multiple: true,
+                            emptyMessage: '<em>All categories</em>', childrenKey: 'categories', maxValues: 10,
+                            scrollable: false, collapsibleSets: true, subLabel: 'expand details', columns: 3,
+                            selectChildren: false,  // default: false - select all subcategories when main is selected
+                            normalizeSets: true     // default: true - ignore main category value when a subcategory is selected
+                        },
+                        // Two linked controls
+                        {
+                            control: 'filter', key: 'category', collection: 'categories', multiple: false,
+                            emptyMessage: '<em>Any category</em>', columns: 3,
+                            nullValue: true         // default: false - set to true to enable null or [] values
+                        },
+                        {
+                            control: 'filter', key: 'subcategories', collection: 'subcategories', multiple: true,
+                            emptyMessage: '<em>All subcategories</em>', maxValues: 10, visible: 'category', columns: 3
+                        },
+                        // Control with input field and scrollable pane
+                        {
+                            control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
+                            emptyMessage: '<em>All provinces</em>', input: true, placeholder: 'Search province',
+                            columns: 3
+                        },
+                        // Readonly
+                        {
+                            control: 'filter', key: 'province', label: 'Selected Province', collection: 'provinces', 
+                            emptyMessage: '<em>All provinces</em>', readonly: true, open: false, columns: 3
+                        },
+                        // Controls with dependencies
+                        {
+                            control: 'filter', key: 'style', ensureValue: true,
+                            columns: 4, collapsible: false,
+                            options: [
+                                { id: 'default', text: 'Default' },
+                                { id: 'color', text: 'Single color' },
+                                { id: 'colors', text: 'Multiple colors' },
+                                { id: 'pattern', text: 'Pattern' }
+                            ]
+                        },
+                        {
+                            control: 'filter', key: 'color', collection: 'colors', ensureValue: true,
+                            helpMessage: 'Pick your favorite color', autoClose: true, dataKey: 'hex',
+                            collapseTrigger: '*', // selector for elements that trigger collapse,
+                            observe: 'style', visible: 'colorEnabled', omit: '!isVisible', columns: 3,
+                            item: {
+                                template: '<i class="icon <%= icon %>"></i> <span><%= label %> (#<%= item.hex %>)</span>'
+                            }
+                        },
+                        {
+                            control: 'filter', key: 'colors', collection: 'colors', ensureValue: true,
+                            observe: 'style', visible: 'colorsEnabled', omit: '!isVisible',
+                            multiple: true, maxValues: 4
+                        },
+                        {
+                            control: 'filter', key: 'pattern', collection: 'patterns', ensureValue: true,
+                            observe: 'style', disabled: '!patternEnabled', omit: '!isEnabled',
+                            collapsible: true, open: 'patternEnabled', labelKey: 'name', dataKey: '*',
+                            columns: -1 // as many columns as collection length
+                        },
+                        {
+                            control: 'lookup', key: 'color', label: 'Color name', collection: 'colors',
+                            visible: 'colorEnabled', observe: 'style'
+                        }
+                    ],
+                    
+                    colorEnabled: function(data, control) {
+                        var style = this.getValueOf('style');
+                        return style === 'color';
+                    },
+                    
+                    colorsEnabled: function(data, control) {
+                        var style = this.getValueOf('style');
+                        return style === 'colors';
+                    },
+                    
+                    patternEnabled: function(data, control) {
+                        var style = this.getValueOf('style');
+                        return style === 'pattern';
+                    }
+                    
+                });
+                
+                // Implementation
+                
+                var Categories = Form.Collection.extend({
+                    
+                    url: '/data/kickstarter.json'
+                    
+                });
+                
+                var categories = new Categories();
+                categories.fetch();
+                
+                var colors = new Form.Collection([
+                    { id: 'white', text: 'White', hex: 'ffffff' },
+                    { id: 'black', text: 'Black', hex: '000000' },
+                    { id: 'red', text: 'Red', hex: 'ff0000' },
+                    { id: 'green', text: 'Green', hex: '00ff00' },
+                    { id: 'blue', text: 'Blue', hex: '0000ff' },
+                    { id: 'transparent', text: 'Transparent', selectable: false }
+                ]);
+                
+                var patterns = new Form.Collection([
+                    { id: 'solid', name: 'Solid' },
+                    { id: 'checkerboard', name: 'Checkerboard' },
+                    { id: 'gradient', name: 'Gradient' }
+                ]);
+                
+                var provinces = new Form.Collection([
+                    { id: 'AB', text: 'Alberta' },
+                    { id: 'BC', text: 'British Columbia' },
+                    { id: 'MB', text: 'Manitoba' },
+                    { id: 'NB', text: 'New Brunswick' },
+                    { id: 'NL', text: 'Newfoundland and Labrador' },
+                    { id: 'NT', text: 'Northwest Territories' },
+                    { id: 'NS', text: 'Nova Scotia' },
+                    { id: 'NU', text: 'Nunavut' },
+                    { id: 'ON', text: 'Ontario' },
+                    { id: 'PE', text: 'Prince Edward Island' },
+                    { id: 'QC', text: 'Québec' },
+                    { id: 'SK', text: 'Saskatchewan' },
+                    { id: 'YT', text: 'Yukon' }
+                ]);
+                
+                Form.registerCollection('categories', categories);
+                Form.registerCollection('subcategories', []);
+                
+                Form.registerCollection('colors', colors);
+                Form.registerCollection('patterns', patterns);
+                
+                Form.registerCollection('provinces', provinces);
+                
+                var filters = new Form.Model({
+                    style: 'colors',
+                    color: 'green',
+                    colors: ['white', 'black'],
+                    province: 'YT',
+                    categories: ['art', 'design']
+                });
+                
+                var form = new FilterForm({
+                    model: filters,
+                    layout: 'vertical',
+                    formClassName: 'form-blocks'
+                });
+                
+                form.on('control:value:change', function(control, model, value) {
+                    var key = control.getKey();
+                    if (key === 'category' && value) {
+                        var category = control.collection.get(value);
+                        var subcategories = form.getCollection('subcategories');
+                        if (subcategories && category) subcategories.reset(category.get('categories'));
+                    } else if (key === 'category') {
+                        var subcategories = form.getCollection('subcategories');
+                        if (subcategories) subcategories.reset([]);
+                    }
+                });
+                
+                form.on('control:render', function(control) {
+                    var key = control.getKey();
+                    if (key === 'color' && control.getAttribute('control') === 'filter') {
+                        var selected = _.first(control.getSelection());
+                        if (selected) {
+                            control.$('.synopsis').css('borderRight', '4px solid #' + selected.get('hex'));
+                        } else {
+                            control.$('.synopsis').css('border', 0);
+                        }
+                    }
+                });
+                
+                // Collapsing
+                
+                form.on('control:before:collapse', function(control, isCollapsed) {
+                    if (!isCollapsed) return; // skip
+                    form.children.each(function(view) {
+                        if (view instanceof Form.FilterControl && view !== control) {
+                            view.collapseList('fast');
+                        }
+                    });
+                });
+                
+                // Mobile Browser native <select> 'wheel' support
+                
+                var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    
+                    form.on('control:render', function(control) {
+                        if (control instanceof Form.FilterControl) {
+                            control.$('select').remove();
+                            control.$el.append(control.createNativeControl());
+                        }
+                    });
+                    
+                    form.on('control:toggle', function(control, event) {
+                        if (control instanceof Form.FilterControl && control.isCollapsible()) {
+                            event.stopPropagation();
+                            control.$('select').focus();
+                        }
+                    });
+                    
+                }
+                
+                // Changes and validation
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.on('control:collapse:sets', function(control, isCollapsed) {
+                    var label = (isCollapsed ? 'expand' : 'hide') + ' details';
+                    control.ui.subLabel.text(label);
+                });
+                
+                form.on('control:before:render', function(control) {
+                    window._scrollTop = $('body').scrollTop();
+                });
+                
+                form.on('control:render', function(control) {
+                    $('body').scrollTop(window._scrollTop);
+                });
+                
+                // Rendering
+                
+                form.render();
+                $('#layout').append(form.el);
+                
+                // Example interactions
+                
+                // setTimeout(function() {
+                //     filters.set('color', 'blue');
+                //     filters.set('colors', ['blue', 'green']);
+                //     colors.reset([
+                //         { id: 'red', text: 'Red', hex: 'ff0000' },
+                //         { id: 'green', text: 'Green', hex: '00ff00', selectable: false },
+                //         { id: 'blue', text: 'Blue', hex: '0000ff' },
+                //     ]);
+                //     provinces.get('YT').set('selectable', false);
+                // }, 1500);
+                
+                // setTimeout(function() {
+                //     form.model.clear();
+                // }, 3000);
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>filter controls</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>
