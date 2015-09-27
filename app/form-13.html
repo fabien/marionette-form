@@ -71,6 +71,10 @@
                             }
                         },
                         {
+                            control: 'lookup', key: 'color', label: 'Selected color', collection: 'colors',
+                            visible: 'colorEnabled', observe: 'style'
+                        },
+                        {
                             control: 'filter', key: 'colors', collection: 'colors', ensureValue: true,
                             observe: 'style', visible: 'colorsEnabled', omit: '!isVisible',
                             multiple: true, maxValues: 4
@@ -80,10 +84,6 @@
                             observe: 'style', disabled: '!patternEnabled', omit: '!isEnabled',
                             collapsible: true, open: 'patternEnabled', labelKey: 'name', dataKey: '*',
                             columns: -1 // as many columns as collection length
-                        },
-                        {
-                            control: 'lookup', key: 'color', label: 'Color name', collection: 'colors',
-                            visible: 'colorEnabled', observe: 'style'
                         }
                     ],
                     

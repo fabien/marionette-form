@@ -8,6 +8,8 @@
         <link rel="stylesheet" href="/css/select2.css" type="text/css">
         <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.skinFlat.css" type="text/css">
         <style type="text/css" media="screen">
             .form-group.disabled {
                 opacity: 0.5;
@@ -72,7 +74,7 @@
                     
                 });
                 
-                var Profile = Backbone.Model.extend({
+                var Profile = Form.Model.extend({
                     validation: {
                         firstName: {
                             required: true

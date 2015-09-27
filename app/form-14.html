@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.skinFlat.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group.disabled {
+                opacity: 0.5;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.form.control.slider',
+                'autoNumeric',
+            ], function(Backbone, Marionette, Form) {
+                
+                var DataForm = Form.View.extend({
+                    
+                    prefix: 'data-',
+                    
+                    layout: 'vertical'
+                    
+                });
+                
+                var Data = Form.Model.extend({
+                    validation: {
+                        firstName: {
+                            required: true
+                        },
+                        lastName: {
+                            required: true
+                        }
+                    }
+                });
+                
+                var data = new Data({
+                    range: [50, 500],
+                    amount: 2845,
+                    minAmount: 500,
+                    maxAmount: 12500,
+                    minInterval: 7,
+                    maxInterval: 14,
+                    date: new Date(),
+                    dateRange: ['2015-09-11T12:00:00.000Z', '2015-09-20T12:00:00.000Z']
+                });
+                
+                var form = new DataForm({ model: data });
+                
+                form.collection.reset([
+                    {
+                        id: 'range', control: 'range', min: 25, max: 1000, step: 25, slider: { grid: true }
+                    },
+                    { control: 'spacer' },
+                    {
+                        id: 'priceRange', control: 'range', formatter: 'cents', min: 0, max: 50000, step: 500,
+                        startKey: 'minAmount', endKey: 'maxAmount', minInterval: 2500,
+                        slider: { prefix: '€ ', grid: true, drag_interval: true }
+                    },
+                    {
+                        id: 'price', key: 'amount', control: 'slider', formatter: 'cents', step: 100,
+                        minKey: 'minAmount', maxKey: 'maxAmount', readonly: false, disabled: false,
+                        slider: { prefix: '€ ', grid: true }
+                    },
+                    { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
+                    { control: 'spacer' },
+                    {
+                        id: 'date', control: 'date-slider', min: -30, max: 30, step: 1, unit: 'days', slider: { grid: true }
+                    },
+                    {
+                        id: 'dateRange', control: 'date-range-slider', unit: 'days',
+                        min: -30, max: new Date(), step: 1, minIntervalKey: 'minInterval', maxIntervalKey: 'maxInterval',
+                        slider: { grid: true, drag_interval: true }
+                    },
+                    {
+                        id: 'interval', control: 'range', min: 1, max: 30, step: 1, slider: { grid: true },
+                        startKey: 'minInterval', endKey: 'maxInterval'
+                    }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                // Slider events
+                
+                form.on('control:slider:start', function(control, data) {
+                    console.log('Slider Start');
+                });
+                
+                form.on('control:slider:change', function(control, data) {
+                    console.log('Slider Change');
+                });
+                
+                form.on('control:slider:finish', function(control, data) {
+                    console.log('Slider Finish');
+                });
+                
+                form.on('control:slider:update', function(control, data) {
+                    console.log('Slider Update');
+                });
+                
+                // Rendering
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with ion.rangeSlider</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

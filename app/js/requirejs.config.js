@@ -18,6 +18,7 @@ requirejs.config({
         'jquery.fileupload': 'vendor/blueimp-file-upload/js/jquery.fileupload',
         'jquery.iframe-transport': 'vendor/blueimp-file-upload/js/jquery.iframe-transport',
         'jquery.ui.widget': 'vendor/blueimp-file-upload/js/vendor/jquery.ui.widget',
+        'ion.rangeslider': 'vendor/ion.rangeslider/js/ion.rangeslider',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
         'jquery.quickselect': 'lib/jquery.quickselect',
         'backbone': 'lib/backbone.extended',
@@ -45,7 +46,8 @@ requirejs.config({
         'marionette.form.control.geo': 'marionette.form/controls/geo',
         'marionette.form.control.dropzone': 'marionette.form/controls/dropzone',
         'marionette.form.control.upload': 'marionette.form/controls/upload',
-        'marionette.form.control.filter': 'marionette.form/controls/filter'
+        'marionette.form.control.filter': 'marionette.form/controls/filter',
+        'marionette.form.control.slider': 'marionette.form/controls/slider'
     },
     shim: {
         autoNumeric: {
@@ -62,6 +64,9 @@ requirejs.config({
             exports: '_'
         },
         select2: {
+            deps: ['jquery']
+        },
+        'ion.rangeslider': {
             deps: ['jquery']
         },
         'jquery.quickselect': {

@@ -19,7 +19,7 @@ define([
             this._detachBehave();
             this.editor = new Behave(_.extend({
                 textarea: this.ui.control[0]
-            }, this.getOption('behave')));
+            }, this.getOption('behave'), this.getAttribute('behave')));
             this.triggerMethod('behave:init', this.editor);
         },
         

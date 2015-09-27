@@ -591,8 +591,12 @@ define([
             },
             
             triggers: function() {
-                var changeTriggers = this.getAttribute('trigger') || 'change';
-                changeTriggers = changeTriggers.split(/\s/);
+                if (this.getAttribute('trigger') === false) {
+                    var changeTriggers = [];
+                } else {
+                    var changeTriggers = this.getAttribute('trigger') || 'change';
+                    changeTriggers = changeTriggers.split(/\s/);
+                }
                 var triggers = {};
                 _.each(changeTriggers, function(trigger) {
                     triggers[trigger + ' @ui.control'] = 'change';
@@ -832,7 +836,7 @@ define([
             },
             
             hasValue: function() {
-                return this.form.model.has(this.getKey());
+                return this.form.hasValue(this.getKey());
             },
             
             getValue: function(fromModel) {
@@ -3166,6 +3170,12 @@ define([
             });
         },
         
+        hasValue: function(key) {
+            if (!_.isString(key)) return false;
+            if (key === '*') return true;
+            return this.model.has(key);
+        },
+        
         getValueOf: function(key) {
             if (!_.isString(key)) return;
             if (key === '*') return this.model.toJSON();
@@ -3288,8 +3298,12 @@ define([
             return _.result(this.model, 'url') + '/' + this.model.id;
         },
         
-        triggerChange: function(){
-            this.model.trigger('change', this.model, {});
+        triggerChange: function(key, value) {
+            if (key) {
+                this.model.trigger('change:' + key, this.model, value, {});
+            } else {
+                this.model.trigger('change', this.model, {});
+            }
         },
         
         callDelegate: function(methodName) {
