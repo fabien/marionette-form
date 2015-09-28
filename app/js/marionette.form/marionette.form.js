@@ -3298,11 +3298,11 @@ define([
             return _.result(this.model, 'url') + '/' + this.model.id;
         },
         
-        triggerChange: function(key, value) {
+        triggerChange: function(key, value, options) {
             if (key) {
-                this.model.trigger('change:' + key, this.model, value, {});
+                this.model.trigger('change:' + key, this.model, value, options || {});
             } else {
-                this.model.trigger('change', this.model, {});
+                this.model.trigger('change', this.model, options || {});
             }
         },
         

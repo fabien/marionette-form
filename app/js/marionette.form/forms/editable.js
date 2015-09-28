@@ -59,7 +59,7 @@ define([
         
         onInitialize: function(options) {
             this.fieldValueParser = this.getFormatter('json');
-            this.listenTo(this.collection, 'reorder', this.triggerChange);
+            this.listenTo(this.collection, 'reorder', this.triggerChange.bind(this, null));
             this.listenTo(this.model, 'change', this.updateFields);
             this.updateFields();
         },
