@@ -31,6 +31,7 @@ requirejs.config({
         'backbone.nested-model': 'vendor/backbone-nested-model/backbone-nested',
         'backbone.file-upload': 'vendor/backbone-model-file-upload/backbone-model-file-upload',
         'backbone.bootstrap-modal': 'vendor/backbone-bootstrap-modal/src/backbone.bootstrap-modal',
+        'backbone.operation-queue': 'lib/operation-queue',
         'backbone.uri-sync': 'lib/backbone.uri-sync',
         'backbone.treeview': 'lib/backbone.treeview',
         'backbone-tree-view': 'vendor/backbone-tree-view/lib/backbone-tree-view',
