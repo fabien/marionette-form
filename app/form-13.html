@@ -15,8 +15,10 @@
                 'backbone',
                 'backbone.marionette',
                 'marionette.form',
+                'rison',
+                'backbone.uri-sync',
                 'marionette.form.control.filter'
-            ], function(Backbone, Marionette, Form) {
+            ], function(Backbone, Marionette, Form, rison, uriSync) {
                 
                 var FilterForm = Form.View.extend({
                     
@@ -31,12 +33,12 @@
                         },
                         // Two linked controls
                         {
-                            control: 'filter', key: 'category', collection: 'categories', multiple: false,
+                            id: 'category', control: 'filter', key: 'category', collection: 'categories', multiple: false,
                             emptyMessage: '<em>Any category</em>', columns: 3,
                             nullValue: true         // default: false - set to true to enable null or [] values
                         },
                         {
-                            control: 'filter', key: 'subcategories', collection: 'subcategories', multiple: true,
+                            id: 'subcategories', control: 'filter', key: 'subcategories', collection: 'subcategories', multiple: true,
                             emptyMessage: '<em>All subcategories</em>', maxValues: 10, visible: 'category', columns: 3
                         },
                         // Control with input field and scrollable pane
@@ -154,6 +156,10 @@
                 
                 Form.registerCollection('provinces', provinces);
                 
+                var FilterState = Form.Model.extend({
+                    sync: uriSync
+                });
+                
                 var filters = new Form.Model({
                     style: 'colors',
                     color: 'green',
@@ -162,19 +168,21 @@
                     categories: ['art', 'design']
                 });
                 
+                var filterState = new FilterState();
+                
                 var form = new FilterForm({
                     model: filters,
                     layout: 'vertical',
                     formClassName: 'form-blocks'
                 });
                 
-                form.on('control:value:change', function(control, model, value) {
-                    var key = control.getKey();
-                    if (key === 'category' && value) {
+                form.model.on('change:category', function(model, value) {
+                    var control = form.getField('category');
+                    if (control && value) {
                         var category = control.collection.get(value);
                         var subcategories = form.getCollection('subcategories');
                         if (subcategories && category) subcategories.reset(category.get('categories'));
-                    } else if (key === 'category') {
+                    } else {
                         var subcategories = form.getCollection('subcategories');
                         if (subcategories) subcategories.reset([]);
                     }
@@ -189,6 +197,10 @@
                         } else {
                             control.$('.synopsis').css('border', 0);
                         }
+                    } else if (key === 'category' && control.collection && control.collection.length > 0) {
+                        var category = control.collection.get(control.getValue(true));
+                        var subcategories = form.getCollection('subcategories');
+                        if (subcategories && category) subcategories.reset(category.get('categories'));
                     }
                 });
                 
@@ -244,10 +256,30 @@
                     $('body').scrollTop(window._scrollTop);
                 });
                 
+                // URI Sync usage
+                
+                function updateFilters() {
+                    filters.set(_.omit(filterState.toJSON(), 'id'));
+                };
+                
+                function fetchFilterState() {
+                    filterState.clear({ silent: true });
+                    filterState.fetch();
+                };
+                
+                filterState.on('change', updateFilters);
+                $(window).on('hashchange', fetchFilterState);
+                
+                form.on('change', function() {
+                    filterState.save(form.model.toJSON());
+                });
+                
                 // Rendering
                 
-                form.render();
-                $('#layout').append(form.el);
+                filterState.fetch({ success: function() {
+                    form.render();
+                    $('#layout').append(form.el);
+                } });
                 
                 // Example interactions
                 

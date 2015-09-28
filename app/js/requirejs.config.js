@@ -5,6 +5,7 @@ requirejs.config({
         'filesize': 'lib/filesize',
         'behave': 'lib/behave',
         'urlify': 'lib/urlify',
+        'rison': 'lib/rison',
         'dragula': 'vendor/dragula.js/dist/dragula',
         'dropzone': 'vendor/dropzone/dist/dropzone-amd-module',
         'select2': 'vendor/select2/select2',
@@ -30,6 +31,7 @@ requirejs.config({
         'backbone.nested-model': 'vendor/backbone-nested-model/backbone-nested',
         'backbone.file-upload': 'vendor/backbone-model-file-upload/backbone-model-file-upload',
         'backbone.bootstrap-modal': 'vendor/backbone-bootstrap-modal/src/backbone.bootstrap-modal',
+        'backbone.uri-sync': 'lib/backbone.uri-sync',
         'backbone.treeview': 'lib/backbone.treeview',
         'backbone-tree-view': 'vendor/backbone-tree-view/lib/backbone-tree-view',
         'backbone-tree-model': 'vendor/backbone-tree-model/src/backbone.treemodel',
@@ -55,6 +57,7 @@ requirejs.config({
         autoNumeric: {
             deps: ['jquery']
         },
+        rison: {},
         bootstrap: {
             deps: ['jquery']
         },
