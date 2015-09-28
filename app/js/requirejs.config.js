@@ -14,6 +14,7 @@ requirejs.config({
         'bootstrap-filestyle': 'vendor/bootstrap-filestyle/src/bootstrap-filestyle',
         'bootstrap-datepicker': 'vendor/bootstrap-datepicker/dist/js/bootstrap-datepicker',
         'bootstrap-daterangepicker': 'vendor/bootstrap-daterangepicker/daterangepicker',
+        'bootstrap-combobox': 'lib/bootstrap-combobox',
         'jquery': 'vendor/jquery/dist/jquery',
         'jquery.fileupload': 'vendor/blueimp-file-upload/js/jquery.fileupload',
         'jquery.iframe-transport': 'vendor/blueimp-file-upload/js/jquery.iframe-transport',
@@ -47,7 +48,8 @@ requirejs.config({
         'marionette.form.control.dropzone': 'marionette.form/controls/dropzone',
         'marionette.form.control.upload': 'marionette.form/controls/upload',
         'marionette.form.control.filter': 'marionette.form/controls/filter',
-        'marionette.form.control.slider': 'marionette.form/controls/slider'
+        'marionette.form.control.slider': 'marionette.form/controls/slider',
+        'marionette.form.control.combobox': 'marionette.form/controls/combobox'
     },
     shim: {
         autoNumeric: {
@@ -79,6 +81,9 @@ requirejs.config({
             deps: ['jquery']
         },
         'bootstrap-daterangepicker': {
+            deps: ['jquery']
+        },
+        'bootstrap-combobox': {
             deps: ['jquery']
         }
     }

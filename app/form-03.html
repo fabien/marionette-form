@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
         <link rel="stylesheet" href="/css/select2.css" type="text/css">
         <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/bootstrap-combobox.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.skinFlat.css" type="text/css">
@@ -22,6 +23,7 @@
                 'backbone',
                 'backbone.marionette',
                 'marionette.form',
+                'marionette.form.control.combobox',
                 'backbone.validation',
                 'jquery.maskedinput',
                 'autoNumeric',
@@ -89,6 +91,7 @@
                     firstName: 'Andre',
                     lastName: 'Jones',
                     phone: '(123) 456-7890',
+                    country: 'Netherlands',
                     currency: 'EUR',
                     amount: 2845
                 });
@@ -103,11 +106,21 @@
                     { id: 'YEN', text: 'Japanese Yen' }
                 ]);
                 
+                form.registerCollection('countries', [
+                    { text: '' },
+                    { id: 'BE', text: 'Belgium' },
+                    { id: 'NL', text: 'Netherlands' },
+                    { id: 'FR', text: 'France' },
+                    { id: 'DE', text: 'Germany' }
+                ]);
+                
                 form.collection.reset([
                     { id: 'custom', key: '*', control: 'custom' },
                     { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
                     { id: 'lastName', control: 'input', required: true, omit: 'isBlank' },
                     { id: 'phone', control: 'input', mask: '(999) 999-9999' },
+                    { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
+                    { id: 'combobox', key: 'currency', control: 'combobox', collection: 'currencies' },
                     { id: 'currency', control: 'select', collection: 'currencies', quickSelect: true, placeholder: 'Other &hellip;' },
                     { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
                     { id: 'birthday', control: 'checkbox', omit: true },
