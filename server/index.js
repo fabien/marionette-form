@@ -28,13 +28,11 @@ app.use(function(req, res, next) {
 });
 
 app.get('/', function(req, res) {
-    res.send('hello world');
+    res.send('<h1>Index</h1>');
 });
 
 app.post('/', upload.single('file'), function(req, res) {
-    // if (!res.file) return res.status(500).end();
-    console.log(req.body);
-    console.log(req.file);
+    if (!req.file) return res.status(500).end();
     res.json({
         id: req.file.filename,
         filename: req.file.originalname,
