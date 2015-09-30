@@ -14,7 +14,7 @@
   ],
   "dependencies": {
     "backbone": "~1.2.3",
-    "backbone-bootstrap-modal": "https://github.com/fabien/backbone.bootstrap-modal.git#7ea016c6c90ca57b718cfa461acbda01e6b6946a",
+    "backbone-bootstrap-modal": "https://github.com/fabien/backbone.bootstrap-modal.git#b47f25abecbe287012dbf7791859b48b65b0de4a",
     "backbone-model-file-upload": "backbone-model-file-upload#*",
     "backbone-nested-model": "~2.0.4",
     "backbone-tree-model": "https://github.com/fabien/backbone-tree-model.git#*",
