@@ -51,6 +51,7 @@ requirejs.config({
         'marionette.form.control.geo': 'marionette-form/controls/geo',
         'marionette.form.control.modal': 'marionette-form/controls/modal',
         'marionette.form.control.object': 'marionette-form/controls/object',
+        'marionette.form.control.redactor': 'marionette-form/controls/redactor',
         'marionette.form.control.reference': 'marionette-form/controls/reference',
         'marionette.form.control.slider': 'marionette-form/controls/slider',
         'marionette.form.control.tree': 'marionette-form/controls/tree',

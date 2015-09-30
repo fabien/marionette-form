@@ -770,10 +770,6 @@ define([
             this.filterChildrenByTerm(this.ui.control.val());
         },
         
-        isImmutable: function() {
-            return !this.isEnabled() || this.isReadonly() || !this.isVisible();
-        },
-        
         isCollapsible: function() {
             if (!this.evaluateAttribute('collapsible')) return false;
             return !this.isImmutable();

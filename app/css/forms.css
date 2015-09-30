@@ -335,6 +335,12 @@ form .nested-controls.row > .col {
     min-height: auto;
 }
 
+/* redactor */
+
+.form-group .redactor-editor {
+    min-height: 120px;
+}
+
 /* dragula */
 
 .drag-handle {

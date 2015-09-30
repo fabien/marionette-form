@@ -144,7 +144,7 @@ define([
                 onUpdate: this.triggerMethod.bind(this, 'slider:update')
             };
             var options = _.extend({}, this.getOption('sliderOptions'), this.getAttribute('slider'));
-            if (this.isReadonly() || !this.isEnabled()) options.from_fixed = options.to_fixed = true;
+            if (!this.isEditable()) options.from_fixed = options.to_fixed = true;
             options.type = this.getSliderType();
             options.min = this.getMinValue();
             options.max = this.getMaxValue();

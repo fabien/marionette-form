@@ -691,6 +691,8 @@ define([
                 
                 this.once('render', this.ensureDefaultValue);
                 
+                this.on('refresh', this.refreshView);
+                
                 this.listenTo(this.model, 'change:template', function(model, template) {
                     this.setTemplate(template);
                     this.render();
@@ -766,8 +768,7 @@ define([
             
             enableClassName: function(className, bool) {
                 className = this.getClassName(className) || className;
-                this.$el.removeClass(className);
-                if (bool) this.$el.addClass(className);
+                this.$el.toggleClass(className, !!bool);
             },
             
             getLabel: function() {
@@ -902,6 +903,14 @@ define([
                 return Boolean((value || '').match(/^\s*$/));
             },
             
+            isEditable: function() {
+                return !this.isDisabled() && !this.isReadonly() && this.isVisible();
+            },
+            
+            isImmutable: function() {
+                return !this.isEditable();
+            },
+            
             isDisabled: function() {
                 return this.evaluateAttribute('disabled');
             },
@@ -920,6 +929,10 @@ define([
             
             isRequired: function() {
                 return this.evaluateAttribute('required');
+            },
+            
+            isOmitted: function() {
+                return this.evaluateAttribute('omit');
             },
             
             isValid: function(options) {
@@ -1061,13 +1074,23 @@ define([
                 return data;
             },
             
+            refreshView: function() {
+                this.enableClassName('hidden', !this.isVisible());
+                this.enableClassName('requiredInput', this.isRequired());
+                this.enableClassName('disabled', this.isDisabled());
+                this.enableClassName('readonly', this.isReadonly());
+                this.enableClassName('omit', this.isOmitted());
+            },
+            
             render: function() {
                 var options = _.last(arguments) || {};
-                if (this.getOption('renderOnce') && this.isRendered) {
+                if (this.getOption('renderOnce') && this.isRendered && !options.force) {
+                    this.triggerMethod('refresh', options);
                     this.isValid()
                 } else if (options.force || !this.isRendered || options.viewCid !== this.cid) {
                     return View.prototype.render.apply(this, arguments);
                 } else {
+                    this.triggerMethod('refresh', options);
                     this.isValid();
                 }
                 return this;
@@ -1175,22 +1198,31 @@ define([
                 return html;
             },
             
+            loseFocus: function(toPrevious, target) {
+                var $self = this.$el;
+                var $target = $(target || this.ui.control || this.$(':input'));
+                var className = this.getClassName(this.getOption('groupClassName'));
+                setTimeout(function() {
+                    var $nextFocus;
+                    if (toPrevious) {
+                        $nextFocus = $target.prevAll(':input:visible').length ?
+                            $target.prevAll(':input:visible').first() :
+                            $target.closest('.control-group:visible').prev('.control-group:visible').find(':input:visible');
+                        if ($nextFocus.length === 0) $nextFocus = $self.prev('.' + className).find(':input:visible');
+                    } else {
+                        $nextFocus = $target.nextAll(':input:visible').length ?
+                            $target.nextAll(':input:visible').first() :
+                            $target.closest('.control-group:visible').next('.control-group:visible').find(':input:visible');
+                        if ($nextFocus.length === 0) $nextFocus = $self.next('.' + className).find(':input:visible');
+                    }
+                    if ($nextFocus.length) $nextFocus.first().focus();
+                }, 0);
+            },
+            
             onKeyDown: function(e) {
                 var $target = $(e.currentTarget);
                 if (e.which == 9) {
-                    setTimeout(function() {
-                        var $nextFocus;
-                        if (e.shiftKey) {
-                            $nextFocus = $target.prevAll(':input:visible').length ?
-                                $target.prevAll(':input:visible').first() :
-                                $target.closest('.control-group:visible').prev('.control-group:visible').find(':input:visible');
-                        } else {
-                            $nextFocus = $target.nextAll(':input:visible').length ?
-                                $target.nextAll(':input:visible').first() :
-                                $target.closest('.control-group:visible').next('.control-group:visible').find(':input:visible');
-                        }
-                        if ($nextFocus.length) $nextFocus.first().focus();
-                    }, 0);
+                    this.loseFocus(e.shiftKey, $target);
                 } else if (e.which === 13 && $target.is(':input') && $target.is(':not(textarea)')) {
                     this.commit();
                 }
@@ -2943,9 +2975,7 @@ define([
                 if (_.isEmpty(endDate)) this.setFormValue(this.getEndKey(), this.getEndDate(), opts);
             }
             
-            if (!this.isEnabled() || this.isReadonly()) {
-                this.picker().isShowing = true;
-            }
+            if (!this.isEditable()) this.picker().isShowing = true;
             
             this.triggerMethod('init:picker', this.picker());
             this.triggerMethod('render:picker', this.ui.picker);
