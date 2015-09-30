@@ -27,6 +27,7 @@
             var newIndex = $childElement.parent().children().index($childElement);
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
+            if (!model) return;
             var oldIndex = collection.indexOf(model);
             var info = { from: oldIndex, to: newIndex, sortable: true };
             collection.remove(model);
