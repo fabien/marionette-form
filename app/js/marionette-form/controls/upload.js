@@ -8,6 +8,10 @@ define([
     'jquery.iframe-transport'
 ], function($, _, Backbone, Marionette, Form, FileUpload) {
     
+    // This control needs a model that has the backbone.file-upload mixin applied:
+    //
+    // Thing = FileUpload.extend(Thing, ['file', 'photos']);
+    
     Form.Templates.UploadControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',

@@ -5,7 +5,6 @@ define([
     'backbone',
     'backbone.marionette',
     'marionette.sortable',
-    'backbone.file-upload',
     'backbone.nested-model',
     'backbone.syphon'
 ], function($, _, moment, Backbone, Marionette) {
@@ -903,8 +902,12 @@ define([
                 return Boolean((value || '').match(/^\s*$/));
             },
             
+            isDisabled: function() {
+                return this.evaluateAttribute('disabled');
+            },
+            
             isEnabled: function() {
-                return !this.evaluateAttribute('disabled');
+                return !this.isDisabled();
             },
             
             isVisible: function() {
@@ -2834,6 +2837,7 @@ define([
         constructor: function(options) {
             if (!$.fn.daterangepicker) throw new Error('Bootstrap DateRange picker is not available');
             InputControl.prototype.constructor.apply(this, arguments);
+            this.on('destroy', this.onDestroyControl);
         },
         
         isInvalidDate: function(date) {
@@ -2898,6 +2902,7 @@ define([
         
         onRenderControl: function() {
             var self = this;
+            this.onDestroyControl();
             var options = _.extend({}, this.getAttribute('picker') || this.getOption('picker'));
             options.timePicker = Boolean(this.getAttribute('time'));
             options.singleDatePicker = this.getAttribute('single');
@@ -2923,6 +2928,7 @@ define([
             this.triggerMethod('before:render:picker', options);
             
             this.ui.picker.daterangepicker(options, this._onPickerChange.bind(this));
+            
             this.ui.button.on('click', function(ev) {
                 ev.preventDefault();
                 self.ui.picker.trigger('click');
@@ -2937,7 +2943,17 @@ define([
                 if (_.isEmpty(endDate)) this.setFormValue(this.getEndKey(), this.getEndDate(), opts);
             }
             
+            if (!this.isEnabled() || this.isReadonly()) {
+                this.picker().isShowing = true;
+            }
+            
+            this.triggerMethod('init:picker', this.picker());
             this.triggerMethod('render:picker', this.ui.picker);
+        },
+        
+        onDestroyControl: function() {
+            var picker = this.picker();
+            if (picker) picker.remove();
         },
         
         _onPickerChange: function(start, end, label) {
@@ -3265,6 +3281,13 @@ define([
         },
         
         initChildView: function() {},
+        
+        reset: function(data) {
+            data = _.extend({}, data);
+            this.model.clear();
+            this.triggerMethod('reset', data);
+            this.model.set(data);
+        },
         
         serializeData: function() {
             var data = Marionette.CompositeView.prototype.serializeData.apply(this);
@@ -3653,7 +3676,9 @@ define([
                 form.triggerMethod('modal:' + eventName, _.rest(arguments));
             });
             dialog.on('shown', function() {
-                form.$(':input:enabled:visible:first').focus();
+                form.$(':input:enabled:visible').filter(function() {
+                    return !$(this).prop('readonly');
+                }).first().focus();
             });
             dialog.on('cancel', dfd.reject.bind(dfd, form));
             dialog.open(function() {

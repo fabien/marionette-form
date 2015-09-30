@@ -1,3 +1,7 @@
+.dropdown-menu {
+    z-index: 9999;
+}
+
 @media only screen and (max-width: 768px) {
     form .col-sm-3 {
         margin-bottom: 20px;

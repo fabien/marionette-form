@@ -1,6 +1,6 @@
 // Marionette.SortableCollectionView
 //
-// Copyright (c) 2014 orangain
+// Copyright (c) 2014 orangain + atelier fabien 2015
 // Distributed under MIT License
 // https://github.com/orangain/marionette-sortable
 
@@ -28,7 +28,7 @@
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
             var oldIndex = collection.indexOf(model);
-            var info = { from: oldIndex, to: newIndex };
+            var info = { from: oldIndex, to: newIndex, sortable: true };
             collection.remove(model);
             collection.add(model, { at: newIndex });
             collection.trigger('reorder', model, collection, info);
@@ -39,11 +39,12 @@
             var $childElement = $(el);
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
-            if (model) collection.remove(model);
+            if (model) collection.remove(model, { sortable: true });
             if (model) this.view.triggerMethod('sortable:remove', model, collection);
         },
         
         onRender: function() {
+            if (this.sortable) this.sortable.destroy();
             var options = _.omit(this.options, 'behaviorClass', 'dragMirrorContainer');
             var dragMirrorContainer = this.view.getOption('dragMirrorContainer');
             if (_.isUndefined(dragMirrorContainer)) {

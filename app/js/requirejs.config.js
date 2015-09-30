@@ -4,6 +4,7 @@ requirejs.config({
         // Lib dependencies (these should be kept in sync with mano-client)
         'autoNumeric': 'lib/autoNumeric',
         'backbone': 'lib/backbone.extended',
+        'backbone.file-upload': 'lib/backbone.model-file-upload',
         'backbone.operation-queue': 'lib/operation-queue',
         'backbone.treeview': 'lib/backbone.treeview',
         'backbone.uri-sync': 'lib/backbone.uri-sync',
@@ -19,7 +20,6 @@ requirejs.config({
         'backbone-tree-model': 'vendor/backbone-tree-model/src/backbone.treemodel',
         'backbone-tree-view': 'vendor/backbone-tree-view/lib/backbone-tree-view',
         'backbone.bootstrap-modal': 'vendor/backbone-bootstrap-modal/src/backbone.bootstrap-modal',
-        'backbone.file-upload': 'vendor/backbone-model-file-upload/backbone-model-file-upload',
         'backbone.googlemaps': 'vendor/backbone.googlemaps/lib/backbone.googlemaps',
         'backbone.marionette': 'vendor/marionette/lib/backbone.marionette',
         'backbone.nested-model': 'vendor/backbone-nested-model/backbone-nested',

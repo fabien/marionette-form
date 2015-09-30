@@ -17,13 +17,14 @@
             require([
                 'backbone',
                 'backbone.marionette',
+                'backbone.file-upload',
                 'marionette.form',
                 'marionette.form.control.code',
                 'marionette.form.control.urlify',
                 'select2',
                 'bootstrap-daterangepicker',
                 'bootstrap-filestyle'
-            ], function(Backbone, Marionette, Form) {
+            ], function(Backbone, Marionette, FileUpload, Form) {
                 
                 var PersonForm = Form.View.extend({
                     
@@ -377,6 +378,10 @@
                     }
                     
                 });
+                
+                // Apply Backbone Model FileUpload mixin:
+                
+                Person = FileUpload.extend(Person);
                 
                 var person = new Person({
                     id: 101,
