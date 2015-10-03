@@ -24,13 +24,15 @@
                 'backbone.marionette',
                 'marionette.form',
                 'marionette.form.control.combobox',
+                'marionette.form.control.dropdown',
                 'backbone.validation',
                 'jquery.maskedinput',
                 'autoNumeric',
                 'select2',
                 'jquery.quickselect',
+                'bootstrap',
                 'bootstrap-daterangepicker',
-                'bootstrap-filestyle'
+                'bootstrap-filestyle',
             ], function(Backbone, Marionette, Form) {
                 
                 _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
@@ -93,6 +95,7 @@
                     phone: '(123) 456-7890',
                     country: 'Netherlands',
                     currency: 'EUR',
+                    currencies: ['EUR', 'GBP'],
                     amount: 2845
                 });
                 
@@ -114,6 +117,13 @@
                     { id: 'DE', text: 'Germany' }
                 ]);
                 
+                form.registerCollection('menuOptions', [
+                    { id: 1, text: 'Option 1' },
+                    { id: 2, text: 'Option 2' },
+                    { id: 3, text: 'Option 3' },
+                    { id: 4, text: 'Option 4' }
+                ]);
+                
                 var fullnameTemplate = '<strong>Fullname:</strong> <%- form.data.firstName ? form.data.firstName[0] + ". " : "" %><%- form.data.lastName %>';
                 
                 form.collection.reset([
@@ -122,10 +132,13 @@
                     { id: 'lastName', control: 'input', required: true, omit: 'isBlank', addon: { icon: 'glyphicon glyphicon-remove', action: 'clear', button: true } },
                     { id: 'fullName', control: 'html', html: fullnameTemplate, observe: ['firstName', 'lastName'] },
                     { id: 'phone', control: 'input', mask: '(999) 999-9999' },
-                    { id: 'website', control: 'input', addon: { text: 'http://', action: 'open-link', prepend: true } },
+                    { id: 'website', control: 'input', omit: 'isBlank', addon: { text: 'http://', action: 'open-link', prepend: true } },
                     { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
                     { id: 'combobox', key: 'currency', control: 'combobox', collection: 'currencies' },
                     { id: 'currency', control: 'select', collection: 'currencies', quickSelect: true, placeholder: 'Other &hellip;' },
+                    { key: 'currency', control: 'dropdown', collection: 'currencies', defaultLabel: 'No selection', selectable: true },
+                    { key: 'currencies', control: 'dropdown', collection: 'currencies', defaultLabel: 'No selection', multiple: true, limit: 2 },
+                    { id: 'menu', control: 'menu', collection: 'menuOptions', defaultLabel: 'Options' },
                     { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
                     { id: 'birthday', control: 'checkbox', omit: true },
                     {
@@ -147,6 +160,14 @@
                 form.on('control:action:open-link', function(control, event) {
                     var href = control.getValue();
                     if (!_.isEmpty(href)) window.open('http://' + href, '_blank');
+                });
+                
+                form.on('control:item:click', function(control, item, info) {
+                    console.log('Clicked: %s', item.model.get('text'));
+                    if (control instanceof Form.MenuControl) {
+                        control.setSynopsis(item.getItemLabel());
+                        alert('Your choice: ' + item.getItemValue());
+                    }
                 });
                 
                 form.render();

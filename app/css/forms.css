@@ -7,6 +7,10 @@
     cursor: pointer;
 }
 
+.form-group.readonly button.dropdown-toggle {
+    cursor: not-allowed;
+}
+
 @media only screen and (max-width: 768px) {
     form .col-sm-3 {
         margin-bottom: 20px;
@@ -271,7 +275,8 @@ form .nested-controls.row > .col {
 }
 
 .form-group .filter-item-header .icon,
-.form-group .filter-item.selected > .icon {
+.form-group .filter-item.selected > .icon,
+.dropdown-menu .filter-item .icon {
     color: #333;
 }
 
@@ -302,12 +307,17 @@ form .nested-controls.row > .col {
     opacity: 0;
 }
 
+.control-dropdown .dropdown-menu .filter-item {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
 /* scroll pane */
 
 .form-group .scrollable .scroll {
     overflow: hidden;
-    overflow-y: scroll;
-    max-height: 160px;
+    overflow-y: auto;
+    max-height: 164px;
     border-top: 2px solid #ddd;
 }
 

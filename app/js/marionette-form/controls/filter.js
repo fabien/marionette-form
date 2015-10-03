@@ -39,6 +39,10 @@ define([
         
         className: 'filter-item',
         
+        selectedClassName: 'selected',
+        
+        disabledClassName: 'disabled',
+        
         triggers: {
             'click': 'click'
         },
@@ -79,13 +83,14 @@ define([
         },
         
         applyElementState: function() {
-            this.$el.toggleClass('selected', this.isSelected());
-            this.$el.toggleClass('disabled', !this.isSelectable());
+            this.$el.toggleClass(this.getOption('selectedClassName'), this.isSelected());
+            this.$el.toggleClass(this.getOption('disabledClassName'), !this.isSelectable());
             this.$el.toggleClass('filter-set', Boolean(this.collection));
         },
         
         mixinTemplateHelpers: function(itemData) {
             var data = this.form.mixinTemplateHelpers(data);
+            data.control = this.parent.serializeData();
             data.item = Marionette.ItemView.prototype.mixinTemplateHelpers.call(this, itemData);
             data.label = this.getItemLabel();
             data.value = this.getItemValue();
@@ -295,8 +300,8 @@ define([
             }
         },
         
-        onChildviewClick: function(childView) {
-            if (this.parent.onChildviewClick) this.parent.onChildviewClick(childView);
+        onItemClick: function(childView) {
+            if (this.parent.onItemClick) this.parent.onItemClick(childView);
             this.updateSelectedState();
         },
         
@@ -323,6 +328,8 @@ define([
         childView: FilterItemView,
         
         childViewContainer: '.nested-controls',
+        
+        childViewEventPrefix: 'item',
         
         getChildView: function(model) {
             var viewClass = model.get('view') || this.getOption('childView');
@@ -379,6 +386,13 @@ define([
         },
         
         isSelectable: function(model) {
+            if (!this.evaluateAttribute('selectable')) return false;
+            var selectedValues = this.getSelectedValues();
+            if (this.getAttribute('multiple') && this.getAttribute('limit') > 0
+                && selectedValues.length >= this.getAttribute('limit')
+                && !_.include(selectedValues, this.getItemValue(model))) {
+                return false;
+            }
             if (!model.has(this.selectableKey)) return true;
             return model.get(this.selectableKey);
         }
@@ -411,13 +425,15 @@ define([
             multiple: false,
             nullValue: false,
             ensureValue: false,
+            selectable: true,
             collapsible: true,
             scrollable: false,
             autoClose: false,
             escape: true,
             helpMessage: '',
-            emptyMessage: '',
+            defaultLabel: '',
             placeholder: '',
+            limit: -1,              // max. items for selection
             maxValues: 3,           // max. items for synopsis
             collapseTrigger: null,  // jQuery selector,
             icon: 'glyphicon glyphicon-unchecked',
@@ -451,6 +467,7 @@ define([
             }
             this.on('before:render', this.captureDisplayState);
             this.on('render', this.applyDisplayState);
+            this.listenTo(this.model, 'change:synopsis', this.render);
         },
         
         getItemIcon: function(model) {
@@ -484,6 +501,9 @@ define([
         setValue: function(value, options) {
             if (this.isMultiSelection()) {
                 value = [].concat(value || []);
+                if (this.getAttribute('limit') > 0 && value.length >= this.getAttribute('limit')) {
+                    value = value.slice(0, this.getAttribute('limit'));
+                }
                 if (_.isEmpty(value)) return this.clearValue();
             } else if (_.isUndefined(value) || (_.isArray(value) && _.isEmpty(value))) {
                 return this.clearValue();
@@ -517,6 +537,14 @@ define([
             } else {
                 this.setFormValue(this.getKey(), null, options);
             }
+        },
+        
+        setSynopsis: function(value) {
+            this.model.set('synopsis', value);
+        },
+        
+        unsetSynopsis: function(value) {
+            this.model.unset('synopsis');
         },
         
         // Selection
@@ -598,9 +626,11 @@ define([
         serializeSynopsis: function(data) {
             var maxValues = this.getAttribute('maxValues') || 1;
             var ellipsis = data.selection.length > maxValues;
+            var escape = this.getAttribute('escape');
             var models = data.selection.slice(0, maxValues);
             var labels = _.map(models, function(model) {
-                return this.getItemLabel(model);
+                var label = this.getItemLabel(model);
+                return escape ? _.escape(label) : label;
             }.bind(this));
             if (ellipsis) labels.push('&hellip;');
             return labels.join(', ');
@@ -610,13 +640,12 @@ define([
             data = BaseFilterControl.prototype.mixinTemplateHelpers.call(this, data);
             data.selection = this.getSelection();
             data.isEmpty = _.isEmpty(data.selection);
-            if (data.isEmpty) {
-                data.synopsis = this.getAttribute('emptyMessage') || '';
+            if (_.isString(data.synopsis)) {
+                data.synopsis = data.synopsis;
+            } else if (data.isEmpty) {
+                data.synopsis = this.getAttribute('defaultLabel') || '';
             } else {
                 data.synopsis = this.serializeSynopsis(data);
-                if (this.getAttribute('escape')) {
-                    data.synopsis = _.escape(data.synopsis);
-                }
             }
             return data;
         },
@@ -634,7 +663,7 @@ define([
                 var selector = '[data-col="' + column + '"]';
                 
                 var container = this.$(_.result(this, 'childViewContainer'));
-                container.addClass('row');
+                if (!container.is('ul')) container.addClass('row');
                 
                 var $column = container.children(selector);
                 if ($column.length === 0) {
@@ -741,7 +770,7 @@ define([
         
         // Interaction
         
-        onChildviewClick: function(childView) {
+        onItemClick: function(childView) {
             var isSelectable = this.isSelectable(childView.model);
             if (!isSelectable || this.isImmutable()) return;
             if (this.getAttribute('autoClose')) {
@@ -898,12 +927,9 @@ define([
             data.selection = this.getSelection();
             data.isEmpty = _.isEmpty(data.selection);
             if (data.isEmpty) {
-                data.synopsis = this.getAttribute('emptyMessage') || '';
+                data.synopsis = this.getAttribute('defaultLabel') || '';
             } else {
                 data.synopsis = this.serializeSynopsis(data);
-                if (this.getAttribute('escape')) {
-                    data.synopsis = _.escape(data.synopsis);
-                }
             }
             return data;
         },

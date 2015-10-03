@@ -26,31 +26,32 @@
                         // A single control
                         {
                             control: 'filter-set', key: 'categories', collection: 'categories', multiple: true,
-                            emptyMessage: '<em>All categories</em>', childrenKey: 'categories', maxValues: 10,
+                            defaultLabel: '<em>All categories</em>', childrenKey: 'categories', maxValues: 10,
                             scrollable: false, collapsibleSets: true, subLabel: 'expand details', columns: 3,
+                            limit: 4,               // default: -1, unlimited - max. items to select
                             selectChildren: false,  // default: false - select all subcategories when main is selected
                             normalizeSets: true     // default: true - ignore main category value when a subcategory is selected
                         },
                         // Two linked controls
                         {
                             id: 'category', control: 'filter', key: 'category', collection: 'categories', multiple: false,
-                            emptyMessage: '<em>Any category</em>', columns: 3,
+                            defaultLabel: '<em>Any category</em>', columns: 3,
                             nullValue: true         // default: false - set to true to enable null or [] values
                         },
                         {
                             id: 'subcategories', control: 'filter', key: 'subcategories', collection: 'subcategories', multiple: true,
-                            emptyMessage: '<em>All subcategories</em>', maxValues: 10, visible: 'category', columns: 3
+                            defaultLabel: '<em>All subcategories</em>', maxValues: 10, visible: 'category', columns: 3
                         },
                         // Control with input field and scrollable pane
                         {
                             control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
-                            emptyMessage: '<em>All provinces</em>', input: true, placeholder: 'Search province',
+                            defaultLabel: '<em>All provinces</em>', input: true, placeholder: 'Search province',
                             columns: 3
                         },
                         // Readonly
                         {
                             control: 'filter', key: 'province', label: 'Selected Province', collection: 'provinces', 
-                            emptyMessage: '<em>All provinces</em>', readonly: true, open: false, columns: 3
+                            defaultLabel: '<em>All provinces</em>', readonly: true, open: false, columns: 3
                         },
                         // Controls with dependencies
                         {

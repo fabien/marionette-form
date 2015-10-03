@@ -46,6 +46,7 @@ requirejs.config({
         'marionette.form.view.json': 'marionette-form/views/json',
         'marionette.form.control.code': 'marionette-form/controls/code',
         'marionette.form.control.combobox': 'marionette-form/controls/combobox',
+        'marionette.form.control.dropdown': 'marionette-form/controls/dropdown',
         'marionette.form.control.dropzone': 'marionette-form/controls/dropzone',
         'marionette.form.control.filter': 'marionette-form/controls/filter',
         'marionette.form.control.geo': 'marionette-form/controls/geo',

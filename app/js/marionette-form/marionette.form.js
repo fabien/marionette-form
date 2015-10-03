@@ -261,7 +261,7 @@ define([
     Templates.ButtonControl = _.template([
         '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %>">&nbsp;</label><% } %>',
         '<div class="<%= controlsClassName %>">',
-        '  <button id="control-<%= id %>" data-action="<%= action %>" type="<%= type %>" name="<%= name %>" class="btn btn-<%= buttonType %>" <%= disabled ? "disabled" : "" %> ><%= label %></button>',
+        '  <button id="control-<%= id %>" data-action="<%= action %>" type="<%= type %>" name="<%= name %>" class="btn btn-<%= buttonType %>" <%= disabled ? "disabled" : "" %>><%= label %></button>',
         '  <% if (message) { %><span class="<%= statusClassName %>"><%= message %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -1911,7 +1911,7 @@ define([
             var attributes = {};
             attributes.value = data.value;
             if (data.selected) attributes.selected = 'selected';
-            if (data.disabled) attributes.selected = 'disabled';
+            if (data.disabled) attributes.disabled = 'disabled';
             return attributes;
         },
         
