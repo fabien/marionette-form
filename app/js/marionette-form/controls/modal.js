@@ -101,7 +101,7 @@ define([
         '  <% if (editable || removable || sortable) { %>',
         '    <div class="input-group">',
         '      <span role="control" class="<%= controlClassName %> immutable">',
-        '        <%= isResolving ? "loading..." : synopsis %>',
+        '        <%- isResolving ? "loading..." : synopsis %>',
         '      </span>',
         '      <% if (sortable) { %><div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div><% } %>',
         '      <% if (editable || removable) { %>',
@@ -113,7 +113,7 @@ define([
         '    </div>',
         '  <% } else { %>',
         '    <span role="control" class="<%= controlClassName %> immutable">',
-        '      <%= isResolving ? "loading..." : synopsis %>',
+        '      <%- isResolving ? "loading..." : synopsis %>',
         '    </span>',
         '  <% } %>',
         '</div>'
@@ -126,7 +126,7 @@ define([
         controlDefaults: {
             editable: true, removable: false, sortable: false, confirm: true,
             editIcon: 'glyphicon glyphicon-edit', synopsisLength: 1,
-            removeIcon: 'glyphicon glyphicon-remove'
+            removeIcon: 'glyphicon glyphicon-remove', escape: true
         },
         
         constructor: function(options) {
@@ -152,8 +152,11 @@ define([
                     data.synopsis = this.formatter.fromRaw(value);
                 }
             }
-            if (data.synopsis && data.synopsis.length > 128) {
+            if (_.isString(data.synopsis) && data.synopsis.length > 128) {
                 data.synopsis = data.synopsis.slice(0, 128);
+            }
+            if (this.getAttribute('escape')) {
+                data.synopsis = _.escape(data.synopsis);
             }
         },
         

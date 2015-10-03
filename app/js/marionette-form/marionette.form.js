@@ -157,6 +157,13 @@ define([
         '<div class="<%= controlsClassName %>" data-region="main"></div>'
     ].join('\n'));
     
+    Templates.HtmlControl = _.template([
+      '<div class="<%= labelClassName %>"><%= obj.label %></div>',
+      '<div class="<%= controlsClassName %>">',
+      '  <%= html %>',
+      '</div>'
+    ].join('\n'));
+    
     Templates.StaticControl = _.template([
       '<label class="<%= labelClassName %>"><%= label %></label>',
       '<div class="<%= controlsClassName %>">',
@@ -882,6 +889,9 @@ define([
             },
             
             setFormValue: function(key, value, options) {
+                if (key === this.getKey() && _.isString(value) && this.getAttribute('escape')) {
+                    value = _.unescape(value);
+                }
                 if (this.evaluateAttribute('ignore')) {
                     this.triggerMethod('set:value', key, value, options);
                 } else {
@@ -1022,7 +1032,11 @@ define([
                 } else {
                     var value = this.getValue(true);
                 }
-                return this.formatter.fromRaw(value);
+                value = this.formatter.fromRaw(value);
+                if (this.getAttribute('escape')) {
+                    value = _.escape(value);
+                }
+                return value;
             },
             
             serializeData: function() {
@@ -1310,7 +1324,7 @@ define([
     
     var ImmutableControl = Marionette.Form.ImmutableControl = Control.extend({
         
-        definition: { ignore: true, omit: true },
+        definition: { ignore: true, omit: true, escape: true },
         
         ensureDefaultValue: function() {}
         
@@ -1320,7 +1334,22 @@ define([
         
         template: Templates.StaticControl,
         
-        defaults: { label: '&nbsp;', text: '' }
+        defaults: { label: '&nbsp;', text: '', escape: true }
+        
+    });
+    
+    var HtmlControl = Marionette.Form.HtmlControl = ImmutableControl.extend({
+        
+        template: Templates.HtmlControl,
+        
+        defaults: { label: false, html: '' },
+        
+        _serializeData: function(data) {
+            data.html = _.template(data.html || '')(data);
+            if (this.getAttribute('escape')) {
+                data.html = _.escape(data.html);
+            }
+        }
         
     });
     
@@ -1523,7 +1552,7 @@ define([
         
         template: Templates.HeaderControl,
         
-        defaults: { collapse: false, smallLabel: '', helpMessage: '' },
+        defaults: { collapse: false, smallLabel: '', helpMessage: '', escape: true },
         
         onActionCollapse: function(event, control) {
             var section = this.getAttribute('section');
@@ -1729,7 +1758,7 @@ define([
     
     var ControlItem = Marionette.Form.ControlItem = Marionette.ItemView.extend({
         
-        template: _.template('<%= label %>'),
+        template: _.template('<%- label %>'),
         
         ui: {
             control: 'input'
@@ -3194,11 +3223,17 @@ define([
         },
         
         observeWindowResize: function() {
-            var eventName = 'resize.form-' + this.cid;
-            $(window).on(eventName, _.debounce(this.updateLayout.bind(this), 50));
-            function updateLayout() { _.defer(this.updateLayout.bind(this), arguments[0]); };
-            this.on('destroy', function() { $(window).off(eventName); });
-            this.on('control:render', updateLayout);
+            var onResize = _.debounce(this.updateLayout.bind(this), 50);
+            if (this.parent instanceof Marionette.Form.View) {
+                this.on('resize', onResize);
+            } else {
+                var eventName = 'resize.form-' + this.cid;
+                $(window).on(eventName, this.triggerMethod.bind(this, 'resize'));
+                function updateLayout() { _.defer(this.updateLayout.bind(this), arguments[0]); };
+                this.on('resize', onResize);
+                this.on('destroy', function() { $(window).off(eventName); });
+                this.on('control:render', updateLayout);
+            }
         },
         
         updateLayout: function() {
@@ -3743,7 +3778,7 @@ define([
         _.defaults(options, _.result(this, 'select2'));
         _.defaults(options, this.getAttributes('placeholder', 'multiple'));
         if (this instanceof SelectionControl) delete options.multiple;
-        var escapeMarkup = this.getAttribute('escapeMarkup');
+        var escapeMarkup = this.getAttribute('escapeMarkup') || this.getAttribute('escape');
         if (this.resultTemplate || this.selectionTemplate || escapeMarkup === true) {
             options.escapeMarkup = function (m) { return m; };
         }

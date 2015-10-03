@@ -24,12 +24,12 @@ define([
     ].join('\n'));
     
     Form.Templates.FilterItem = _.template([
-        '<i class="icon <%= icon %>"></i> <span><%= label %></span>'
+        '<i class="icon <%= icon %>"></i> <span><%- label %></span>'
     ].join('\n'));
     
     Form.Templates.FilterSet = _.template([
         '<div class="filter-item-header <%= collapsed ? " collapsed-set" : "" %>">',
-        '  <i class="icon <%= icon %>"></i> <span><%= label %></span>',
+        '  <i class="icon <%= icon %>"></i> <span><%- label %></span>',
         '  <% if (collapsibleSets) { %><span class="toggle-collapse"></span><% } %>',
         '</div>',
         '<div class="filter-items"></div>'
@@ -414,6 +414,7 @@ define([
             collapsible: true,
             scrollable: false,
             autoClose: false,
+            escape: true,
             helpMessage: '',
             emptyMessage: '',
             placeholder: '',
@@ -613,6 +614,9 @@ define([
                 data.synopsis = this.getAttribute('emptyMessage') || '';
             } else {
                 data.synopsis = this.serializeSynopsis(data);
+                if (this.getAttribute('escape')) {
+                    data.synopsis = _.escape(data.synopsis);
+                }
             }
             return data;
         },
@@ -897,6 +901,9 @@ define([
                 data.synopsis = this.getAttribute('emptyMessage') || '';
             } else {
                 data.synopsis = this.serializeSynopsis(data);
+                if (this.getAttribute('escape')) {
+                    data.synopsis = _.escape(data.synopsis);
+                }
             }
             return data;
         },

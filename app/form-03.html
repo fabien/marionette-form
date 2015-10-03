@@ -37,7 +37,7 @@
                 
                 var DemoView = Marionette.ItemView.extend({
                     
-                    template: _.template('<h2><%= form.data.firstName %> <%= form.data.lastName %></h2>')
+                    template: _.template('<h2><%- form.data.firstName %> <%- form.data.lastName %></h2>')
                     
                 });
                 
@@ -114,10 +114,13 @@
                     { id: 'DE', text: 'Germany' }
                 ]);
                 
+                var fullnameTemplate = '<%= form.data.firstName ? form.data.firstName[0] + ". " : "" %><%= form.data.lastName %>';
+                
                 form.collection.reset([
                     { id: 'custom', key: '*', control: 'custom' },
                     { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
                     { id: 'lastName', control: 'input', required: true, omit: 'isBlank' },
+                    { id: 'fullName', control: 'html', html: fullnameTemplate, observe: ['firstName', 'lastName'] },
                     { id: 'phone', control: 'input', mask: '(999) 999-9999' },
                     { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
                     { id: 'combobox', key: 'currency', control: 'combobox', collection: 'currencies' },
