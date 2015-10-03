@@ -15,6 +15,7 @@ define([
     Form.Templates.UploadControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="upload-control">',
         '    <span class="btn btn-success fileinput-button">',
         '      <i class="<%= buttonIcon %>"></i>',
@@ -25,6 +26,7 @@ define([
         '      <div class="progress-bar progress-bar-success"></div>',
         '    </div>',
         '  </div>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));

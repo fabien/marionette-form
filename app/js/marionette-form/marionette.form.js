@@ -20,6 +20,9 @@ define([
     Marionette.Form.classes.form = 'form-horizontal';
     Marionette.Form.classes.group = 'form-group';
     Marionette.Form.classes.groupItem = 'form-group-item';
+    Marionette.Form.classes.inputGroup = 'input-group';
+    Marionette.Form.classes.inputGroupAddon = 'input-group-addon';
+    Marionette.Form.classes.inputGroupButton = 'input-group-btn';
     Marionette.Form.classes.controlLabel = 'control-label col-sm-3';
     Marionette.Form.classes.controls = 'col-controls col-sm-9';
     Marionette.Form.classes.control = 'form-control';
@@ -197,7 +200,9 @@ define([
     Templates.InputControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="<%= type %>" maxlength="<%= maxlength %>" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -205,7 +210,9 @@ define([
     Templates.TextareaControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <textarea id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" rows="<%= rows %>" maxlength="<%= maxlength %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>><%- value %></textarea>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -213,8 +220,9 @@ define([
     Templates.SelectControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
-        '  <select id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" value="<%- value %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>>',
-        '  </select>',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
+        '  <select id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" value="<%- value %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>></select>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -224,19 +232,23 @@ define([
     Templates.BooleanControl = _.template([
         '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %>" for="control-<%= id %>"><%= controlLabel %></label><% } %>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="checkbox">',
         '    <label>',
         '      <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="<%= type %>" <%= value ? \'checked="checked"\' : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
         '      <%= label %>',
         '    </label>',
         '  </div>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.MultiControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="control-options"></div>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -256,7 +268,9 @@ define([
     
     Templates.ListControl = _.template([
         '<% if (form.layout !== "vertical" || !_.isEmpty(label)) { %><label class="<%= labelClassName %>"><%= label %></label><% } %>',
-        '<div class="<%= controlsClassName %> nested-controls"></div>'
+        '<% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
+        '<div class="<%= controlsClassName %> nested-controls"></div>',
+        '<% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>'
     ].join('\n'));
     
     Templates.EmptyListControl = _.template('<span class="form-control immutable">No <%= parentLabel || "items" %></span>');
@@ -279,7 +293,9 @@ define([
     Templates.FileControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="file" placeholder="<%- placeholder %>" accept="<%- accept %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -287,9 +303,11 @@ define([
     Templates.ImageControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="preview well well-lg">',
         '    <% if (value) { %><img src="<%= value %>" class="img-responsive center-block img-<%= style %>"><% } %>',
         '  </div>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (caption && caption.length) { %><span class="<%= helpClassName %>"><%= caption %></span><% } %>',
         '</div>'
     ].join('\n'));
@@ -691,6 +709,10 @@ define([
                 this.listenTo(this.model, 'change:ignore', this.render);
                 this.listenTo(this.model, 'change:omit', this.render);
                 
+                this.listenTo(this.model, 'change:prependHtml', this.render);
+                this.listenTo(this.model, 'change:appendHtml', this.render);
+                this.listenTo(this.model, 'change:addon', this.render);
+                
                 this.on('render', this.renderError);
                 this.on('render', this.applyJQuery);
                 this.on('render', this.triggerMethod.bind(this, 'render:control'));
@@ -1042,6 +1064,15 @@ define([
             serializeData: function() {
                 var data = this.serializeField();
                 
+                var addon = _.extend({}, this.getOption('addon'), this.getAttribute('addon'));
+                var hasAddon = !_.isEmpty(addon);
+                
+                data.prependHtml = this.getPrependHtml();
+                if (hasAddon) data.prependHtml = '<div class="' + this.getClassName('inputGroup') + '">' + (data.prependHtml || '');
+                
+                data.appendHtml = this.getAppendHtml();
+                if (hasAddon) data.appendHtml = (data.appendHtml || '') + '</div>';
+                
                 _.extend(data, {
                     disabled: this.evaluateAttribute('disabled', data),
                     required: this.evaluateAttribute('required', data),
@@ -1086,6 +1117,46 @@ define([
                 this.triggerMethod('serialize:data', data);
                 
                 return data;
+            },
+            
+            getAddon: function(prepend) {
+                var addon = _.extend({}, this.getOption('addon'), this.getAttribute('addon'));
+                if (_.isEmpty(addon)) return '';
+                if (prepend && !addon.prepend) return '';
+                if (!prepend && addon.prepend) return '';
+                var span = $('<span>', _.pick(addon, 'id', 'class', 'style'));
+                span.addClass(this.getClassName(addon.button ? 'inputGroupButton' : 'inputGroupAddon'));
+                var elem = span;
+                if (addon.button) {
+                    var buttonOptions = _.isObject(addon.button) ? addon.button : {};
+                    elem = $('<button>', buttonOptions);
+                    elem.addClass('btn');
+                    if (!buttonOptions.class) elem.addClass('btn-default');
+                    span.append(elem);
+                }
+                if (addon.html) {
+                    elem.html(addon.html);
+                } else if (addon.text) {
+                    elem.text(addon.text);
+                }
+                elem.attr('data-action', addon.action || 'addon');
+                if (addon.icon) elem.append($('<i>', { class: addon.icon }));
+                this.triggerMethod('init:addon', span, addon);
+                return span.wrap('<div>').parent().html();
+            },
+            
+            getPrependHtml: function() {
+                var html = this.getOption('prependHtml') || '';
+                if (this.hasAttribute('prependHtml')) html += this.getAttribute('prependHtml');
+                html += this.getAddon(true);
+                if (!_.isEmpty(html)) return html;
+            },
+            
+            getAppendHtml: function() {
+                var html = this.getAddon(false);
+                if (this.hasAttribute('appendHtml')) html += this.getAttribute('appendHtml');
+                html += this.getOption('appendHtml') || '';
+                if (!_.isEmpty(html)) return html;
             },
             
             refreshView: function() {
