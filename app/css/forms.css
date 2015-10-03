@@ -307,9 +307,14 @@ form .nested-controls.row > .col {
     opacity: 0;
 }
 
-.control-dropdown .dropdown-menu .filter-item {
+.dropdown-menu .filter-item {
     padding-left: 10px;
     padding-right: 10px;
+}
+
+.control-menu .dropdown-menu .filter-item {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* scroll pane */
@@ -323,6 +328,13 @@ form .nested-controls.row > .col {
 
 .form-group .scroll :first-child {
     border-top: 0;
+}
+
+/* control-input-dropdown */
+
+.control-input-dropdown .form-group-item .form-control {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
 
 /* block style layout */

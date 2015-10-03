@@ -594,9 +594,9 @@ define([
                 className += ' control-' + this.model.get('control');
                 className += ' field-' + this.model.get('name');
                 var controlClassName = _.result(this, 'controlClassName');
-                if (!_.isEmpty(controlClassName)) {
-                    className += ' ' + controlClassName;
-                }
+                if (!_.isEmpty(controlClassName)) className += ' ' + controlClassName;
+                controlClassName = this.getAttribute('controlClass');
+                if (!_.isEmpty(controlClassName)) className += ' ' + controlClassName;
                 return className;
             },
             
@@ -2868,7 +2868,7 @@ define([
         commit: function() {}, // disabled
         
         getTemplate: function() {
-            if (this.getAttribute('template')) {
+            if (this.getAttribute('template') || this.getOption('template')) {
                 return Marionette.CompositeView.prototype.getTemplate.apply(this, arguments);
             }
             return this.parent ? Templates.NestedControl : Templates.ListControl;
@@ -2898,7 +2898,7 @@ define([
         },
         
         attachHtml: function(collectionView, childView, index) {
-            if (this.getAttribute('insertHtml')) {
+            if (this.getAttribute('insertHtml') || this.getOption('insertHtml')) {
                 attachHtml(collectionView, childView, index);
             } else {
                 Marionette.CompositeView.prototype.attachHtml.apply(this, arguments);
@@ -2940,7 +2940,9 @@ define([
             childView.attachElContent = function(html) {
                 var unwrapped = $(html).filter(sel).html();
                 if (_.isEmpty(unwrapped)) unwrapped = html; // fallback
-                return attachElContent.call(this, unwrapped);
+                this.triggerMethod('attachElContent');
+                attachElContent.call(this, unwrapped);
+                return this;
             };
         }
         
