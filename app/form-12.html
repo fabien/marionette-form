@@ -99,7 +99,7 @@
                     fields: [
                         {
                             key: 'color', control: 'modal',
-                            modal: ColorView, synopsis: 'Hex: <%= value %>',
+                            modal: ColorView, synopsis: 'Hex: <%- value %>',
                             editable: true, removable: true, confirm: false,
                         },
                         {
@@ -139,7 +139,7 @@
                                     label: 'Reference',
                                     control: 'select2',
                                     labelKey: 'firstName',
-                                    format: '<%= firstName ? firstName[0] + ". " : "" %><%= lastName %>',
+                                    format: '<%- firstName ? firstName[0] + ". " : "" %><%- lastName %>',
                                     placeholder: 'Select a friend',
                                     collection: 'people'
                                 },
@@ -147,7 +147,7 @@
                                 { key: 'firstName', control: 'immutable' },
                                 { key: 'lastName', control: 'immutable' }
                             ],
-                            synopsis: '<%= value.firstName %> <%= value.lastName %>',
+                            synopsis: '<%- value.firstName %> <%- value.lastName %>',
                             resolver: 'people'
                         },
                         {
@@ -155,7 +155,7 @@
                             label: false,
                             control: 'select2',
                             labelKey: 'firstName',
-                            format: '<%= firstName %> <%= lastName %>',
+                            format: '<%- firstName %> <%- lastName %>',
                             placeholder: 'Select a friend',
                             collection: 'people',
                             ignore: true
@@ -176,7 +176,7 @@
                                 ]
                             },
                             removable: true, confirm: true,
-                            synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                            synopsis: '<%- value.firstName %> <%- value.lastName %>'
                         },
                         { control: 'spacer' },
                         {
@@ -190,7 +190,7 @@
                                     { key: 'lastName', control: 'input', required: true }
                                 ],
                                 removable: true, confirm: true,
-                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                                synopsis: '<%- value.firstName %> <%- value.lastName %>'
                             }
                         },
                         {
@@ -198,7 +198,7 @@
                             control: 'collection', sortable: true,
                             item: {
                                 control: 'modal', modal: 'json',
-                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                                synopsis: '<%- value.firstName %> <%- value.lastName %>'
                             }
                         },
                         { control: 'spacer' },
@@ -213,7 +213,7 @@
                                     { key: 'lastName', control: 'input', required: true }
                                 ],
                                 removable: true, confirm: true,
-                                synopsis: '<%= value.firstName %> <%= value.lastName %>'
+                                synopsis: '<%- value.firstName %> <%- value.lastName %>'
                             }
                         },
                         {
@@ -384,7 +384,7 @@
         <div id="layout" class="container"></div>
         
         <script id="color-view" type="text/template">
-            <div class="color-preview"><%= color %></div>
+            <div class="color-preview"><%- color %></div>
             <div class="controls">
                 <input name="color" type="text" class="form-control" placeholder="#000000">
             </div>

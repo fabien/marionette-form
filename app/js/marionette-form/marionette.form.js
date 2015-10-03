@@ -158,7 +158,7 @@ define([
     ].join('\n'));
     
     Templates.HtmlControl = _.template([
-      '<div class="<%= labelClassName %>"><%= obj.label %></div>',
+      '<% if (obj.label) { %><label class="<%= labelClassName %>"><%= obj.label %></label><% } %>',
       '<div class="<%= controlsClassName %>">',
       '  <%= html %>',
       '</div>'
@@ -1338,11 +1338,11 @@ define([
         
     });
     
-    var HtmlControl = Marionette.Form.HtmlControl = ImmutableControl.extend({
+    var HtmlControl = Marionette.Form.HtmlControl = Control.extend({
         
         template: Templates.HtmlControl,
         
-        defaults: { label: false, html: '' },
+        defaults: { label: false, escape: false, html: '' },
         
         _serializeData: function(data) {
             data.html = _.template(data.html || '')(data);

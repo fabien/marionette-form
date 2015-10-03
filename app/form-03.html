@@ -114,7 +114,7 @@
                     { id: 'DE', text: 'Germany' }
                 ]);
                 
-                var fullnameTemplate = '<%= form.data.firstName ? form.data.firstName[0] + ". " : "" %><%= form.data.lastName %>';
+                var fullnameTemplate = '<strong>Fullname:</strong> <%- form.data.firstName ? form.data.firstName[0] + ". " : "" %><%- form.data.lastName %>';
                 
                 form.collection.reset([
                     { id: 'custom', key: '*', control: 'custom' },
