@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.form.view.table',
+                'select2'
+            ], function(Backbone, Marionette, Form) {
+                
+                var TableView = Form.TableView.extend({
+                    
+                    defaultControl: 'input',
+                    
+                    fields: [
+                        { key: 'id', control: 'immutable' },
+                        { key: 'firstName', required: true },
+                        { key: 'lastName', required: true },
+                        { key: 'favoriteColor', control: 'select2', collection: 'colors' }
+                    ],
+                    
+                    itemView: {
+                        validateRequired: true
+                    },
+                    
+                    getControlWidth: function(control) {
+                        if (control.getAttribute('id') === 'id' || control.getAttribute('control') === 'button') return 1;
+                    }
+                    
+                });
+                
+                var ListView = Form.TableView.extend({
+                    
+                    fields: [
+                        { key: 'id', width: 6 },
+                        { key: 'firstName', width: 34, sort: true },
+                        { key: 'lastName', width: 34, sort: true },
+                        { key: 'favoriteColor', control: 'lookup', collection: 'colors', sort: true }
+                    ]
+                    
+                });
+                
+                var colors = new Form.Collection([
+                    { id: 'white', text: 'White', hex: 'ffffff' },
+                    { id: 'black', text: 'Black', hex: '000000' },
+                    { id: 'red', text: 'Red', hex: 'ff0000' },
+                    { id: 'green', text: 'Green', hex: '00ff00' },
+                    { id: 'blue', text: 'Blue', hex: '0000ff' }
+                ]);
+                
+                var collection = new Form.Collection([
+                    { id: 102, firstName: 'Fred', lastName: 'Flintstone', favoriteColor: 'red' },
+                    { id: 103, firstName: 'Wilma', lastName: 'Flintstone', favoriteColor: 'green' },
+                    { id: 104, firstName: 'Barney', lastName: 'Rubble', favoriteColor: 'blue' }
+                ]);
+                
+                var table = new TableView({ collection: collection });
+                
+                table.registerCollection('colors', colors);
+                
+                table.on('row:change', function(row) {
+                    console.log('Changes:', row.getData());
+                });
+                
+                table.on('row:submit', function(row, control, event) {
+                    var item = table.collection.get(row.model.id);
+                    if (item) console.log('Saving %s', item.id, row.getData());
+                });
+                
+                // Rendering
+                
+                table.render();
+                table.$el.appendTo('#layout');
+                
+                // Add some fields (after initial render)
+                
+                setTimeout(function() {
+                    table.field('submit', {
+                        control: 'button', label: 'Save', type: 'submit', buttonType: 'success',
+                        autoDisable: true, header: false
+                    });
+                }, 1000);
+                
+                // Secondary view, based on the same collection
+                
+                var list = new ListView({ collection: collection, comparator: 'id', sortByMultiple: false });
+                
+                list.registerCollection('colors', colors);
+                
+                list.render();
+                list.$el.appendTo('#layout');
+                
+                list.listenTo(collection, 'change', list.render); // re-render on changes
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>TableView <small>with Form.View items</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

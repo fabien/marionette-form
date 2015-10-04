@@ -54,7 +54,7 @@
                         // Display control with interpolated text and keys to observe
                         {   
                             control: 'dynamic', label: 'Full name', observe: ['firstName', 'lastName'],
-                            text: '<%= form.data.firstName %> <%= form.data.lastName %>',
+                            text: '<%- form.data.firstName %> <%- form.data.lastName %>',
                             section: 'main'
                         },
                         // Input controls, marked as required

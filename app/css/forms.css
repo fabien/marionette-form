@@ -362,6 +362,27 @@ form .nested-controls.row > .col {
     min-height: auto;
 }
 
+/* table style layout */
+
+th.sort {
+    cursor: pointer;
+}
+
+th.sort .sort-dir:after {
+    font-family: 'Glyphicons Halflings';
+    content: "\e150";
+    float: right;
+    color: grey;
+}
+
+th.sort.sort-asc .sort-dir:after {
+    content: "\e155";
+}
+
+th.sort.sort-desc .sort-dir:after {
+    content: "\e156";
+}
+
 /* redactor */
 
 .form-group .redactor-editor {

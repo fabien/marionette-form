@@ -155,6 +155,10 @@ define([
         '</div>'
     ].join('\n'));
     
+    Templates.DefaultControl = _.template([
+        '<%= _.isArray(obj.value) ? obj.value.join(", ") : obj.value %>'
+    ].join('\n'));
+    
     Templates.BaseControl = Templates.LayoutControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>" data-region="main"></div>'
@@ -184,9 +188,9 @@ define([
     Templates.HeaderControl = _.template([
         '<div class="<%= labelClassName %>"></div>',
         '<div class="<%= controlsClassName %>" data-action="collapse">',
-        '  <h2><%= label %> <% if (smallLabel) { %><small><%= smallLabel %><% } %></small>',
+        '  <h<%= level %>><%= label %> <% if (smallLabel) { %><small><%= smallLabel %><% } %></small>',
         '  <% if (collapse) { %><span class="section-caret"></span><% } %>',
-        '  </h2>',
+        '  </h<%= level %>>',
         '</div>'
     ].join('\n'));
     
@@ -557,6 +561,12 @@ define([
         delete __collections[name];
     };
     
+    // Forms
+    
+    Marionette.Form.getForm = function(name) {
+        return resolveNameToClass(name, 'Form');
+    };
+    
     // Views
     
     var DebugView = Marionette.Form.DebugView = Marionette.ItemView.extend({
@@ -585,8 +595,12 @@ define([
             
             id: function() {
                 var id = (this.model && this.model.id) || ('field-' + this.cid);
-                var prefix = this.form && this.form.getOption('prefix');
+                var prefix = this.form.callDelegate('getControlIdPrefix', this) || this.form.getOption('prefix');
                 return formatName(prefix ? prefix + id : id);
+            },
+            
+            tagName: function() {
+                return this.getAttribute('tagName') || this.options.tagName || 'div';
             },
             
             className: function() {
@@ -669,7 +683,9 @@ define([
                 
                 if (!(this.model instanceof NestedModel)) {
                     throw new Error('Cannot create Control without a Model');
-                } else if (!_.isEmpty(this.definition)) {
+                } else if (!_.isEmpty(this.definition) && this.form.getOption('enforceDefinitions')) {
+                    // note that this might cause side-effects when multiple
+                    // (form) views are bound to this same model!
                     this.model.set(this.definition);
                 }
                 
@@ -768,7 +784,7 @@ define([
                     template = Marionette.TemplateCache.get(template);
                 } else if (isString && template.indexOf('@') === 0) {
                     try {
-                        template = resolveNameToClass(template, 'Template');
+                        template = resolveNameToClass(template.slice(1), 'Template');
                     } catch(e) {
                         template = _.template('Template not found: ' + template);
                     }
@@ -1173,12 +1189,22 @@ define([
                     this.triggerMethod('refresh', options);
                     this.isValid()
                 } else if (options.force || !this.isRendered || options.viewCid !== this.cid) {
+                    this.once('render', this.triggerMethod.bind(this, 'refresh', options));
                     return View.prototype.render.apply(this, arguments);
                 } else {
                     this.triggerMethod('refresh', options);
                     this.isValid();
                 }
                 return this;
+            },
+            
+            attachElContent: function(html) {
+                var unwrap = this.getOption('unwrap') || this.form.getOption('unwrapControls');
+                if (unwrap && _.isString(html) && html.match(/<[a-z][\s\S]*>/i)) {
+                    var unwrapped = $('<div />').append(html).find('.col-controls').html();
+                    html = _.isEmpty(unwrapped) ? html : unwrapped;
+                }
+                return View.prototype.attachElContent.call(this, html);
             },
             
             renderError: function() {
@@ -1390,6 +1416,16 @@ define([
         commit: function() {
             // Hook method
         }
+        
+    });
+    
+    var DefaultControl = Marionette.Form.DefaultControl = Control.extend({
+        
+        template: Templates.DefaultControl,
+        
+        definition: { ignore: true, omit: true, escape: true },
+        
+        ensureDefaultValue: function() {}
         
     });
     
@@ -1623,14 +1659,30 @@ define([
         
         template: Templates.HeaderControl,
         
-        defaults: { collapse: false, smallLabel: '', helpMessage: '', escape: true },
+        defaults: {
+            collapse: false, collapsed: false, escape: true, level: 2,
+            section: '*', smallLabel: '', helpMessage: ''
+        },
         
-        onActionCollapse: function(event, control) {
-            var section = this.getAttribute('section');
+        constructor: function(options) {
+            BaseControl.prototype.constructor.apply(this, arguments);
+            if (this.getAttribute('collapsed')) {
+                this.once('render', function() {
+                    _.defer(this.toggleSection.bind(this));
+                });
+            }
+        },
+        
+        toggleSection: function(section) {
+            section = section || this.getAttribute('section');
             if (!section) return;
             var collapsed = this.$el.hasClass('collapsed');
             this.$el.toggleClass('collapsed');
-            this.form.toggleSection(section, !collapsed);
+            this.form.toggleSection(section, !collapsed, this.el);
+        },
+        
+        onActionCollapse: function(event, control) {
+            this.toggleSection();
         }
         
     });
@@ -1640,6 +1692,12 @@ define([
         // Lookup display (label) values for reference/id value.
         
         template: Templates.Control,
+        
+        getTemplate: function() {
+            if (this.hasAttribute('template')) return ImmutableControl.prototype.getTemplate.apply(this, arguments);
+            if (this.form.getOption('layout') === 'table') return Templates.DefaultControl;
+            return Templates.Control;
+        },
         
         constructor: function(options) {
             ImmutableControl.prototype.constructor.apply(this, arguments);
@@ -2925,25 +2983,16 @@ define([
         
         // A group control unwraps nested items from their own layout.
         
+        unwrap: true,
+        
         defaults: {
             label: false,
             extraClasses: []
         },
         
         childViewOptions: {
-            groupClassName: 'groupItem'
-        },
-        
-        initChildView: function(childView) {
-            var sel = '.col-controls';
-            var attachElContent = childView.attachElContent;
-            childView.attachElContent = function(html) {
-                var unwrapped = $(html).filter(sel).html();
-                if (_.isEmpty(unwrapped)) unwrapped = html; // fallback
-                this.triggerMethod('attachElContent');
-                attachElContent.call(this, unwrapped);
-                return this;
-            };
+            groupClassName: 'groupItem',
+            unwrap: true
         }
         
     });
@@ -3211,9 +3260,11 @@ define([
         
         modelConstructor: NestedModel,
         
+        enforceDefinitions: true,
+        
         constructor: function(options) {
             options = _.extend({}, options);
-            var opts = _.omit(options, 'fields', 'errors', 'classes', 'collections', 'formDelegate');
+            var opts = _.omit(options, 'fields', 'parent', 'errors', 'classes', 'collections', 'formDelegate');
             
             var defaultClasses = _.extend({}, Marionette.Form.classes);
             
@@ -3225,6 +3276,8 @@ define([
             
             this.classes = _.extend({}, defaultClasses, _.result(this, 'classes'), options.classes);
             
+            if (options.parent instanceof Backbone.View) this.parent = options.parent;
+            
             this.collections = options.collections || {};
             this.viewRegistry = options.viewRegistry || {}; // lookup for views
             this.registry = options.registry || {}; // lookup for controls
@@ -3235,7 +3288,7 @@ define([
             
             var rootKey = this.getOption('rootKey');
             
-            var fields = this.collection || _.result(this, 'fields');
+            var fields = this.collection || options.fields || _.result(this, 'fields');
             if (!(fields instanceof Backbone.Collection)) {
                 fields = new Fields(fields);
             }
@@ -3272,7 +3325,7 @@ define([
             
             if (this.getOption('autoValidate')) this.on('change', this.isValid);
             
-            var submitFn = this.triggerMethod.bind(this, 'submit', this);
+            var submitFn = this.triggerMethod.bind(this, 'submit');
             this.on('control:action:submit', submitFn);
             
             this.on('control:focus', function(control) {
@@ -3297,7 +3350,7 @@ define([
         
         observeWindowResize: function() {
             var onResize = _.debounce(this.updateLayout.bind(this), 50);
-            if (this.parent instanceof Marionette.Form.View) {
+            if (this.parent && _.isFunction(this.parent.observeWindowResize)) {
                 this.on('resize', onResize);
             } else {
                 var eventName = 'resize.form-' + this.cid;
@@ -3763,9 +3816,10 @@ define([
             return this.isValid();
         },
         
-        toggleSection: function(section, collapse) {
+        toggleSection: function(section, collapse, omitElem) {
             var toggleSectionEl = this.toggleSectionEl.bind(this);
-            this.$('[data-section="' + section + '"]').each(function() {
+            var sel = section === '*' ? '> *' : '[data-section="' + section + '"]';
+            this.$(sel).not(omitElem).each(function() {
                 var elem = $(this);
                 if (elem.is('.control-header')) return; // skip
                 toggleSectionEl(elem, collapse);
@@ -3831,6 +3885,134 @@ define([
         }
         
     });
+    
+    // CollectionView
+    
+    var ItemView = Marionette.Form.ItemView = Marionette.Form.View.extend({
+        
+    });
+    
+    var CollectionView = Marionette.Form.CollectionView = Marionette.CompositeView.extend({
+        
+        layout: 'vertical',
+        
+        className: 'form-collection',
+        
+        template: _.template(''),
+        
+        childView: ItemView,
+        
+        childViewEventPrefix: 'row',
+        
+        constructor: function(options) {
+            options = _.extend({}, options);
+            Marionette.CompositeView.prototype.constructor.call(this, _.omit(options, 'itemView', 'fields'));
+            
+            this.collections = {}; // registry
+            
+            this.model = this.model || new NestedModel(_.extend({}, _.result(this, 'defaults')));
+            
+            if (_.isObject(options.itemView) || _.isFunction(options.itemView) || _.isString(options.itemView)) {
+                this.itemView = options.itemView;
+            }
+            
+            var fields = options.fields || _.result(this, 'fields');
+            if (!(fields instanceof Backbone.Collection)) {
+                fields = new Fields(fields);
+            }
+            if (_.isArray(options.fields)) {
+                fields.set(options.fields, { remove: false });
+            }
+            
+            this.fields = fields;
+            this.listenTo(this.fields, 'reset sync change update', this.triggerMethod.bind(this, 'fields:change'));
+            
+            this.observeWindowResize();
+        },
+        
+        getChildView: function(row) {
+            var baseClass = Marionette.CompositeView.prototype.getChildView.apply(this, arguments);
+            if (_.isString(this.itemView)) {
+                return Marionette.Form.getForm(this.itemView) || baseClass;  // lookup by name
+            } else if (_.isFunction(this.itemView) && this.itemView.prototype instanceof Marionette.Form.View) {
+                return this.itemView;                             // constructor
+            } else if (_.isFunction(this.itemView)) {
+                return this.itemView.call(this, baseClass, row);  // factory
+            } else if (_.isObject(this.itemView)) {
+                return baseClass.extend(this.itemView);
+            } else {
+                return baseClass;
+            }
+        },
+        
+        buildChildView: function(model, ChildViewClass, childViewOptions) {
+            childViewOptions = _.extend({}, childViewOptions, _.result(this, 'formOptions'));
+            var options = _.extend({ model: model, collection: this.fields }, childViewOptions);
+            options.layout = options.layout || this.getOption('layout') || 'vertical';
+            options.defaultControl = options.defaultControl || this.getOption('defaultControl');
+            options.formDelegate = this;
+            options.parent = this;
+            var childView = new ChildViewClass(options);
+            this.initChildView(childView);
+            return childView;
+        },
+        
+        initChildView: function() {},
+        
+        observeWindowResize: function() {
+            var eventName = 'resize.form-' + this.cid;
+            $(window).on(eventName, this.triggerMethod.bind(this, 'resize'));
+            this.on('destroy', function() { $(window).off(eventName); });
+        },
+        
+        // Fields
+        
+        field: function(id, config, options) {
+            var field = this.buildField(id, config);
+            return this.fields.add(field, options);
+        },
+        
+        buildField: function(id, config) {
+            return new Field(_.extend({ id: id }, config));
+        },
+        
+        // Collections
+        
+        getCollection: function(name) {
+            return this.collections[name] || __collections[name];
+        },
+        
+        hasCollection: function(name) {
+            return _.has(this.collections, name) || _.has(__collections, name);
+        },
+        
+        registerCollection: function(name, collection, global) {
+            var collections = global ? __collections : this.collections;
+            if (collection instanceof Backbone.Collection) {
+                collections[name] = collection;
+            } else if (_.isArray(collection)) {
+                collections[name] = new NestedCollection(collection);
+            } else if (collection === true) {
+                throw new Error('Cannot register collection with option: true');
+            } else {
+                collections[name] = new NestedCollection();
+            }
+            return collections[name];
+        },
+        
+        unregisterCollection: function(name, global) {
+            var collections = global ? __collections : this.collections;
+            delete collections[name];
+        },
+        
+        // Delegate methods
+        
+        getControlIdPrefix: function(control) {
+            return control.form.cid + '-';
+        }
+        
+    });
+    
     
     return Marionette.Form;
     
