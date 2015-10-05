@@ -4032,7 +4032,7 @@ define([
         if (!$.fn.select2) return console.warn('Select2 is not available');
         _.defaults(options, _.result(this, 'select2'));
         _.defaults(options, this.getAttributes('placeholder', 'multiple'));
-        options.maximumSelectionSize = function() {
+        options.maximumSelectionSize = this.maximumSelectionSize || function() {
             var limit = this.getAttribute('limit');
             if (_.isNumber(limit)) return limit;
             return 0; // no limit
