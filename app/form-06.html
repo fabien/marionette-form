@@ -74,7 +74,7 @@
                 var form = new ConfigEditor({ model: config, headers: false });
                 
                 form.field('username', { control: 'input', default: 'andre-jones' }, { at: 0 });
-                form.field('currencies', { control: 'select2', options: currencies, multiple: true });
+                form.field('currencies', { control: 'select2', options: currencies, multiple: true, limit: 2 });
                 form.field('theme', { control: 'select2', options: ['light', 'dark'] });
                 
                 form.on('change', function() {
