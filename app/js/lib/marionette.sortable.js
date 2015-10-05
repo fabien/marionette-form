@@ -119,5 +119,7 @@
         }
 
     });
+    
+    return Marionette.SortableBehavior;
 
 }));

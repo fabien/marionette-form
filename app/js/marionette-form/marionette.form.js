@@ -3930,6 +3930,14 @@ define([
             this.observeWindowResize();
         },
         
+        getData: function(asCollection) {
+            var collection = new NestedCollection();
+            this.children.each(function(row) {
+                collection.add(row.getData(true));
+            }.bind(this));
+            return asCollection ? collection : collection.toJSON();
+        },
+        
         getChildView: function(row) {
             var baseClass = Marionette.CompositeView.prototype.getChildView.apply(this, arguments);
             if (_.isString(this.itemView)) {
@@ -4009,6 +4017,12 @@ define([
         
         getControlIdPrefix: function(control) {
             return control.form.cid + '-';
+        },
+        
+        // Defer rendering
+        
+        _renderChildren: function() {
+            _.defer(Marionette.CompositeView.prototype._renderChildren.bind(this));
         }
         
     });

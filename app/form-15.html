@@ -22,10 +22,13 @@
             require([
                 'backbone',
                 'backbone.marionette',
-                'marionette.form'
-            ], function(Backbone, Marionette, Form) {
+                'marionette.form',
+                'marionette.sort'
+            ], function(Backbone, Marionette, Form, Sort) {
                 
                 var ListView = Form.CollectionView.extend({
+                    
+                    reorderOnSort: true,
                     
                     fields: [
                         {
@@ -44,11 +47,24 @@
                     { id: 104, firstName: 'Barney', lastName: 'Rubble' }
                 ]);
                 
+                Marionette.Sort.CollectionMixin.extend(collection, true);
+                
+                collection.sortByAttribute('firstName');
+                collection.sortByAttribute('lastName');
+                
+                collection.on('change:firstName change:lastName', function(model, value, options) {
+                    this.sort();
+                });
+                
                 var list = new ListView({ collection: collection });
                 
                 list.on('row:change', function(row) {
                     var item = list.collection.get(row.model.id);
                     if (item) console.log('Saving %s', item.id, row.getData());
+                });
+                
+                list.on('row:change', function(row) {
+                    console.log('Change: ', JSON.stringify(list.getData(), null, 4));
                 });
                 
                 // Rendering

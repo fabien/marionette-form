@@ -12,6 +12,10 @@
     
     var comparators = {};
     
+    function normalizeValue(value) {
+        return _.isString(value) ? value.toLowerCase() : value;
+    };
+    
     // Plain objects
     
     function sortByProperty(property, sortOrder) {
@@ -19,8 +23,8 @@
         var fn;
         return function fn(a,b) {
             var result;
-            var aValue = objectPath.get(a, property);
-            var bValue = objectPath.get(b, property);
+            var aValue = normalizeValue(objectPath.get(a, property));
+            var bValue = normalizeValue(objectPath.get(b, property));
             if (aValue < bValue) result = -1;
             if (aValue > bValue) result = 1;
             if (aValue === bValue) result = 0;
@@ -40,8 +44,8 @@
         var fn;
         return function fn(a,b) {
             var result;
-            var aValue = a.get(property);
-            var bValue = b.get(property);
+            var aValue = normalizeValue(a.get(property));
+            var bValue = normalizeValue(b.get(property));
             if (aValue < bValue) result = -1;
             if (aValue > bValue) result = 1;
             if (aValue === bValue) result = 0;

@@ -3,8 +3,8 @@ define([
     'backbone',
     'backbone.marionette',
     'marionette.form',
-    'comparators'
-], function(moment, Backbone, Marionette, Form, comparators) {
+    'marionette.sort'
+], function(moment, Backbone, Marionette, Form, Sort) {
     
     Form.Templates.TableView = _.template([
         '<table class="<%= tableClass %>">',
@@ -37,7 +37,7 @@ define([
         },
         
         getSortDirection: function() {
-            var direction = this.form.callDelegate('getSortDirection', this);
+            var direction = this.form.callDelegate('getSortDirection', this.getKey());
             if (_.isNumber(direction)) return direction;
             return this.getAttribute('sortDirection') || 0;
         },
@@ -175,10 +175,8 @@ define([
         
         constructor: function(options) {
             Form.CollectionView.prototype.constructor.apply(this, arguments);
+            Sort.CollectionViewMixin.extend(this);
             var renderHeader = this.model.has('header') ? this.model.get('header') : this.getOption('header');
-            var defaultComparator = this.getOption('comparator');
-            if (defaultComparator) this.setViewComparator(defaultComparator);
-            this._sortState = [];
             this.model.set('header', renderHeader);
             if (renderHeader) {
                 this.header = this.buildHeaderView(options.header);
@@ -190,58 +188,12 @@ define([
         
         // Sorting
         
-        setViewComparator: function(comparator) {
-            if (_.isFunction(comparator)) {
-                this.viewComparator = defaultComparator;
-            } else if (_.isArray(comparator)) {
-                this.viewComparator = comparators.sortByAttribute(comparator[0], comparator[1]);
-            } else if (_.isString(comparator)) {
-                this.viewComparator = comparators.sortByAttribute(comparator);
-            }
-            this.render();
-        },
-        
-        sortByAttribute: function(attribute, direction) {
-            if (attribute === false) {
-                this._sortState = [];
-            } else if (direction === 0) {
-                this._sortState = _.reject(this._sortState, function(spec) {
-                    return spec.attr === attribute;
-                });
-            } else if (direction === -1 || direction === 1) {
-                var spec = _.where(this._sortState, { attr: attribute })[0];
-                if (spec) {
-                    spec.dir = direction;
-                } else if (this.getOption('sortByMultiple')) {
-                    this._sortState.unshift({ attr: attribute, dir: direction });
-                } else {
-                    this._sortState = [{ attr: attribute, dir: direction }];
-                }
-            }
-            if (_.isEmpty(this._sortState)) {
-                delete this.viewComparator;
-                var defaultComparator = this.getOption('comparator');
-                if (defaultComparator) this.setViewComparator(defaultComparator);
-            } else {
-                var specs = _.map(this._sortState, function(spec) {
-                    return [spec.attr, spec.dir];
-                });
-                this.viewComparator = comparators.sortByAttributes.apply(null, specs);
-                this.render();
-            }
-        },
-        
-        getSortDirection: function(control) {
-            var spec = _.where(this._sortState, { attr: control.getKey() })[0];
-            return (spec && spec.dir) || 0;
-        },
-        
         isSortable: function() {
             return Boolean(this.model.get('sort'));
         },
         
         onHeaderControlSort: function(header, control, direction) {
-            this.sortByAttribute(control.getKey(), direction);
+            if (this.isSortable()) this.sortByAttribute(control.getKey(), direction);
         },
         
         // Header
@@ -268,49 +220,6 @@ define([
         }
         
     });
-    
-    // var Table = Form.Table = Form.View.extend({
-    //     
-    //     // template: Form.Templates.Table,
-    //     
-    //     // childViewContainer: '.form-controls',
-    //     
-    //     // behaviors: {
-    //     //     sortable: {
-    //     //         behaviorClass: Marionette.SortableBehavior,
-    //     //         handle: '.control-label',
-    //     //         removeOnSpill: true
-    //     //     }
-    //     // },
-    //     
-    //     onSortableRemove: function(model, collection) {
-    //         var key = model.get('key');
-    //         if (key) this.unsetValueOf(key);
-    //     },
-    //     
-    //     // onControlLabelClick: function(control, event) {
-    //     //     if (event.altKey && control.model) {
-    //     //         event.preventDefault();
-    //     //         this.collection.remove(control.model);
-    //     //         var key = control.model.get('key');
-    //     //         if (key) this.unsetValueOf(key);
-    //     //         this.triggerChange(); // manually
-    //     //     }
-    //     // },
-    //     
-    //     // getData: function(asModel) {
-    //         // var copy = new this.modelConstructor();
-    //         // this.collection.each(function(model) {
-    //         //     var field = this.children.findByModel(model);
-    //         //     var key = field.getKey();
-    //         //     if (key && !field.evaluateAttribute('omit')) {
-    //         //         copy.set(key, field.getData());
-    //         //     }
-    //         // }.bind(this));
-    //         // return asModel ? copy : copy.toJSON();
-    //     // },
-    //     
-    // });
     
     return TableView;
     

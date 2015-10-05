@@ -14,6 +14,7 @@ requirejs.config({
         'filesize': 'lib/filesize',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
         'jquery.quickselect': 'lib/jquery.quickselect',
+        'marionette.sort': 'lib/marionette.sort',
         'marionette.sortable': 'lib/marionette.sortable',
         'object-path': 'lib/object-path',
         'rison': 'lib/rison',
