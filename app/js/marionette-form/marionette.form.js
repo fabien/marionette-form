@@ -4061,6 +4061,9 @@ define([
         this.ui.control.select2('enable', !this.getAttribute('disabled'));
         this.ui.control.select2('readonly', !!this.getAttribute('readonly'));
         this.triggerMethod('render:select', this.ui.control);
+        this.once('before:destroy', function() {
+            this.ui.control.select2('destroy');
+        });
     };
     
     function attachQuickSelect(options) {
