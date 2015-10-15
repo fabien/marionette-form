@@ -132,6 +132,8 @@ define([
         
         childView: FilterItemView,
         
+        childViewEventPrefix: 'item',
+        
         childViewContainer: '.filter-items',
         
         events: {
@@ -434,7 +436,7 @@ define([
             defaultLabel: '',
             placeholder: '',
             limit: -1,              // max. items for selection
-            maxValues: 3,           // max. items for synopsis
+            maxValues: -1,          // max. items for synopsis
             collapseTrigger: null,  // jQuery selector,
             icon: 'glyphicon glyphicon-unchecked',
             selectedIcon: 'glyphicon glyphicon-check',
@@ -625,9 +627,10 @@ define([
         
         serializeSynopsis: function(data) {
             var maxValues = this.getAttribute('maxValues') || 1;
-            var ellipsis = data.selection.length > maxValues;
+            var ellipsis = maxValues > 0 && data.selection.length > maxValues;
             var escape = this.getAttribute('escape');
-            var models = data.selection.slice(0, maxValues);
+            var models = data.selection;
+            if (maxValues > 0) models = models.slice(0, maxValues);
             var labels = _.map(models, function(model) {
                 var label = this.getItemLabel(model);
                 return escape ? _.escape(label) : label;
