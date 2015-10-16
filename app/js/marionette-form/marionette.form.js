@@ -3345,6 +3345,7 @@ define([
         
         className: function() {
             var className = this.getClassName(null, 'form');
+            if (this.isReadonly()) className += ' readonly';
             var formClassName = _.result(this, 'formClassName') || this.getOption('formClassName');
             return _.isEmpty(formClassName) ? className : (className + ' ' + formClassName);
         },

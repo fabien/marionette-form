@@ -740,6 +740,7 @@ define([
                 var promise = this.ui.list.slideUp(options).promise();
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(true);
+                    this.$el.removeClass('expanded');
                     this.$el.addClass('collapsed');
                     this.triggerMethod('collapse', true);
                 }.bind(this));
@@ -758,6 +759,7 @@ define([
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(false);
                     this.$el.removeClass('collapsed');
+                    this.$el.addClass('expanded');
                     this.triggerMethod('collapse', false);
                 }.bind(this));
                 return promise;
