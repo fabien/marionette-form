@@ -972,6 +972,7 @@ define([
             },
             
             isReadonly: function() {
+                if (this.form.isReadonly()) return true;
                 return this.evaluateAttribute('readonly');
             },
             
@@ -3375,6 +3376,10 @@ define([
                     $el.css('maxWidth', (containerWidth - width) + 'px');
                 }
             });
+        },
+        
+        isReadonly: function() {
+            return Boolean(this.getOption('readonly'));
         },
         
         hasValue: function(key) {
