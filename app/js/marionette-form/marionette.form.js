@@ -4,7 +4,6 @@ define([
     'moment',
     'backbone',
     'backbone.marionette',
-    'marionette.sortable',
     'backbone.nested-model',
     'backbone.syphon'
 ], function($, _, moment, Backbone, Marionette) {
@@ -769,6 +768,9 @@ define([
                 this.behaviors = _.result(this, 'behaviors') || {};
                 if (this instanceof Marionette.CollectionView
                     && options.model && options.model.get('sortable')) {
+                    if (!Marionette.SortableBehavior) {
+                        throw new Error('Marionette.SortableBehavior is not available');
+                    }
                     var sortable = options.model.get('sortable');
                     this.behaviors._Sortable = _.extend({
                         behaviorClass: Marionette.SortableBehavior

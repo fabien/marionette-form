@@ -4,7 +4,8 @@ define([
     'backbone',
     'backbone.marionette',
     'marionette.form',
-    'backbone.bootstrap-modal'
+    'backbone.bootstrap-modal',
+    'marionette.sortable'
 ], function($, _, Backbone, Marionette, Form, Behave) {
     
     // A modal view can implement the following interface methods to comply with ModalViewMixin:

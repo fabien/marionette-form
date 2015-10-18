@@ -4,7 +4,8 @@ define([
     'backbone',
     'backbone.marionette',
     'marionette.form',
-    'marionette.form.control.modal'
+    'marionette.form.control.modal',
+    'marionette.sortable'
 ], function($, _, Backbone, Marionette, Form) {
     
     Form.Templates.ObjectList = _.template([
