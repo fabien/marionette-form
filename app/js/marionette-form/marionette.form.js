@@ -962,6 +962,7 @@ define([
             },
             
             isDisabled: function() {
+                if (this.form.isDisabled()) return true;
                 return this.evaluateAttribute('disabled');
             },
             
@@ -984,6 +985,10 @@ define([
             
             isOmitted: function() {
                 return this.evaluateAttribute('omit');
+            },
+            
+            isIgnored: function() {
+                return  this.evaluateAttribute('ignore')
             },
             
             isValid: function(options) {
@@ -1093,12 +1098,12 @@ define([
                 if (hasAddon) data.appendHtml = (data.appendHtml || '') + '</div>';
                 
                 _.extend(data, {
-                    disabled: this.evaluateAttribute('disabled', data),
-                    required: this.evaluateAttribute('required', data),
-                    readonly: this.evaluateAttribute('readonly', data),
-                    visible:  this.evaluateAttribute('visible', data),
-                    ignore:   this.evaluateAttribute('ignore', data),
-                    omit:     this.evaluateAttribute('omit', data)
+                    disabled: this.isDisabled(),
+                    required: this.isRequired(),
+                    readonly: this.isReadonly(),
+                    visible:  this.isVisible(),
+                    ignore:   this.isIgnored(),
+                    omit:     this.isOmitted()
                 });
                 
                 data.error = this.form.getError(data.key);
@@ -3348,6 +3353,7 @@ define([
         className: function() {
             var className = this.getClassName(null, 'form');
             if (this.isReadonly()) className += ' readonly';
+            if (this.isDisabled()) className += ' disabled';
             var formClassName = _.result(this, 'formClassName') || this.getOption('formClassName');
             return _.isEmpty(formClassName) ? className : (className + ' ' + formClassName);
         },
@@ -3383,6 +3389,10 @@ define([
         
         isReadonly: function() {
             return Boolean(this.getOption('readonly'));
+        },
+        
+        isDisabled: function() {
+            return Boolean(this.getOption('disabled'));
         },
         
         hasValue: function(key) {
@@ -3475,6 +3485,7 @@ define([
         buildChildView: function(model, ChildViewClass, childViewOptions) {
             var options = _.extend({ model: model, form: this }, childViewOptions);
             var childView = new ChildViewClass(options);
+            this.triggerMethod('control:build', childView);
             this.initChildView(childView);
             return childView;
         },
@@ -3847,7 +3858,9 @@ define([
         },
         
         attachHtml: function(collectionView, childView, index) {
-            if (this.getOption('insertControls')) {
+            if (childView.hasAttribute('el')) {
+                // already attached, skip
+            } else if (this.getOption('insertControls')) {
                 insertControls(collectionView, childView, index);
             } else if (this.getOption('replaceControls')) {
                 replaceControls(collectionView, childView, index);

@@ -46,6 +46,7 @@ requirejs.config({
         // Marionette Form
         'marionette.form': 'marionette-form/marionette.form',
         'marionette.form.editable': 'marionette-form/forms/editable',
+        'marionette.form.html': 'marionette-form/forms/html',
         'marionette.form.view.json': 'marionette-form/views/json',
         'marionette.form.view.table': 'marionette-form/views/table',
         'marionette.form.control.code': 'marionette-form/controls/code',

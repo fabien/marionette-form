@@ -351,7 +351,7 @@
                         // console.log('%s: %s', view.model.get('control'), view.getKey());
                     },
                     
-                    onSubmit: function(form, control, event) {
+                    onSubmit: function(control, event) {
                         event.preventDefault();
                         if (this.commit()) {
                             console.log('Submit', JSON.stringify(this.getData(), null, 2));

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2.css" type="text/css">
+        <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'backbone.marionette',
+                'marionette.form',
+                'marionette.form.html',
+                'select2'
+            ], function(Backbone, Marionette, Form) {
+                
+                var ProfileForm = Form.Html.extend({
+                    
+                    prefix: 'profile-',
+                    
+                    layout: 'vertical',
+                    
+                    prependElContent: false, // default: false
+                    
+                    fields: [
+                        { 
+                            control: 'dynamic', label: 'Full name', observe: ['firstName', 'lastName'],
+                            text: '<%- form.data.firstName %> <%- form.data.lastName %>'
+                        },
+                        { id: 'notes', control: 'textarea', disabled: '!active', omit: '!active', observe: 'active' }
+                    ],
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var profile = new Form.Model({
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    active: true,
+                    choices: ['A', 'C'],
+                    choice: 2,
+                    address: {
+                        city: 'Alberta',
+                        country: 'CA'
+                    }
+                });
+                
+                var form = new ProfileForm({
+                    el: '#form', model: profile,
+                    disabled: false
+                });
+                
+                form.on('control:build', function(control) {
+                    console.log('CONTROL', control.getId());
+                    if (control.$el.is('select')) {
+                        control.on('render', function() {
+                            this.$el.select2();
+                        });
+                        control.once('before:destroy', function() {
+                            this.$el.select2('destroy');
+                        });
+                    }
+                });
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit' });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>using existing DOM elements</small></h1>
+        </div>
+        <div id="layout" class="container">
+            <form id="form">
+                <div class="form-group">
+                    <label for="profile-firstname">First name</label>
+                    <input type="text" class="form-control" id="profile-firstname" data-key="firstName" data-trigger="input change">
+                </div>
+                <div class="form-group">
+                    <label for="profile-lastname">Last name</label>
+                    <input type="text" class="form-control" id="profile-lastname" data-key="lastName">
+                </div>
+                <div class="form-group">
+                    <label for="profile-address-city">City</label>
+                    <input type="text" class="form-control" id="profile-address-city" data-key="address.city" data-omit="isBlank">
+                </div>
+                <div class="form-group">
+                    <label for="profile-address-country">Country</label>
+                    <select class="form-control" id="profile-address-country" data-key="address.country">
+                        <option value="NL">Netherlands</option>
+                        <option value="BE">Belgium</option>
+                        <option value="FR">France</option>
+                        <option value="CA">Canada</option>
+                        <option value="US">United States</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" data-key="active"> Active</label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-inline"><input type="checkbox" data-key="choices" name="choices" value="A" data-formatter="json">Option A</label>
+                    <label class="checkbox-inline"><input type="checkbox" data-key="choices" name="choices" value="B" data-formatter="json">Option B</label>
+                    <label class="checkbox-inline"><input type="checkbox" data-key="choices" name="choices" value="C" data-formatter="json">Option C</label>
+                </div>
+                <div class="form-group">
+                    <label class="radio-inline"><input type="radio" data-key="choice" name="choice" value="1" data-formatter="json">Option 1</label>
+                    <label class="radio-inline"><input type="radio" data-key="choice" name="choice" value="2" data-formatter="json">Option 2</label>
+                    <label class="radio-inline"><input type="radio" data-key="choice" name="choice" value="3" data-formatter="json">Option 3</label>
+                </div>
+                <div class="form-group">
+                    <label for="profile-active">First name</label>
+                    <textarea class="form-control" data-key="firstName" data-readonly="!active" data-observe="active"></textarea>
+                </div>
+            </form>
+        </div>
+        
+        <script id="form" type="text/template">
+        <div class="row">
+          <div class="col-sm-6">
+            <div data-control="firstname"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="lastname"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-6">
+            <div data-control="address-address1"></div>
+            <div data-control="address-address2"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="address-postalcode"></div>
+            <div data-control="address-city"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-6">
+            <div data-control="address-province"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="address-country"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div data-block="default" class="col-sm-12"></div>
+        </div>
+        </script>
+    </body>
+</html>
