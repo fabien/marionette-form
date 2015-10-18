@@ -31,7 +31,7 @@
                     
                     template: '#form',
                     
-                    insertControls: true,
+                    replaceControls: true,
                     
                     onInitialize: function(options) {
                         this.listenTo(this.model, 'change:address.country', this.onCountryChange);
@@ -150,14 +150,18 @@
     </head>
     <body>
         <div class="container">
-            <h1>Form <small>with custom layout</small></h1>
+            <h1>Form <small>with custom layout (placeholders)</small></h1>
         </div>
         <div id="layout" class="container"></div>
         
         <script id="form" type="text/template">
         <div class="row">
-          <div data-control="firstname" class="col-sm-6"></div>
-          <div data-control="lastname" class="col-sm-6"></div>
+          <div class="col-sm-6">
+            <div data-control="firstname"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="lastname"></div>
+          </div>
         </div>
         <div class="row">
           <div class="col-sm-6">
@@ -170,8 +174,12 @@
           </div>
         </div>
         <div class="row">
-          <div data-control="address-province" class="col-sm-6"></div>
-          <div data-control="address-country" class="col-sm-6"></div>
+          <div class="col-sm-6">
+            <div data-control="address-province"></div>
+          </div>
+          <div class="col-sm-6">
+            <div data-control="address-country"></div>
+          </div>
         </div>
         <div class="row">
           <div data-block="default" class="col-sm-12"></div>

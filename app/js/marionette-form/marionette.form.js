@@ -2670,7 +2670,7 @@ define([
         getChildViewContainer: function(containerView, childView) {
             if (!!containerView.$childViewContainer) {
                 return containerView.$childViewContainer;
-            } else if (this.getAttribute('insertHtml')) {
+            } else if (this.getAttribute('insertControls')) {
                 var container = containerView.$el;
                 return containerView.$childViewContainer = container;
             }
@@ -2938,7 +2938,7 @@ define([
         getChildViewContainer: function(containerView, childView) {
             if (!!containerView.$childViewContainer) {
                 return containerView.$childViewContainer;
-            } else if (this.getAttribute('insertHtml')) {
+            } else if (this.getAttribute('insertControls')) {
                 var container = containerView.$el;
                 return containerView.$childViewContainer = container;
             }
@@ -2959,8 +2959,8 @@ define([
         },
         
         attachHtml: function(collectionView, childView, index) {
-            if (this.getAttribute('insertHtml') || this.getOption('insertHtml')) {
-                attachHtml(collectionView, childView, index);
+            if (this.getAttribute('insertControls') || this.getOption('insertControls')) {
+                insertControls(collectionView, childView, index);
             } else {
                 Marionette.CompositeView.prototype.attachHtml.apply(this, arguments);
             }
@@ -3847,8 +3847,10 @@ define([
         },
         
         attachHtml: function(collectionView, childView, index) {
-            if (this.getOption('insertHtml')) {
-                attachHtml(collectionView, childView, index);
+            if (this.getOption('insertControls')) {
+                insertControls(collectionView, childView, index);
+            } else if (this.getOption('replaceControls')) {
+                replaceControls(collectionView, childView, index);
             } else {
                 Marionette.CompositeView.prototype.attachHtml.apply(this, arguments);
             }
@@ -4038,7 +4040,7 @@ define([
     
     return Marionette.Form;
     
-    function attachHtml(collectionView, childView, index) {
+    function insertControls(collectionView, childView, index) {
         var section = childView.model.get('section') || 'default';
         var controlId = formatName(childView.model.id);
         var container = collectionView.$('[data-control="' + controlId + '"]');
@@ -4048,6 +4050,15 @@ define([
             container.empty();
         }
         container.append(childView.el);
+    };
+    
+    function replaceControls(collectionView, childView, index) {
+        var controlId = formatName(childView.model.id);
+        var elem = collectionView.$('[data-control="' + controlId + '"]');
+        if (elem.is('*')) {
+            childView.$el.attr('data-control', controlId);
+            elem.replaceWith(childView.el);
+        }
     };
     
     function attachSelect2(options) {
