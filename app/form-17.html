@@ -145,6 +145,40 @@
                 form.render();
                 form.$el.appendTo('#layout');
                 
+                // Create a non-rendering Form, as a factory:
+                
+                var factory = new Form.View({
+                    rendering: false,
+                    layout: 'vertical',
+                    model: profile,
+                    fields: [
+                        { id: 'firstName', control: 'input', required: true },
+                        { id: 'lastName', control: 'input', required: true }
+                    ]
+                });
+                
+                factory.registerCollection('provinces', provinces);
+                factory.registerCollection('countries', '/data/countries.json');
+                
+                var firstName = factory.getField('firstName', true);
+                var lastName = factory.getField('lastName', true);
+                
+                var city = factory.getField('city', { key: 'address.city', control: 'input' });
+                
+                var province = factory.getField('province', {
+                    key: 'address.province', control: 'select', collection: 'provinces', select2: true
+                });
+                
+                var country = factory.getField('country', { 
+                    key: 'address.country', control: 'lookup', collection: 'countries', labelKey: 'name', valueKey: 'code'
+                });
+                
+                firstName.appendTo('#sample');
+                lastName.appendTo('#sample');
+                city.appendTo('#sample');
+                province.appendTo('#sample');
+                country.appendTo('#sample');
+                
             });
         </script>
     </head>
@@ -153,6 +187,10 @@
             <h1>Form <small>with custom layout (placeholders)</small></h1>
         </div>
         <div id="layout" class="container"></div>
+        <div class="container">
+            <h2>Form <small>from field factory</small></h2>
+            <form id="sample" class="form"></form>
+        </div>
         
         <script id="form" type="text/template">
         <div class="row">

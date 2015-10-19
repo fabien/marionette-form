@@ -712,6 +712,8 @@ define([
                     this.observeKey(key);
                 }.bind(this));
                 
+                this.listenTo(this.form, 'destroy', this.destroy);
+                
                 _.each(_.result(this, 'formEvents'), function(eventName) {
                     var eventTrigger = 'form:' + eventName;
                     this.listenTo(this.form, eventName, this.triggerMethod.bind(this, eventTrigger));
@@ -1203,6 +1205,12 @@ define([
                     this.triggerMethod('refresh', options);
                     this.isValid();
                 }
+                return this;
+            },
+            
+            appendTo: function(sel) {
+                if (!this.isRendered) this.render();
+                this.$el.appendTo(sel);
                 return this;
             },
             
@@ -1710,7 +1718,9 @@ define([
         constructor: function(options) {
             ImmutableControl.prototype.constructor.apply(this, arguments);
             this.collection = this.collection || this.getCollection(options);
-            this.listenTo(this.collection, 'reset sync change update', this.render);
+            this.listenTo(this.collection, 'reset change update', function() {
+                _.defer(this.render.bind(this));
+            });
             this.maxValues = this.getAttribute('maxValues') || this.getOption('maxValues') || 100;
             this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
@@ -1863,8 +1873,10 @@ define([
         },
         
         bindCollection: function(collection) {
-            this.listenTo(collection, 'reset sync change update', this.ensureValue);
-            this.listenTo(collection, 'reset sync change update', this.render);
+            this.listenTo(collection, 'reset change update', function() {
+                this.ensureValue();
+                _.defer(this.render.bind(this));
+            });
         },
         
         unbindCollection: function(collection) {
@@ -2161,7 +2173,12 @@ define([
             this.matcher = this.getOption('matcher') || $.fn.select2.defaults.matcher;
             
             this.collection = this.collection || this.getCollection(this.getCollectionData());
-            if (this.collection) this.listenTo(this.collection, 'reset sync change update', this.render);
+            
+            if (this.collection) {
+                this.listenTo(this.collection, 'reset change update', function() {
+                    _.defer(this.render.bind(this));
+                });
+            }
             
             this.on('before:render:select', this._setupSelect);
         },
@@ -2709,8 +2726,10 @@ define([
         },
         
         bindCollection: function(collection) {
-            this.listenTo(collection, 'change update', this.updateValue); // first
-            this.listenTo(collection, 'reset sync change update', this.render);
+            this.listenTo(collection, 'reset change update', function() {
+                 this.updateValue();
+                 _.defer(this.render.bind(this));
+            });
             this.listenTo(collection, 'reorder', this.triggerMethod.bind(this, 'reorder'));
         },
         
@@ -3445,9 +3464,17 @@ define([
             return new Field(_.extend({ id: id }, config));
         },
         
-        getField: function(id) {
+        getField: function(id, autoCreate) {
             var def = this.getFieldModel(id);
-            return def && this.children.findByModel(def);
+            var field = def && this.children.findByModel(def);
+            if (field) {
+                return field;
+            } else if (def && autoCreate === true) {
+                return this.createChildView(def);
+            } else if (_.isObject(autoCreate)) {
+                def = this.field(id, autoCreate);
+                return this.createChildView(def);
+            }
         },
         
         getFieldModel: function(id) {
@@ -3480,6 +3507,15 @@ define([
         getChildView: function(field) {
             var control = field.get('control') || this.getOption('defaultControl');
             return this.getControl(control);
+        },
+        
+        createChildView: function(field, options) {
+            if (!(field instanceof Backbone.Model)) {
+                field = new NestedModel(_.isObject(field) ? field : {});
+            }
+            var ChildView = this.getChildView(field);
+            var childViewOptions = this.getOption('childViewOptions');
+            return this.buildChildView(field, ChildView, _.extend({}, childViewOptions, options));
         },
         
         buildChildView: function(model, ChildViewClass, childViewOptions) {
@@ -3590,6 +3626,12 @@ define([
                 collections[name] = new NestedCollection(collection);
             } else if (collection === true) {
                 collections[name] = this.bindCollection(name);
+            } else if (_.isString(collection)) { // url
+                var collectionConstructor = this.getOption('collectionConstructor');
+                if (!_.isFunction(collectionConstructor)) collectionConstructor = NestedCollection;
+                var Collection = collectionConstructor.extend({ url: collection });
+                collections[name] = new Collection();
+                collections[name].fetch();
             } else {
                 collections[name] = new NestedCollection();
             }
@@ -3606,20 +3648,26 @@ define([
             if (collection) return collection;
             options = _.extend({}, options);
             var formatter = this.getFormatter(options.formatter, options);
+            
             var collectionConstructor = options.collection || this.getOption('collectionConstructor');
             if (!_.isFunction(collectionConstructor)) collectionConstructor = NestedCollection;
+            if (_.isString(options.url)) {
+                collectionConstructor = collectionConstructor.extend({ url: options.url });
+            }
+            
             if (!this.model.has(key)) {
                 this.model.set(key, []);
             } else if (!_.isArray(this.model.get(key))) {
                 throw new Error('Cannot bind to key: ' + key);
             }
+            
             collection = new collectionConstructor(this.model.get(key));
             collection.listenTo(this.model, 'change:' + key, function(model, values, options) {
                 if (options.bound) return; // self-inflicted change - skip
                 options.bound = true;
                 this.set(formatter.fromRaw(values, collection), options);
             });
-            this.listenTo(collection, 'reset sync change update', function() {
+            this.listenTo(collection, 'reset change update', function() {
                 var options = _.last(arguments) || {};
                 if (options.bound) return; // self-inflicted change - skip
                 options.bound = true;
@@ -3851,6 +3899,15 @@ define([
         
         // Rendering
         
+        render: function() {
+            var options = _.last(arguments) || {};
+            if (options.rendering === false || this.getOption('rendering') === false) {
+                this.triggerMethod('refresh');
+                return this;
+            }
+            return Marionette.CompositeView.prototype.render.apply(this, arguments);
+        },
+        
         formatLabel: function(label) {
             label = String(label).replace(/\./g, ' ').replace(/([A-Z])/g, ' $1');
             label = label.replace(/^./, function(label) { return label.toUpperCase(); });
@@ -3948,7 +4005,7 @@ define([
             }
             
             this.fields = fields;
-            this.listenTo(this.fields, 'reset sync change update', this.triggerMethod.bind(this, 'fields:change'));
+            this.listenTo(this.fields, 'reset change update', this.triggerMethod.bind(this, 'fields:change'));
             
             this.observeWindowResize();
         },
