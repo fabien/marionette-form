@@ -24,14 +24,16 @@
         
         onSortUpdate: function(el, target, source) {
             var $childElement = $(el);
-            var newIndex = $childElement.parent().children().index($childElement);
+            var $children = $childElement.parent().children();
+            var newIndex = $children.index($childElement);
             var collection = this.view.collection;
             var model = collection.get($childElement.data('model-cid'));
             if (!model) return;
             var oldIndex = collection.indexOf(model);
             var info = { from: oldIndex, to: newIndex, sortable: true };
-            collection.remove(model);
-            collection.add(model, { at: newIndex });
+            collection.remove(model, { silent: true });
+            collection.add(model, { at: newIndex, silent: true });
+            collection.trigger('update', collection, info);
             collection.trigger('reorder', model, collection, info);
             this.view.triggerMethod('sortable:reorder', model, collection, info);
         },

@@ -312,7 +312,7 @@
                 // listView.on('render', listView.reorder); // Example of using viewComparator
                 
                 var listView = new ListView({ collection: friendsCollection });
-                listView.listenTo(listView.collection, 'change', listView.render);
+                listView.listenTo(listView.collection, 'update', listView.render);
                 
                 listView.render();
                 listView.$el.appendTo('#list');
