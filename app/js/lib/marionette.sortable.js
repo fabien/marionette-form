@@ -30,6 +30,7 @@
             var model = collection.get($childElement.data('model-cid'));
             if (!model) return;
             var oldIndex = collection.indexOf(model);
+            if (newIndex === -1 || oldIndex === -1) return;
             var info = { from: oldIndex, to: newIndex, sortable: true };
             collection.remove(model, { silent: true });
             collection.add(model, { at: newIndex, silent: true });
