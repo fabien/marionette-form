@@ -93,9 +93,9 @@
                             label: 'Salutation',
                             control: 'radio',
                             options: [
-                                { id: 'Mr', text: 'Mr.' },
-                                { id: 'Mrs', text: 'Mrs.' },
-                                { id: 'Mme', text: 'Mme.' }
+                                { id: 'Mr', label: 'Mr.' },
+                                { id: 'Mrs', label: 'Mrs.' },
+                                { id: 'Mme', label: 'Mme.' }
                             ],
                             section: 'main'
                         },
@@ -308,13 +308,13 @@
                             label: 'JSON value',
                             control: 'select',
                             options: [
-                                { id: null, text: 'null' },
-                                { id: true, text: 'true' },
-                                { id: false, text: 'false' },
-                                { id: 0, text: '0' },
-                                { id: 1, text: '1' },
-                                { id: 99, text: '99' },
-                                { id: 'a string', text: 'a string' }
+                                { id: null, label: 'null' },
+                                { id: true, label: 'true' },
+                                { id: false, label: 'false' },
+                                { id: 0, label: '0' },
+                                { id: 1, label: '1' },
+                                { id: 99, label: '99' },
+                                { id: 'a string', label: 'a string' }
                             ]
                         },
                         { control: 'spacer' },
@@ -435,32 +435,32 @@
                 });
                 
                 var materialsCollection = new Backbone.Collection([
-                    { id: 'wood', text: 'Wood' },
-                    { id: 'metal', text: 'Metal' },
-                    { id: 'plastic', text: 'Plastic' },
-                    { id: 'textile', text: 'Textile' }
+                    { id: 'wood', label: 'Wood' },
+                    { id: 'metal', label: 'Metal' },
+                    { id: 'plastic', label: 'Plastic' },
+                    { id: 'textile', label: 'Textile' }
                 ]);
                 
                 var colorsCollection = new Backbone.Collection([
-                    { id: 1, text: 'Red' },
-                    { id: 2, text: 'Green' },
-                    { id: 3, text: 'Blue' }
+                    { id: 1, label: 'Red' },
+                    { id: 2, label: 'Green' },
+                    { id: 3, label: 'Blue' }
                 ]);
                 
                 var provinces = new Backbone.Collection([
-                    { id: 'AB', text: 'Alberta' },
-                    { id: 'BC', text: 'British Columbia' },
-                    { id: 'MB', text: 'Manitoba' },
-                    { id: 'NB', text: 'New Brunswick' },
-                    { id: 'NL', text: 'Newfoundland and Labrador' },
-                    { id: 'NT', text: 'Northwest Territories' },
-                    { id: 'NS', text: 'Nova Scotia' },
-                    { id: 'NU', text: 'Nunavut' },
-                    { id: 'ON', text: 'Ontario' },
-                    { id: 'PE', text: 'Prince Edward Island' },
-                    { id: 'QC', text: 'Québec' },
-                    { id: 'SK', text: 'Saskatchewan' },
-                    { id: 'YT', text: 'Yukon' }
+                    { id: 'AB', label: 'Alberta' },
+                    { id: 'BC', label: 'British Columbia' },
+                    { id: 'MB', label: 'Manitoba' },
+                    { id: 'NB', label: 'New Brunswick' },
+                    { id: 'NL', label: 'Newfoundland and Labrador' },
+                    { id: 'NT', label: 'Northwest Territories' },
+                    { id: 'NS', label: 'Nova Scotia' },
+                    { id: 'NU', label: 'Nunavut' },
+                    { id: 'ON', label: 'Ontario' },
+                    { id: 'PE', label: 'Prince Edward Island' },
+                    { id: 'QC', label: 'Québec' },
+                    { id: 'SK', label: 'Saskatchewan' },
+                    { id: 'YT', label: 'Yukon' }
                 ]);
                 
                 var form = new PersonForm({ model: person });
@@ -510,16 +510,16 @@
                 
                 setTimeout(function() {
                     // province.collection.reset([
-                    //     { id: 'SK', text: 'Saskatchewan' },
-                    //     { id: 'YT', text: 'Yukon' }
+                    //     { id: 'SK', label: 'Saskatchewan' },
+                    //     { id: 'YT', label: 'Yukon' }
                     // ]);
                     
                     // materialsCollection.reset([
-                    //     { id: 'metal', text: 'Metal' },
-                    //     { id: 'plastic', text: 'Plastic' }
+                    //     { id: 'metal', label: 'Metal' },
+                    //     { id: 'plastic', label: 'Plastic' }
                     // ]);
                     
-                    colorsCollection.add({ id: 4, text: 'Purple' });
+                    colorsCollection.add({ id: 4, label: 'Purple' });
                     
                     form.getCollection('friends').add({ id: 105, firstName: 'Betty', lastName: 'Rubble' });
                     
@@ -545,7 +545,7 @@
         </script>
         
         <script id="select-result" type="text/template">
-        <span style="background-color: <%= text %>">&nbsp;</span> <%= label %>
+        <span style="background-color: <%= label %>">&nbsp;</span> <%= label %>
         </script>
         
         <script id="address" type="text/template">
@@ -629,9 +629,9 @@
         <div class="<%= controlsClassName %>">
           <div class="input-group">
             <span role="control" class="<%= controlClassName %> immutable">
-              <%= value.text %>
+              <%= value.label %>
             </span>
-            <div class="input-group-addon" style="background-color: <%= value.text %>">
+            <div class="input-group-addon" style="background-color: <%= value.label %>">
               <span class="glyphicon glyphicon-tint" aria-hidden="true" style="color: #fff"></span>
             </div>
             <div class="input-group-btn" role="group">

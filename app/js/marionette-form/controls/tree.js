@@ -24,7 +24,7 @@ define([
         omitAttributes: ['open', 'checked'],
         
         initialize: function(options) {
-            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
             var asCollection = this.getAttribute('collection') === true;
             var references = this.getAttribute('references');
@@ -180,7 +180,7 @@ define([
         pathSeparator: ' / ',
         
         initialize: function(options) {
-            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
             this.collection = this.collection || this.getCollection(options);
         },
         

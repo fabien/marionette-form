@@ -402,7 +402,7 @@ define([
     }, Form.CollectionMixin), function(options) {
         this.collection = this.collection || this.getCollection(options);
         
-        this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+        this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
         this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         this.dataKey = this.getAttribute('dataKey') || this.getOption('dataKey');
         this.iconKey = this.getAttribute('iconKey') || this.getOption('iconKey') || 'icon';

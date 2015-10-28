@@ -128,7 +128,7 @@ define([
         
         buildItem: function(value, labelKey, valueKey) {
             if (_.isString(value)) value = value.replace(/,/g, '');
-            var labelKey = labelKey || this.labelKey || 'text';
+            var labelKey = labelKey || this.labelKey || 'label';
             var valueKey = valueKey || this.valueKey || 'id';
             var item = {};
             item[labelKey] = this.createItemLabel(value);
@@ -550,6 +550,10 @@ define([
             __collections[name] = collection;
         } else if (_.isArray(collection)) {
             __collections[name] = new NestedCollection(collection);
+        } else if (_.isString(collection)) { // url
+            var Collection = NestedCollection.extend({ url: collection });
+            __collections[name] = new Collection();
+            __collections[name].fetch();
         } else {
             __collections[name] = new NestedCollection();
         }
@@ -950,9 +954,7 @@ define([
             },
             
             isBlank: function() {
-                var value = this.getValue(true);
-                if (_.isEmpty(value)) return true;
-                return Boolean((value || '').match(/^\s*$/));
+                return isBlank(this.getValue(true));
             },
             
             isEditable: function() {
@@ -1722,7 +1724,7 @@ define([
                 _.defer(this.render.bind(this));
             });
             this.maxValues = this.getAttribute('maxValues') || this.getOption('maxValues') || 100;
-            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         },
         
@@ -1734,7 +1736,8 @@ define([
             var valueKey = this.valueKey;
             var template = this.formatTemplate;
             var collection = this.collection;
-            var refs = data.references = [].concat(data.value || []);
+            var value = this.form.getValueOf(this.getKey());
+            var refs = data.references = [].concat(value || []);
             if (valueKey === 'id') {
                 var values = _.map(refs, function(id) {
                     var item = collection.get(id);
@@ -1892,7 +1895,7 @@ define([
         }
         
     }, CollectionMixin), function(options) {
-        this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+        this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
         this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         
         this.collection = this.collection || this.getCollection(options);
@@ -2084,7 +2087,7 @@ define([
         constructor: function(options) {
             if (!$.fn.select2) throw new Error('Select2 is not available');
             InputControl.prototype.constructor.apply(this, arguments);
-            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
             this.collection = this.collection || this.getCollection(this.getCollectionData());
         },
@@ -2167,7 +2170,7 @@ define([
             this.resultTemplate = this.getAttribute('resultTemplate') || this.getOption('resultTemplate');
             this.selectionTemplate = this.getAttribute('selectionTemplate') || this.getOption('selectionTemplate');
             
-            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'text';
+            this.labelKey = this.getAttribute('labelKey') || this.getOption('labelKey') || 'label';
             this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
             this.matchKey = this.getAttribute('matchKey') || this.getOption('matchKey') || this.labelKey;
             this.matcher = this.getOption('matcher') || $.fn.select2.defaults.matcher;
@@ -4082,6 +4085,12 @@ define([
                 collections[name] = new NestedCollection(collection);
             } else if (collection === true) {
                 throw new Error('Cannot register collection with option: true');
+            } else if (_.isString(collection)) { // url
+                var collectionConstructor = this.getOption('collectionConstructor');
+                if (!_.isFunction(collectionConstructor)) collectionConstructor = NestedCollection;
+                var Collection = collectionConstructor.extend({ url: collection });
+                collections[name] = new Collection();
+                collections[name].fetch();
             } else {
                 collections[name] = new NestedCollection();
             }
@@ -4296,6 +4305,12 @@ define([
             return klass;
         }
         return name;
+    };
+    
+    function isBlank(obj) {
+        if (_.isNumber(obj)) return false;
+        return _.isNull(obj) || _.isUndefined(obj) || _.isEmpty(obj) ||
+            (_.isString(obj) && /^[\s\t\r\n]*$/.test(obj));
     };
     
 });

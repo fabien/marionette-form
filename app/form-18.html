@@ -81,6 +81,8 @@
                     console.log('Change', JSON.stringify(form.getData(), null, 2));
                 });
                 
+                form.field('headerField', { key: 'firstName', control: 'binding', el: '#header-field' });
+                
                 form.render();
                 
             });
@@ -88,7 +90,11 @@
     </head>
     <body>
         <div class="container">
-            <h1>Form <small>using existing DOM elements</small></h1>
+            <form class="form-inline">
+                <h1>
+                    Form <small>using existing DOM elements <input id="header-field" type="text" class="form-control" style="margin-left: 2ex; width: 32ex;"></small>
+                </h1>
+            </form>
         </div>
         <div id="layout" class="container">
             <form id="form">

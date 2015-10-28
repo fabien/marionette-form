@@ -58,10 +58,10 @@
                             control: 'filter', key: 'style', ensureValue: true,
                             columns: 4, collapsible: false,
                             options: [
-                                { id: 'default', text: 'Default' },
-                                { id: 'color', text: 'Single color' },
-                                { id: 'colors', text: 'Multiple colors' },
-                                { id: 'pattern', text: 'Pattern' }
+                                { id: 'default', label: 'Default' },
+                                { id: 'color', label: 'Single color' },
+                                { id: 'colors', label: 'Multiple colors' },
+                                { id: 'pattern', label: 'Pattern' }
                             ]
                         },
                         {
@@ -119,12 +119,12 @@
                 categories.fetch();
                 
                 var colors = new Form.Collection([
-                    { id: 'white', text: 'White', hex: 'ffffff' },
-                    { id: 'black', text: 'Black', hex: '000000' },
-                    { id: 'red', text: 'Red', hex: 'ff0000' },
-                    { id: 'green', text: 'Green', hex: '00ff00' },
-                    { id: 'blue', text: 'Blue', hex: '0000ff' },
-                    { id: 'transparent', text: 'Transparent', selectable: false }
+                    { id: 'white', label: 'White', hex: 'ffffff' },
+                    { id: 'black', label: 'Black', hex: '000000' },
+                    { id: 'red', label: 'Red', hex: 'ff0000' },
+                    { id: 'green', label: 'Green', hex: '00ff00' },
+                    { id: 'blue', label: 'Blue', hex: '0000ff' },
+                    { id: 'transparent', label: 'Transparent', selectable: false }
                 ]);
                 
                 var patterns = new Form.Collection([
@@ -134,19 +134,19 @@
                 ]);
                 
                 var provinces = new Form.Collection([
-                    { id: 'AB', text: 'Alberta' },
-                    { id: 'BC', text: 'British Columbia' },
-                    { id: 'MB', text: 'Manitoba' },
-                    { id: 'NB', text: 'New Brunswick' },
-                    { id: 'NL', text: 'Newfoundland and Labrador' },
-                    { id: 'NT', text: 'Northwest Territories' },
-                    { id: 'NS', text: 'Nova Scotia' },
-                    { id: 'NU', text: 'Nunavut' },
-                    { id: 'ON', text: 'Ontario' },
-                    { id: 'PE', text: 'Prince Edward Island' },
-                    { id: 'QC', text: 'Québec' },
-                    { id: 'SK', text: 'Saskatchewan' },
-                    { id: 'YT', text: 'Yukon' }
+                    { id: 'AB', label: 'Alberta' },
+                    { id: 'BC', label: 'British Columbia' },
+                    { id: 'MB', label: 'Manitoba' },
+                    { id: 'NB', label: 'New Brunswick' },
+                    { id: 'NL', label: 'Newfoundland and Labrador' },
+                    { id: 'NT', label: 'Northwest Territories' },
+                    { id: 'NS', label: 'Nova Scotia' },
+                    { id: 'NU', label: 'Nunavut' },
+                    { id: 'ON', label: 'Ontario' },
+                    { id: 'PE', label: 'Prince Edward Island' },
+                    { id: 'QC', label: 'Québec' },
+                    { id: 'SK', label: 'Saskatchewan' },
+                    { id: 'YT', label: 'Yukon' }
                 ]);
                 
                 Form.registerCollection('categories', categories);
@@ -288,9 +288,9 @@
                 //     filters.set('color', 'blue');
                 //     filters.set('colors', ['blue', 'green']);
                 //     colors.reset([
-                //         { id: 'red', text: 'Red', hex: 'ff0000' },
-                //         { id: 'green', text: 'Green', hex: '00ff00', selectable: false },
-                //         { id: 'blue', text: 'Blue', hex: '0000ff' },
+                //         { id: 'red', label: 'Red', hex: 'ff0000' },
+                //         { id: 'green', label: 'Green', hex: '00ff00', selectable: false },
+                //         { id: 'blue', label: 'Blue', hex: '0000ff' },
                 //     ]);
                 //     provinces.get('YT').set('selectable', false);
                 // }, 1500);

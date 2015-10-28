@@ -102,26 +102,26 @@
                 var form = new ProfileForm({ model: profile });
                 
                 form.registerCollection('currencies', [
-                    { id: 'EUR', text: 'Euro', primary: true },
-                    { id: 'USD', text: 'US Dollar', primary: true },
-                    { id: 'GBP', text: 'GB Pound Sterling' },
-                    { id: 'CAD', text: 'Canadian Dollar' },
-                    { id: 'YEN', text: 'Japanese Yen' }
+                    { id: 'EUR', label: 'Euro', primary: true },
+                    { id: 'USD', label: 'US Dollar', primary: true },
+                    { id: 'GBP', label: 'GB Pound Sterling' },
+                    { id: 'CAD', label: 'Canadian Dollar' },
+                    { id: 'YEN', label: 'Japanese Yen' }
                 ]);
                 
                 form.registerCollection('countries', [
-                    { text: '' },
-                    { id: 'BE', text: 'Belgium' },
-                    { id: 'NL', text: 'Netherlands' },
-                    { id: 'FR', text: 'France' },
-                    { id: 'DE', text: 'Germany' }
+                    { label: '' },
+                    { id: 'BE', label: 'Belgium' },
+                    { id: 'NL', label: 'Netherlands' },
+                    { id: 'FR', label: 'France' },
+                    { id: 'DE', label: 'Germany' }
                 ]);
                 
                 form.registerCollection('menuOptions', [
-                    { id: 1, text: 'Option 1' },
-                    { id: 2, text: 'Option 2' },
-                    { id: 3, text: 'Option 3' },
-                    { id: 4, text: 'Option 4' }
+                    { id: 1, label: 'Option 1' },
+                    { id: 2, label: 'Option 2' },
+                    { id: 3, label: 'Option 3' },
+                    { id: 4, label: 'Option 4' }
                 ]);
                 
                 var fullnameTemplate = '<strong>Fullname:</strong> <%- form.data.firstName ? form.data.firstName[0] + ". " : "" %><%- form.data.lastName %>';
