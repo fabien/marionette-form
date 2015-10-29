@@ -12,6 +12,7 @@ requirejs.config({
         'bootstrap-combobox': 'lib/bootstrap-combobox',
         'comparators': 'lib/comparators',
         'filesize': 'lib/filesize',
+        'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
         'jquery.quickselect': 'lib/jquery.quickselect',
         'marionette.sort': 'lib/marionette.sort',
@@ -84,6 +85,9 @@ requirejs.config({
             deps: ['jquery']
         },
         'ion.rangeslider': {
+            deps: ['jquery']
+        },
+        'jquery.animate-enhanced': {
             deps: ['jquery']
         },
         'jquery.quickselect': {

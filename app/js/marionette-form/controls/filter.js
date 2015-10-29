@@ -207,7 +207,7 @@ define([
             if (_.isFunction(options)) callback = options, options = {};
             if (!this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', true);
-                var promise = this.getItemsContainer().slideUp(options).promise();
+                var promise = this.performCollapse(options);
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(false);
                     this.$el.addClass('collapsed-set');
@@ -223,7 +223,7 @@ define([
             if (_.isFunction(options)) callback = options, options = {};
             if (this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', false);
-                var promise = this.getItemsContainer().slideDown(options).promise();
+                var promise = this.performUncollapse(options);
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(true);
                     this.$el.removeClass('collapsed-set');
@@ -233,6 +233,14 @@ define([
             } else {
                 return $.Deferred().resolve().promise();
             }
+        },
+        
+        performCollapse: function(options) {
+            return this.getItemsContainer().slideUp(options).promise();
+        },
+        
+        performUncollapse: function(options) {
+            return this.getItemsContainer().slideDown(options).promise();
         },
         
         // Selection
@@ -317,6 +325,7 @@ define([
             if (this._isCollapsed) this.collapseSet(0);
             var partial = this.getSelectionState() === 1;
             this.$el.toggleClass('partial-selection', partial);
+            this.$el.toggleClass('empty', this.collection.length === 0);
         }
         
     }, FilterItemMixin));
@@ -722,7 +731,7 @@ define([
         },
         
         toggleList: function(options, callback) {
-            if (!this.evaluateAttribute('collapsible')) return; // skip
+            if (!this.isCollapsible()) return; // skip
             var isCollapsed = this.isCollapsed();
             options = _.isUndefined(options) ? 'fast' : options;
             if (isCollapsed) {
@@ -733,11 +742,10 @@ define([
         },
         
         collapseList: function(options, callback) {
-            var collapsible = this.evaluateAttribute('collapsible');
             if (_.isFunction(options)) callback = options, options = {};
-            if (collapsible && !this.isCollapsed() && this.children.length > 0) {
+            if (this.isCollapsible() && !this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', false);
-                var promise = this.ui.list.slideUp(options).promise();
+                var promise = this.performCollapse(options);
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(true);
                     this.$el.removeClass('expanded');
@@ -751,11 +759,10 @@ define([
         },
         
         uncollapseList: function(options, callback) {
-            var collapsible = this.evaluateAttribute('collapsible');
             if (_.isFunction(options)) callback = options, options = {};
-            if (collapsible && this.isCollapsed() && this.children.length > 0) {
+            if (this.isCollapsible() && this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', true);
-                var promise = this.ui.list.slideDown(options).promise();
+                var promise = this.performUncollapse(options);
                 promise.done(function() {
                     if (_.isFunction(callback)) callback(false);
                     this.$el.removeClass('collapsed');
@@ -771,6 +778,14 @@ define([
         isCollapsed: function() {
             if (!this.isRendered) return false;
             return this.ui.list && !this.ui.list.is(':visible');
+        },
+        
+        performCollapse: function(options) {
+            return this.ui.list.slideUp(options).promise();
+        },
+        
+        performUncollapse: function(options) {
+            return this.ui.list.slideDown(options).promise();
         },
         
         // Interaction
@@ -810,7 +825,13 @@ define([
         
         isCollapsible: function() {
             if (!this.evaluateAttribute('collapsible')) return false;
+            if (this.children.length === 0) return false;
             return !this.isImmutable();
+        },
+        
+        isOpen: function() {
+            if (this.children.length === 0) return false;
+            return this.hasAttribute('open') && this.evaluateAttribute('open');
         },
         
         // Display state
@@ -823,14 +844,11 @@ define([
         
         applyDisplayState: function() {
             this.$el.toggleClass('collapsible', this.isCollapsible());
+            this.$el.toggleClass('empty', this.collection.length === 0);
             this.ui.scrollContainer.scrollTop(this._scrollPosition || 0);
             var isCollapsed = this._isCollapsed;
-            if (this.hasAttribute('open')) {
-                if (this.evaluateAttribute('open')) {
-                    this.uncollapseList(0);
-                } else {
-                    this.collapseList(0);
-                }
+            if (this.isOpen()) {
+                this.uncollapseList(0);
             } else if (isCollapsed) {
                 this.collapseList(0);
             }
