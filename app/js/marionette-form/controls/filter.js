@@ -24,7 +24,8 @@ define([
     ].join('\n'));
     
     Form.Templates.FilterItem = _.template([
-        '<i class="icon <%= icon %>"></i> <span><%- label %></span>'
+        '<i class="icon <%= icon %>"></i> <span class="item-label"><%- label %></span>',
+        '<% if (obj.count > 0) { %> <span class="badge"><%- obj.count %></span><% } %>'
     ].join('\n'));
     
     Form.Templates.FilterSet = _.template([
@@ -63,6 +64,10 @@ define([
             return this.parent.getItemValue(this.model);
         },
         
+        getItemCount: function() {
+            return this.parent.getItemCount(this.model);
+        },
+        
         isSelected: function() {
             return this.parent.isSelected(this.model);
         },
@@ -94,6 +99,7 @@ define([
             data.item = Marionette.ItemView.prototype.mixinTemplateHelpers.call(this, itemData);
             data.label = this.getItemLabel();
             data.value = this.getItemValue();
+            data.count = this.getItemCount();
             data.icon = this.getItemIcon();
             data.selected = this.isSelected();
             data.selectable = this.isSelectable();
@@ -374,6 +380,11 @@ define([
             return model.get(this.valueKey);
         },
         
+        getItemCount: function(model) {
+            if (!model.has(this.countKey)) return -1;
+            return model.get(this.countKey);
+        },
+        
         getItemValues: function() {
             var itemValues = [];
             this.collection.each(function(model) {
@@ -415,6 +426,7 @@ define([
         this.valueKey = this.getAttribute('valueKey') || this.getOption('valueKey') || 'id';
         this.dataKey = this.getAttribute('dataKey') || this.getOption('dataKey');
         this.iconKey = this.getAttribute('iconKey') || this.getOption('iconKey') || 'icon';
+        this.countKey = this.getAttribute('countKey') || this.getOption('countKey') || 'count';
         this.selectableKey = this.getAttribute('selectableKey') || this.getOption('selectableKey') || 'selectable';
         this.childrenKey = this.getAttribute('childrenKey') || this.getOption('childrenKey') || 'children';
         

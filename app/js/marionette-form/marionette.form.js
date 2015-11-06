@@ -545,6 +545,10 @@ define([
         delete __resolvers[name];
     };
     
+    Marionette.Form.getCollection = function(name) {
+        return __collections[name];
+    };
+    
     Marionette.Form.registerCollection = function(name, collection) {
         if (collection instanceof Backbone.Collection) {
             __collections[name] = collection;
@@ -768,6 +772,8 @@ define([
                 }
                 
                 if (_.isFunction(viewConstructor)) viewConstructor.call(this, options);
+                
+                this.triggerMethod('initialize', options);
             },
             
             setupControlBehaviors: function(options) {
