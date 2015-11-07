@@ -1,7 +1,7 @@
 define([
     'moment',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'marionette.form',
     'marionette.sort'
 ], function(moment, Backbone, Marionette, Form, Sort) {

@@ -2,7 +2,7 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'marionette.form',
     'marionette.form.control.filter'
 ], function($, _, Backbone, Marionette, Form) {

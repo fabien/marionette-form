@@ -2,7 +2,7 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'marionette.form',
     'moment',
     'ion.rangeslider'

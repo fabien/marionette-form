@@ -2,7 +2,7 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'marionette.form',
     'dropzone'
 ], function($, _, Backbone, Marionette, Form, Dropzone) {

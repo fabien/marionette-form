@@ -7,7 +7,7 @@
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['backbone.marionette', 'underscore', 'dragula'], factory);
+        define(['marionette', 'underscore', 'dragula'], factory);
     } else if (typeof exports !== 'undefined') {
         // Node/CommonJS
         var Marionette = require('backbone.marionette');
@@ -100,11 +100,14 @@
         },
         
         getSortableContainer: function() {
-            if (_.isFunction(this.view.getChildViewContainer)) {
-                // CompositeView
+            var selector = this.getOption('selector') || this.view.getOption('selector');
+            if (_.isString(selector))
+                return this.$(selector).eq(0);
+            if (_.isFunction(this.view.getSortableContainer)) {
+                return this.view.getSortableContainer(this.view);
+            } else if (_.isFunction(this.view.getChildViewContainer)) {
                 return this.view.getChildViewContainer(this.view);
             } else {
-                // CollectionView
                 return this.$el;
             }
         }

@@ -1,6 +1,6 @@
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['backbone.marionette', 'underscore', 'comparators'], function(Marionette, _, comparators) {
+        define(['marionette', 'underscore', 'comparators'], function(Marionette, _, comparators) {
             return factory(Marionette, _, comparators);
         });
     } else if (typeof exports !== 'undefined') {

@@ -2,7 +2,7 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'marionette.form',
     'backbone.googlemaps'
 ], function($, _, Backbone, Marionette, Form) {

@@ -3,7 +3,7 @@ define([
     'underscore',
     'moment',
     'backbone',
-    'backbone.marionette',
+    'marionette',
     'backbone.nested-model',
     'backbone.syphon'
 ], function($, _, moment, Backbone, Marionette) {
