@@ -45,10 +45,10 @@
                         },
                         // Control with input field and scrollable pane
                         {
-                            control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
-                            defaultLabel: '<em>All provinces</em>', input: true, placeholder: 'Search province',
-                            columns: 3
-                        },
+                              control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
+                              defaultLabel: '<em>All provinces</em>', input: true, placeholder: 'Search province',
+                              columns: 3
+                          },
                         // Readonly
                         {
                             control: 'filter', key: 'province', label: 'Selected Province', collection: 'provinces', 
@@ -62,7 +62,8 @@
                                 { id: 'default', label: 'Default' },
                                 { id: 'color', label: 'Single color' },
                                 { id: 'colors', label: 'Multiple colors' },
-                                { id: 'pattern', label: 'Pattern' }
+                                { id: 'pattern', label: 'Pattern' },
+                                { id: 'invisible', label: 'Invisible', visible: false }
                             ]
                         },
                         {
@@ -135,19 +136,19 @@
                 ]);
                 
                 var provinces = new Form.Collection([
-                    { id: 'AB', label: 'Alberta' },
-                    { id: 'BC', label: 'British Columbia' },
-                    { id: 'MB', label: 'Manitoba' },
-                    { id: 'NB', label: 'New Brunswick' },
-                    { id: 'NL', label: 'Newfoundland and Labrador' },
-                    { id: 'NT', label: 'Northwest Territories' },
-                    { id: 'NS', label: 'Nova Scotia' },
-                    { id: 'NU', label: 'Nunavut' },
-                    { id: 'ON', label: 'Ontario' },
-                    { id: 'PE', label: 'Prince Edward Island' },
-                    { id: 'QC', label: 'Québec' },
-                    { id: 'SK', label: 'Saskatchewan' },
-                    { id: 'YT', label: 'Yukon' }
+                    { id: 'AB', label: 'Alberta', count: 3 },
+                    { id: 'BC', label: 'British Columbia', count: 5 },
+                    { id: 'MB', label: 'Manitoba', count: 7 },
+                    { id: 'NB', label: 'New Brunswick', count: 2 },
+                    { id: 'NL', label: 'Newfoundland and Labrador', count: 8 },
+                    { id: 'NT', label: 'Northwest Territories', count: 14 },
+                    { id: 'NS', label: 'Nova Scotia', count: 1 },
+                    { id: 'NU', label: 'Nunavut', count: 6 },
+                    { id: 'ON', label: 'Ontario', count: 9 },
+                    { id: 'PE', label: 'Prince Edward Island', count: 4 },
+                    { id: 'QC', label: 'Québec', count: 11 },
+                    { id: 'SK', label: 'Saskatchewan', count: 0 },
+                    { id: 'YT', label: 'Yukon', count: 2 }
                 ]);
                 
                 Form.registerCollection('categories', categories);
@@ -278,10 +279,12 @@
                 
                 // Rendering
                 
-                filterState.fetch({ success: function() {
-                    form.render();
-                    $('#layout').append(form.el);
-                } });
+                categories.cache.done(function() {
+                    filterState.fetch({ success: function() {
+                        form.render();
+                        $('#layout').append(form.el);
+                    } });
+                });
                 
                 // Example interactions
                 

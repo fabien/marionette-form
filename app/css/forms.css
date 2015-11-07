@@ -274,6 +274,11 @@ form .nested-controls.row > .col {
     color: #bbb;
 }
 
+.form-group .filter-item .badge {
+    float: right;
+    margin-right: 1ex;
+}
+
 .form-group .filter-item-header .icon,
 .form-group .filter-item.selected > .icon,
 .dropdown-menu .filter-item .icon {

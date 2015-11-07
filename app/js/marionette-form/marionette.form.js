@@ -518,6 +518,19 @@ define([
         
     });
     
+    var PercentageFormatter = Marionette.Form.PercentageFormatter = function() {};
+    _.extend(PercentageFormatter.prototype, {
+        
+        fromRaw: function(rawData, model) {
+            return (_.isNumber(rawData) ? rawData.toFixed() : 0) + ' %';
+        },
+        
+        toRaw: function(formattedData, model) {
+            return parseInt(String(formattedData).replace(/\D+/g, ''));
+        }
+        
+    });
+    
     var ArrayFormatter = Marionette.Form.ArrayFormatter = function() {};
     _.extend(ArrayFormatter.prototype, {
         

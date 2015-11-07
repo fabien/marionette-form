@@ -44,6 +44,8 @@ define([
         
         disabledClassName: 'disabled',
         
+        hiddenClassName: 'hidden',
+        
         triggers: {
             'click': 'click'
         },
@@ -69,11 +71,15 @@ define([
         },
         
         isSelected: function() {
-            return this.parent.isSelected(this.model);
+            return this.parent.isSelectedItem(this.model);
         },
         
         isSelectable: function() {
-            return this.parent.isSelectable(this.model);
+            return this.parent.isSelectableItem(this.model);
+        },
+        
+        isVisible: function() {
+            return this.parent.isVisibleItem(this.model);
         },
         
         setMatchTerm: function(match, term) {
@@ -90,6 +96,7 @@ define([
         applyElementState: function() {
             this.$el.toggleClass(this.getOption('selectedClassName'), this.isSelected());
             this.$el.toggleClass(this.getOption('disabledClassName'), !this.isSelectable());
+            this.$el.toggleClass(this.getOption('hiddenClassName'), !this.isVisible());
             this.$el.toggleClass('filter-set', Boolean(this.collection));
         },
         
@@ -102,6 +109,7 @@ define([
             data.count = this.getItemCount();
             data.icon = this.getItemIcon();
             data.selected = this.isSelected();
+            data.visible = this.isVisible();
             data.selectable = this.isSelectable();
             data.collapsibleSets = !!this.parent.getAttribute('collapsibleSets');
             if (this.collection) data.children = this.collection.toJSON();
@@ -211,10 +219,10 @@ define([
         
         collapseSet: function(options, callback) {
             if (_.isFunction(options)) callback = options, options = {};
-            if (!this.isCollapsed() && this.children.length > 0) {
+            if (!this.isCollapsed() || options === 0) {
                 this.triggerMethod('before:collapse', true);
                 var promise = this.performCollapse(options);
-                promise.done(function() {
+                $.when(promise).done(function() {
                     if (_.isFunction(callback)) callback(false);
                     this.$el.addClass('collapsed-set');
                     this.triggerMethod('collapse', false);
@@ -230,7 +238,7 @@ define([
             if (this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', false);
                 var promise = this.performUncollapse(options);
-                promise.done(function() {
+                $.when(promise).done(function() {
                     if (_.isFunction(callback)) callback(true);
                     this.$el.removeClass('collapsed-set');
                     this.triggerMethod('collapse', true);
@@ -252,7 +260,7 @@ define([
         // Selection
         
         isSelected: function() {
-            return this.parent.isSelected(this.model);
+            return this.parent.isSelectedItem(this.model);
         },
         
         getItemValue: function() {
@@ -388,7 +396,7 @@ define([
         getItemValues: function() {
             var itemValues = [];
             this.collection.each(function(model) {
-                if (!this.isSelectable(model)) return;
+                if (!this.isSelectableItem(model)) return;
                 itemValues.push(this.getItemValue(model));
             }.bind(this)); 
             return itemValues;
@@ -407,7 +415,7 @@ define([
             }
         },
         
-        isSelectable: function(model) {
+        isSelectableItem: function(model) {
             if (!this.evaluateAttribute('selectable')) return false;
             var selectedValues = this.getSelectedValues();
             if (this.getAttribute('multiple') && this.getAttribute('limit') > 0
@@ -416,7 +424,12 @@ define([
                 return false;
             }
             if (!model.has(this.selectableKey)) return true;
-            return model.get(this.selectableKey);
+            return Boolean(model.get(this.selectableKey));
+        },
+        
+        isVisibleItem: function(model) {
+            if (!model.has(this.visibleKey)) return true;
+            return Boolean(model.get(this.visibleKey));
         }
         
     }, Form.CollectionMixin), function(options) {
@@ -428,6 +441,7 @@ define([
         this.iconKey = this.getAttribute('iconKey') || this.getOption('iconKey') || 'icon';
         this.countKey = this.getAttribute('countKey') || this.getOption('countKey') || 'count';
         this.selectableKey = this.getAttribute('selectableKey') || this.getOption('selectableKey') || 'selectable';
+        this.visibleKey = this.getAttribute('visibleKey') || this.getOption('visibleKey') || 'visible';
         this.childrenKey = this.getAttribute('childrenKey') || this.getOption('childrenKey') || 'children';
         
         this.listenTo(this.collection, 'reset sync change update', this.ensureValue.bind(this, false));
@@ -496,7 +510,7 @@ define([
         getItemIcon: function(model) {
             var icon = BaseFilterControl.prototype.getItemIcon.apply(this, arguments);
             if (_.isString(icon)) return icon;
-            return this.getAttribute(this.isSelected(model) ? 'selectedIcon' : 'icon');
+            return this.getAttribute(this.isSelectedItem(model) ? 'selectedIcon' : 'icon');
         },
         
         getData: function() {
@@ -587,7 +601,7 @@ define([
             }.bind(this));
         },
         
-        isSelected: function(model) {
+        isSelectedItem: function(model) {
             var values = [].concat(this.getValue(true) || []);
             var value = this.getItemValue(model);
             return _.include(values, value);
@@ -676,11 +690,14 @@ define([
         
         attachHtml: function(collectionView, childView, index) {
             var columns = this.getAttribute('columns');
-            if (_.isNumber(columns) && columns) {
+            if (!childView.isVisible()) {
+                return; // skip
+            } else if (_.isNumber(columns) && columns) {
                 columns = columns > 0 ? columns : this.collection.length;
+                var visibleItems = this.collection.filter(this.isVisibleItem.bind(this));
                 var colPrefix = this.getAttribute('columnPrefix') || 'col-sm-';
                 var colClass = colPrefix + (12 / columns);
-                var total = this.collection.length;
+                var total = visibleItems.length;
                 var limit = Math.ceil(total / columns);
                 var offset = index + 1;
                 var column = Math.ceil(offset / limit);
@@ -758,7 +775,7 @@ define([
             if (this.isCollapsible() && !this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', false);
                 var promise = this.performCollapse(options);
-                promise.done(function() {
+                $.when(promise).done(function() {
                     if (_.isFunction(callback)) callback(true);
                     this.$el.removeClass('expanded');
                     this.$el.addClass('collapsed');
@@ -775,7 +792,7 @@ define([
             if (this.isCollapsible() && this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', true);
                 var promise = this.performUncollapse(options);
-                promise.done(function() {
+                $.when(promise).done(function() {
                     if (_.isFunction(callback)) callback(false);
                     this.$el.removeClass('collapsed');
                     this.$el.addClass('expanded');
@@ -803,7 +820,7 @@ define([
         // Interaction
         
         onItemClick: function(childView) {
-            var isSelectable = this.isSelectable(childView.model);
+            var isSelectable = this.isSelectableItem(childView.model);
             if (!isSelectable || this.isImmutable()) return;
             if (this.getAttribute('autoClose')) {
                 this.once('render', this.collapseList.bind(this, 'fast'));
@@ -876,7 +893,9 @@ define([
             FilterControl.prototype.constructor.apply(this, arguments);
             this._collapsedSets = [];
             if (this.getAttribute('collapsibleSets')) {
-                this.once('render', function() { this.collapseSets(0); });
+                this.once('render', function() { 
+                    setTimeout(this.collapseSets.bind(this, 0), 0);
+                });
             }
         },
         
