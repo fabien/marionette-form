@@ -166,6 +166,8 @@ define([
         
     });
     
+    Form.ObjectView = Form.Editable; // for use as (modal) view
+    
     return EditableForm;
     
 });
