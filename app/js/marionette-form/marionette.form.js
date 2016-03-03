@@ -3370,6 +3370,7 @@ define([
             }
             
             this.listenTo(this.model, 'change', this.triggerMethod.bind(this, 'change'));
+            this.listenTo(this.model, 'validated', this.onModelValidated);
             this.listenTo(this.model, 'invalid', this.onModelInvalid);
             
             if (this.getOption('autoValidate')) this.on('change', this.isValid);
@@ -3769,6 +3770,10 @@ define([
             }
             if (isValid) this.unsetError(key);
             return isValid;
+        },
+        
+        onModelValidated: function(isValid, model, errors) {
+            if (isValid) this.resetErrors();
         },
         
         onModelInvalid: function(model, errors, options) {

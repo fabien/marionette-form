@@ -128,7 +128,8 @@ define([
         },
         
         fieldFromAttribute: function(attr, value) {
-            if (this.createFieldForAttribute(attr, value)) return;
+            var field = this.createFieldForAttribute(attr, value);
+            if (field instanceof Form.Field || field === false) return;
             if (_.isArray(value) && _.isObject(value[0])) {
                 var modalViewOptions = _.extend({}, _.result(this, 'modalViewOptions'));
                 this.field(attr, {
