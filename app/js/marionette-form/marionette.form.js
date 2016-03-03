@@ -3508,6 +3508,12 @@ define([
             return; // Hook method for i18n of labels
         },
         
+        getFieldByKey: function(key) {
+            return this.children.find(function(field) {
+                return field.getKey() === key;
+            });
+        },
+        
         getControl: function(name) {
             var controlClass = this.registry[name] || this.callDelegate('getControl', name);
             if (controlClass) return controlClass;
