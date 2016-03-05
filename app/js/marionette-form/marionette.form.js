@@ -3355,14 +3355,14 @@ define([
                 this.model = new this.modelConstructor(data);
                 
                 this.model.listenTo(source, 'change:' + rootKey, function(model, data, options) {
-                    if (options.source === this) return;
+                    if (options && options.source === this) return;
                     options = _.extend({}, options);
                     options.source = options.source || this;
                     this.set(data, options);
                 });
                 
                 source.listenTo(this.model, 'change', function(model, options) {
-                    if (options.source === this) return;
+                    if (options && options.source === this) return;
                     options = _.extend({}, options);
                     options.source = options.source || this;
                     this.set(rootKey, model.toJSON(), options);
