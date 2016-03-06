@@ -1378,6 +1378,8 @@ define([
             
             onAction: function(event) {
                 var action = $(event.currentTarget).data('action') || 'default';
+                this.form.triggerMethod('before:action', action, event);
+                this.triggerMethod('before:action', action, event);
                 this.triggerMethod('action:' + action, event);
             },
             
