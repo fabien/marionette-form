@@ -34,7 +34,7 @@ define([
             });
             this.on('resolve:done', this.render);
             this.on('resolve:fail', function() {
-                this.itemModel.clear();
+                this.itemModel.clear({ reset: true });
                 this.ui.control.not('button').val('').text('');
             });
         },
@@ -70,7 +70,7 @@ define([
         
         resolvedReference: function(model) {
             if (!_.isObject(model)) return; // model or plain object
-            this.itemModel.clear({ silent: true });
+            this.itemModel.clear({ reset: true, silent: true });
             if (model instanceof Backbone.Model) {
                 model.unset('__resolving', { silent: true })
                 this.assignModel(model);

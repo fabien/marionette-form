@@ -3561,7 +3561,7 @@ define([
         
         reset: function(data) {
             data = _.extend({}, data);
-            this.model.clear();
+            this.model.clear({ reset: true });
             this.triggerMethod('reset', data);
             this.model.set(data);
         },
@@ -3858,7 +3858,7 @@ define([
                 if (this.errors.has(rootKey)) this.errors.unset(key);
                 if (_.isEmpty(this.errors.get(rootKey))) this.errors.unset(rootKey);
             } else if (_.isObject(key)) { 
-                this.errors.clear();
+                this.errors.clear({ reset: true });
                 this.errors.set(normalizeErrors(key, errors === true));
             }
         },
@@ -3898,7 +3898,7 @@ define([
             if (arguments.length > 0) {
                 this.setErrors(key);
             } else {
-                this.errors.clear();
+                this.errors.clear({ reset: true });
             }
         },
         
