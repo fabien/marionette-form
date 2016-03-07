@@ -2086,6 +2086,13 @@ define([
         getPluginOptions: function(type) {
             var options = this.getAttribute(type) || this.getOption(type);
              return _.isObject(options) ? options : ((options === true) ? {} : null);
+        },
+        
+        filter: function (model, index, collection) {
+            if (!this.getAttribute('multiple') && this.isReadonly()) {
+                return model.get(this.valueKey) === this.getValue(true);
+            }
+            return true;
         }
         
     });
