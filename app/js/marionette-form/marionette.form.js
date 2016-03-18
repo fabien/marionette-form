@@ -2919,7 +2919,7 @@ define([
             if (!model || !model.get('__resolving')) return;
             var resolved;
             if (this.resolver instanceof Backbone.Collection) {
-                function resolve() {
+                function resolveFn() {
                     resolved = this.resolveModelById(model.id);
                     if (resolved) {
                         this.resolvedReference(resolved);
@@ -2927,7 +2927,7 @@ define([
                         this.triggerMethod('resolve:fail', model);
                     }
                 };
-                var resolve = resolve.bind(this);
+                var resolve = resolveFn.bind(this);
                 if (this.resolver.cache && _.isFunction(this.resolver.cache.done)) {
                     this.resolver.cache.done(function() { setTimeout(resolve, 0); });
                 } else {
