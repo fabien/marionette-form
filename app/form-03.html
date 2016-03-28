@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="/css/select2.css" type="text/css">
         <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/css/bootstrap-combobox.css" type="text/css">
+        <link rel="stylesheet" href="/css/bootstrap-switch.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.skinFlat.css" type="text/css">
@@ -25,6 +26,7 @@
                 'marionette.form',
                 'marionette.form.control.combobox',
                 'marionette.form.control.dropdown',
+                'marionette.form.control.switch',
                 'backbone.validation',
                 'jquery.maskedinput',
                 'autoNumeric',
@@ -96,7 +98,8 @@
                     country: 'Netherlands',
                     currency: 'EUR',
                     currencies: ['EUR', 'GBP'],
-                    amount: 2845
+                    amount: 2845,
+                    active: 'yes'
                 });
                 
                 var form = new ProfileForm({ model: profile });
@@ -138,6 +141,7 @@
                     },
                     { id: 'website', control: 'input', omit: 'isBlank', addon: { text: 'http://', action: 'open-link', prepend: true } },
                     { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
+                    { id: 'active', control: 'switch', label: 'Account active?', onText: 'Yes', offText: 'No', onValue: 'yes', offValue: 'no' },
                     { id: 'combobox', key: 'currency', control: 'combobox', collection: 'currencies' },
                     { id: 'currency', control: 'select', collection: 'currencies', quickSelect: true, placeholder: 'Other &hellip;' },
                     { id: 'dropdown', key: 'currency', control: 'dropdown', collection: 'currencies', defaultLabel: 'No selection', selectable: true },
@@ -145,6 +149,7 @@
                     { id: 'menu', control: 'menu', collection: 'menuOptions', defaultLabel: 'Options' },
                     { id: 'amount', control: 'input', formatter: 'cents', numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
                     { id: 'birthday', control: 'checkbox', omit: true },
+                    { id: 'birthday-switch', key: 'birthday', control: 'switch', label: false, omit: true },
                     {
                         id: 'dateOfBirth', control: 'date', disabled: '!birthday', omit: '!birthday', observe: 'birthday',
                         default: '2015-02-04T22:45:00.000Z'

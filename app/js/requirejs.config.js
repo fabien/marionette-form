@@ -11,8 +11,9 @@ requirejs.config({
         'backbone.uri-sync': 'lib/backbone.uri-sync',
         'behave': 'lib/behave',
         'bootstrap-combobox': 'lib/bootstrap-combobox',
+        'bootstrap-switch': 'lib/bootstrap-switch',
         'comparators': 'lib/comparators',
-        "countable": "lib/countable",
+        'countable': 'lib/countable',
         'filesize': 'lib/filesize',
         'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
@@ -63,6 +64,7 @@ requirejs.config({
         'marionette.form.control.redactor': 'marionette-form/controls/redactor',
         'marionette.form.control.reference': 'marionette-form/controls/reference',
         'marionette.form.control.slider': 'marionette-form/controls/slider',
+        'marionette.form.control.switch': 'marionette-form/controls/switch',
         'marionette.form.control.tree': 'marionette-form/controls/tree',
         'marionette.form.control.upload': 'marionette-form/controls/upload',
         'marionette.form.control.urlify': 'marionette-form/controls/urlify'
@@ -71,7 +73,7 @@ requirejs.config({
         autoNumeric: {
             deps: ['jquery']
         },
-        rison: { "exports": "rison" },
+        rison: { exports: 'rison' },
         bootstrap: {
             deps: ['jquery']
         },
@@ -104,6 +106,9 @@ requirejs.config({
             deps: ['jquery']
         },
         'bootstrap-combobox': {
+            deps: ['jquery']
+        },
+        'bootstrap-switch': {
             deps: ['jquery']
         }
     }

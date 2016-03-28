@@ -236,6 +236,15 @@ form .nested-controls.row > .col {
     margin: 5px 0;
 }
 
+.control-switch .checkbox {
+    display: inline-block;
+}
+
+.control-switch .col-controls > label {
+    margin-left: 2ex;
+    cursor: pointer;
+}
+
 .form-group .filter-list .help-block {
     margin-top: 10px;
 }
