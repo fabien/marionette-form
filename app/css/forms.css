@@ -31,6 +31,10 @@ form .nested-controls.row > .col {
    color: red;
 }
 
+.form-group.invalid .control-label {
+   color: red;
+}
+
 .form-horizontal .nested-form .form-group,
 .form-horizontal .nested-controls.empty .form-group {
     margin-left: 0;

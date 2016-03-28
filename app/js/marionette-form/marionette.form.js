@@ -587,6 +587,12 @@ define([
         return resolveNameToClass(name, 'Form');
     };
     
+    // Util
+    
+    Marionette.Form.geoIpLookup = function(callback) {
+        return $.get('http://ipinfo.io', function() {}, 'jsonp').always(callback);
+    };
+    
     // Views
     
     var DebugView = Marionette.Form.DebugView = Marionette.ItemView.extend({
@@ -1218,13 +1224,15 @@ define([
                 var options = _.last(arguments) || {};
                 if (this.getOption('renderOnce') && this.isRendered && !options.force) {
                     this.triggerMethod('refresh', options);
-                    this.isValid()
+                    this.$el.toggleClass('invalid', !this.isValid());
                 } else if (options.force || !this.isRendered || options.viewCid !== this.cid) {
                     this.once('render', this.triggerMethod.bind(this, 'refresh', options));
+                    this.$el.removeClass('invalid');
                     return View.prototype.render.apply(this, arguments);
                 } else {
                     this.triggerMethod('refresh', options);
                     this.isValid();
+                    this.$el.toggleClass('invalid', !this.isValid());
                 }
                 return this;
             },
@@ -4155,7 +4163,6 @@ define([
         }
         
     });
-    
     
     return Marionette.Form;
     

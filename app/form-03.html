@@ -9,6 +9,7 @@
         <link rel="stylesheet" href="/css/select2-bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/css/bootstrap-combobox.css" type="text/css">
         <link rel="stylesheet" href="/css/bootstrap-switch.css" type="text/css">
+        <link rel="stylesheet" href="/css/intl-tel-input.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.css" type="text/css">
         <link rel="stylesheet" href="/js/vendor/ion.rangeslider/css/ion.rangeSlider.skinFlat.css" type="text/css">
@@ -26,6 +27,7 @@
                 'marionette.form',
                 'marionette.form.control.combobox',
                 'marionette.form.control.dropdown',
+                'marionette.form.control.phone',
                 'marionette.form.control.switch',
                 'marionette.form.control.text',
                 'backbone.validation',
@@ -37,6 +39,8 @@
                 'bootstrap-daterangepicker',
                 'bootstrap-filestyle',
             ], function(Backbone, Marionette, Form) {
+                
+                $.fn.intlTelInput.loadUtils('/js/lib/intl-tel-input-utils.js');
                 
                 _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
                 
@@ -95,7 +99,8 @@
                 var profile = new Profile({
                     firstName: 'Andre',
                     lastName: 'Jones',
-                    phone: { number: '(123) 456-7890', type: 'mobile' },
+                    phone: { number: '(123) 456-7890', type: 'home' },
+                    mobile: '+3211885728',
                     country: 'Netherlands',
                     currency: 'EUR',
                     currencies: ['EUR', 'GBP'],
@@ -140,6 +145,7 @@
                         input: { key: 'number', mask: '(999) 999-9999' },
                         dropdown: { key: 'type', collection: ['home', 'work', 'mobile'], ensureValue: true }
                     },
+                    { id: 'mobile', control: 'phone', initialCountry: 'auto', mobile: true, preferred: ['nl', 'be', 'de'] },
                     { id: 'website', control: 'input', omit: 'isBlank', addon: { text: 'http://', action: 'open-link', prepend: true } },
                     { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
                     { id: 'active', control: 'switch', label: 'Account active?', onText: 'Yes', offText: 'No', onValue: 'yes', offValue: 'no' },
