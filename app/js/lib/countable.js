@@ -379,7 +379,28 @@
     */
     
     countText: function(value, options) {
-        return __count(value, _extendDefaults(options))
+      return __count(value, _extendDefaults(options))
+    },
+    
+    /**
+     * The `countText` method returns counts for a plain text value.
+    */
+    
+    truncateText: function(value, max, unit, options) {
+      unit = unit || 'characters', options = options || {};
+      var count = this.countText(value, options);
+      var trimmed = (value + '').trim();
+      if (!trimmed || max < 1) return value;
+      if (unit === 'paragraphs') {
+        var returns = options.hardReturns ? '\n\n': '\n';
+        return (trimmed.match(options.hardReturns ? /\n{2,}/g : /\n+/g) || []).slice(0, max).join(returns);
+      } else if (unit === 'sentences') {
+        return (trimmed.match(/[.?!…]+./g) || []).slice(0, max).join(' ');
+      } else if (unit === 'words') {
+        return (trimmed.match(/\S+/g) || []).slice(0, max).join(' ');
+      } else if (unit === 'characters' || unit === 'all') {
+        return trimmed.slice(0, max);
+      }
     },
 
     /**

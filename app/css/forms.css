@@ -245,6 +245,17 @@ form .nested-controls.row > .col {
     cursor: pointer;
 }
 
+.control-text .counter {
+    color: #777777;
+    font-size: 14px;
+    line-height: 2.3;
+    float: right;
+}
+
+.control-text .counter.warning {
+    color: #d9534f;
+}
+
 .form-group .filter-list .help-block {
     margin-top: 10px;
 }

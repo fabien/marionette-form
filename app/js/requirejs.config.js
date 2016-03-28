@@ -65,6 +65,7 @@ requirejs.config({
         'marionette.form.control.reference': 'marionette-form/controls/reference',
         'marionette.form.control.slider': 'marionette-form/controls/slider',
         'marionette.form.control.switch': 'marionette-form/controls/switch',
+        'marionette.form.control.text': 'marionette-form/controls/text',
         'marionette.form.control.tree': 'marionette-form/controls/tree',
         'marionette.form.control.upload': 'marionette-form/controls/upload',
         'marionette.form.control.urlify': 'marionette-form/controls/urlify'

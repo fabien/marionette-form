@@ -27,6 +27,7 @@
                 'marionette.form.control.combobox',
                 'marionette.form.control.dropdown',
                 'marionette.form.control.switch',
+                'marionette.form.control.text',
                 'backbone.validation',
                 'jquery.maskedinput',
                 'autoNumeric',
@@ -65,7 +66,7 @@
                             field.model.set('omit', !hasBirthDay || field.isBlank());
                         } else if (hasBirthDay) {
                             var index = this.collection.length - 1;
-                            this.field('notes', { control: 'textarea', omit: 'isBlank' }, { at: index });
+                            this.field('notes', { control: 'text', max: 100, truncate: true, omit: 'isBlank' }, { at: index });
                         }
                     },
                     
