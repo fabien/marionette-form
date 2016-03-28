@@ -12,6 +12,7 @@ requirejs.config({
         'behave': 'lib/behave',
         'bootstrap-combobox': 'lib/bootstrap-combobox',
         'comparators': 'lib/comparators',
+        "countable": "lib/countable",
         'filesize': 'lib/filesize',
         'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',

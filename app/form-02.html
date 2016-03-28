@@ -68,6 +68,10 @@
                     
                     template: '#list-item',
                     
+                    modelEvents: {
+                        'change': 'render'
+                    }
+                    
                 });
                 
                 var ListView = Marionette.CollectionView.extend({

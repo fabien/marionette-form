@@ -2895,8 +2895,9 @@ define([
             var options = { __internal: true };
             var m = this.collection.get(model.id);
             var childView = this.children.find(function(v) {
-                return v.itemModel && v.itemModel.id;
+                return v.itemModel && v.itemModel.id === model.id;
             });
+            if (childView) childView.$el.hide();
             var index = this.collection.indexOf(m);
             if (index !== -1) this.collection.remove(m, options);
             if (model instanceof Backbone.Model) {
