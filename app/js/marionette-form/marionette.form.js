@@ -723,7 +723,7 @@ define([
                 this.on('change', this.clearError);
                 this.on('blur', this.renderError);
                 
-                if (this.hasAttribute('default')) {
+                if (this.hasAttribute('default') && this.isBlank()) {
                     this.setValue(this.getAttribute('default'), { silent: true });
                 }
                 
@@ -1287,6 +1287,8 @@ define([
                 if (!control || !control.is('*')) return; // skip
                 if (_.isFunction(this._applyJQuery)) this._applyJQuery(control);
                 var jquery = _.extend({}, this.getOption('jquery'), this.getAttribute('jquery'));
+                var appliedPlugins = [];
+                var self = this;
                 
                 var plugins = _.extend({}, _.result(this, 'plugins'));
                 _.each(plugins, function(plugin, attr) {
@@ -1296,8 +1298,14 @@ define([
                 
                 _.each(jquery, function(args, method) {
                     args = _.isArray(args) ? args : [].concat(args || []);
-                    if (_.isFunction(control[method])) control[method].apply(control, args);
+                    if (_.isFunction(control[method])) {
+                        control[method].apply(control, args);
+                        appliedPlugins.push(method);
+                        self.triggerMethod('jquery:plugin', method, args);
+                    }
                 });
+                
+                this.triggerMethod('jquery:plugins', appliedPlugins);
             },
             
             observeKey: function(key, method) {
@@ -1798,7 +1806,10 @@ define([
         // 9 - Represents a numeric character (0-9)
         // * - Represents an alphanumeric character (A-Z,a-z,0-9)
         
-        plugins: { mask: 'mask', numeric: 'autoNumeric' },
+        plugins: {
+            mask: 'mask', numeric: 'autoNumeric',
+            prefix: 'prefix', suffix: 'suffix'
+        },
         
         template: Templates.InputControl,
         
@@ -1814,19 +1825,67 @@ define([
             control: 'input'
         },
         
+        initialize: function() {
+            Control.prototype.initialize.apply(this, arguments);
+            this.on('jquery:plugins', this._finalizePlugins);
+            this.on('destroy', this._detachPlugins);
+            this.listenTo(this.model, 'change:prefix', this._setPrefix);
+            this.listenTo(this.model, 'change:suffix', this._setSuffix);
+        },
+        
         getValue: function(fromModel) {
             if (fromModel) {
                 return Control.prototype.getValue.apply(this, arguments);
             } else if (this.getAttribute('numeric') && $.fn.autoNumeric) {
                 if (this.ui.control.data('autoNumeric')) {
                     var value = parseFloat(this.ui.control.autoNumeric('get'));
+                    return this.coerceValue(value);
                 } else {
-                    var value = 0;
+                    return this.coerceValue(0);
                 }
-                return this.coerceValue(value);
+            } else if (this.getAttribute('prefix') || this.getAttribute('suffix')) {
+                var rawValue = Control.prototype.getValue.apply(this, arguments);
+                if (!this.ui.control.affixValue) return rawValue;
+                var plainValue = this.ui.control.affixValue();
+                if (isBlank(plainValue) && !this.getAttribute('forceAffix')) return '';
+                return this.coerceValue(this.getAttribute('affix') ? rawValue : plainValue);
             } else {
                 return Control.prototype.getValue.apply(this, arguments);
             }
+        },
+        
+        setPrefix: function(affix) {
+            this.model.set('prefix', affix);
+        },
+        
+        setSuffix: function(affix) {
+            this.model.set('suffix', affix);
+        },
+        
+        _finalizePlugins: function(plugins) {
+            if (_.include(plugins, 'prefix') || _.include(plugins, 'suffix')) {
+                if (this.ui.control.affixValue && !this.getAttribute('affix')) {
+                    this.ui.control.affixValue(this.getValue(true));
+                    this.setValue(this.getValue());
+                }
+            }
+        },
+        
+        _setPrefix: function() {
+            if (!this.ui.control.prefix) return;
+            var affix = this.getAttribute('prefix');
+            if (affix) this.ui.control.prefix(affix);
+        },
+        
+        _setSuffix: function() {
+            if (!this.ui.control.suffix) return;
+            var affix = this.getAttribute('suffix');
+            if (affix) this.ui.control.suffix(affix);
+        },
+        
+        _detachPlugins: function() {
+            if (this.ui.control.prefix) this.ui.control.prefix(true);
+            if (this.ui.control.suffix) this.ui.control.suffix(true);
         }
         
     });

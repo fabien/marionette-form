@@ -15,6 +15,7 @@ requirejs.config({
         'comparators': 'lib/comparators',
         'countable': 'lib/countable',
         'filesize': 'lib/filesize',
+        'jquery.affix': 'lib/jquery.affix',
         'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
         'jquery.quickselect': 'lib/jquery.quickselect',
@@ -91,6 +92,9 @@ requirejs.config({
             deps: ['jquery']
         },
         'ion.rangeslider': {
+            deps: ['jquery']
+        },
+        'jquery.affix': {
             deps: ['jquery']
         },
         'jquery.animate-enhanced': {

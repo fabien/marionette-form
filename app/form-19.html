@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style>
+            .control-input.omit input {
+                color: #ccc;
+            }
+            .control-input.omit input:focus {
+                color: #555 !important;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'jquery.affix',
+            ], function(Backbone, Marionette, Form) {
+                
+                var ExampleForm = Form.View.extend({
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Model = Form.Model.extend();
+                
+                var model = new Model({
+                    url: 'https://facebook.com/foo.bar',
+                    file: 'test.html',
+                    path: '/examples/test.html',
+                    percentage: 45,
+                    money: 85
+                });
+                
+                var form = new ExampleForm({ model: model });
+                
+                form.collection.reset([
+                    { id: 'url', control: 'input', prefix: 'https://facebook.com/', omit: 'isBlank', affix: true },
+                    { id: 'filename', control: 'input', placeholder: 'filename.html', default: 'demo', suffix: '.html', omit: 'isBlank', affix: true },
+                    { id: 'path', control: 'input', default: 'demo', placeholder: ' ', prefix: '/examples/', suffix: '.html', omit: 'isBlank', affix: true },
+                    { id: 'mime', control: 'input', default: 'plain', prefix: 'text/' },
+                    { id: 'percentage', control: 'input', default: 100, formatter: 'integer', suffix: '%' },
+                    { id: 'money', control: 'input', default: 0, formatter: 'integer', prefix: '$ ', suffix: ',00 excl. VAT' },
+                    { id: 'color', control: 'input', default: 'FFFFFF', maxlength: 7 }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                form.getField('path').setPrefix('/content/');
+                form.getField('money').setPrefix('€ ');
+                form.getField('color').setPrefix('#');
+                
+                form.model.set('percentage', 33);
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with prefix/suffix inputs</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>
