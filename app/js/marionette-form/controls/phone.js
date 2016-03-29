@@ -84,6 +84,8 @@ define([
     
     var PhoneControl = Form.PhoneControl = Form.InputControl.extend({
         
+        controlDefaults: defaults,
+        
         controlEvents: {
             'countrychange @ui.control': '_onCountryChange'
         },
@@ -97,7 +99,8 @@ define([
         },
         
         onChange: function(event) {
-            var number = this.getNumber();
+            var national = this.getAttribute('nationalMode') || this.getAttribute('separateDialCode');
+            var number = this.getNumber(national ? phoneFormats.NATIONAL : null);
             this.ui.control.val(number);
             this.commit();
         },
@@ -115,13 +118,13 @@ define([
             return phoneTypesLookup[numberType] || 'UNKNOWN';
         },
         
-        getNumber: function(value, format) {
-            var format = _.isUndefined(format) ? this.getPhoneFormat() : format;
+        getNumber: function(format) {
+            var format = _.isNumber(format) ? format : this.getPhoneFormat();
             return this.ui.control.intlTelInput('getNumber', format);
         },
         
         setNumber: function(value, format) {
-            var format = _.isUndefined(format) ? this.getPhoneFormat() : format;
+            var format = _.isNumber(format) ? format : this.getPhoneFormat();
             this.ui.control.intlTelInput('setNumber', value, format);
         },
         

@@ -145,7 +145,7 @@
                         input: { key: 'number', mask: '(999) 999-9999' },
                         dropdown: { key: 'type', collection: ['home', 'work', 'mobile'], ensureValue: true }
                     },
-                    { id: 'mobile', control: 'phone', initialCountry: 'auto', mobile: true, preferred: ['nl', 'be', 'de'] },
+                    { id: 'mobile', control: 'phone', omit: 'isBlank', initialCountry: 'auto', mobile: true, preferred: ['nl', 'be', 'de'], separateDialCode: false },
                     { id: 'website', control: 'input', omit: 'isBlank', addon: { text: 'http://', action: 'open-link', prepend: true } },
                     { id: 'country', key: 'country', control: 'combobox', collection: 'countries', valueKey: 'text', input: true },
                     { id: 'active', control: 'switch', label: 'Account active?', onText: 'Yes', offText: 'No', onValue: 'yes', offValue: 'no' },
