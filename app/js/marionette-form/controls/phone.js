@@ -75,16 +75,25 @@ define([
     
     var validationErrorsLookup = _.invert(validationErrors);
     
+    var errorMessages = {
+        INVALID_COUNTRY_CODE: { message: 'has an invalid country code', code: 'format' },
+        TOO_SHORT: { message: 'too short', code: 'length' },
+        TOO_LONG: { message: 'too long', code: 'length' },
+        NOT_A_NUMBER: { message: 'is invalid', code: 'invalid' }
+    };
+    
     var PhoneControl = Form.PhoneControl = Form.InputControl.extend({
+        
+        controlEvents: {
+            'countrychange @ui.control': '_onCountryChange'
+        },
         
         constructor: function(options) {
             Form.InputControl.prototype.constructor.apply(this, arguments);
             this.on('render', this._attachPlugin);
             this.on('destroy', this._detachPlugin);
-        },
-        
-        controlEvents: {
-            'countrychange @ui.control': '_onCountryChange'
+            this.on('country:change', this.validate);
+            this.listenTo(this.form, 'validate', this.validateNumber);
         },
         
         onChange: function(event) {
@@ -155,9 +164,21 @@ define([
             return this.ui.control.intlTelInput('isValidNumber');
         },
         
-        isValid: function(options) {
-            if (!this.isValidNumber()) return false;
-            return Form.InputControl.prototype.isValid.call(this, options);
+        validate: function() {
+            return this.validateNumber(this.getKey());
+        },
+        
+        validateNumber: function(key, options) {
+            if (key !== this.getKey() || this.isBlank()) return;
+            var errorCode = this.getValidationErrorCode();
+            var info = this.constructor.getErrorMessage(errorCode, this.getValue());
+            if (!_.isEmpty(info)) {
+                this.form.setError(key, info.message, info.code);
+                return false;
+            } else {
+                this.form.unsetError(key);
+                return true;
+            }
         },
         
         _attachPlugin: function() {
@@ -184,6 +205,7 @@ define([
             if (!_.isEmpty(excludeCountries)) options.excludeCountries = excludeCountries;
             
             this.ui.control.intlTelInput(options).done(function() {
+                if (!window.intlTelInputUtils) throw new Error('intlTelInputUtils not loaded');
                 this.trigger('control:ready');
             }.bind(this));
         },
@@ -193,8 +215,10 @@ define([
         },
         
         _onCountryChange: function(e, countryData) {
-            this.triggerMethod('country:change', countryData);
-            setTimeout(function() { this.onChange(e); }.bind(this), 10);
+            setTimeout(function() {
+                this.triggerMethod('country:change', countryData);
+                this.onChange(e);
+            }.bind(this), 10);
         }
         
     }, {
@@ -203,10 +227,27 @@ define([
         
         phoneTypes: phoneTypes,
         
+        errorMessages: errorMessages,
+        
         formatNumber: function(phoneNumber, countryCode, format) {
             if (!window.intlTelInputUtils) return phoneNumber;
             format = format || phoneFormats.INTERNATIONAL;
             return intlTelInputUtils.formatNumber(phoneNumber, countryCode, format);
+        },
+        
+        validateNumber: function(phoneNumber, countryCode) {
+            if (!window.intlTelInputUtils) return null;
+            var error = intlTelInputUtils.getValidationError(phoneNumber, countryCode);
+            return validationErrorsLookup[error] || 'IS_POSSIBLE';
+        },
+        
+        getCountryData: function() {
+            return $.fn.intlTelInput.getCountryData();
+        },
+        
+        getErrorMessage: function(code, value) {
+            var messages = _.result(this, 'errorMessages') || {};
+            return messages[code];
         }
         
     });

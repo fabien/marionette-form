@@ -120,6 +120,7 @@
 }
 .intl-tel-input.allow-dropdown .selected-flag {
     width: 46px;
+    outline: none;
 }
 .intl-tel-input.allow-dropdown .flag-container:hover {
     cursor: pointer;

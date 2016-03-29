@@ -1224,15 +1224,13 @@ define([
                 var options = _.last(arguments) || {};
                 if (this.getOption('renderOnce') && this.isRendered && !options.force) {
                     this.triggerMethod('refresh', options);
-                    this.$el.toggleClass('invalid', !this.isValid());
+                    this.isValid();
                 } else if (options.force || !this.isRendered || options.viewCid !== this.cid) {
                     this.once('render', this.triggerMethod.bind(this, 'refresh', options));
-                    this.$el.removeClass('invalid');
                     return View.prototype.render.apply(this, arguments);
                 } else {
                     this.triggerMethod('refresh', options);
                     this.isValid();
-                    this.$el.toggleClass('invalid', !this.isValid());
                 }
                 return this;
             },
@@ -2096,11 +2094,22 @@ define([
              return _.isObject(options) ? options : ((options === true) ? {} : null);
         },
         
-        filter: function (model, index, collection) {
+        showCollection: function() {
             if (!this.getAttribute('multiple') && this.isReadonly()) {
-                return model.get(this.valueKey) === this.getValue(true);
+                var valueKey = this.valueKey;
+                var value = this.getValue(true);
+                var child = this.collection.find(function(model) {
+                    return model.get(valueKey) === value;
+                });
+                if (child) {
+                    var ChildView = this.getChildView(child);
+                    this.addChild(child, ChildView);
+                } else {
+                    this.showEmptyView();
+                }
+            } else {
+                SelectionControl.prototype.showCollection.apply(this, arguments);
             }
-            return true;
         }
         
     });
@@ -3447,8 +3456,20 @@ define([
             });
         },
         
+        setReadonly: function(bool) {
+            var isReadonly = this.isReadonly();
+            this.options.readonly = Boolean(bool || arguments.length === 0);
+            if (this.options.readonly !== isReadonly) this.children.invoke('render');
+        },
+        
         isReadonly: function() {
             return Boolean(this.getOption('readonly'));
+        },
+        
+        setDisabled: function(bool) {
+            var isDisabled = this.isDisabled();
+            this.options.disabled = Boolean(bool || arguments.length === 0);
+            if (this.options.disabled !== isDisabled) this.children.invoke('render');
         },
         
         isDisabled: function() {
@@ -3836,6 +3857,7 @@ define([
                 });
                 if (failed > 0) return false;
             }
+            if (key && this.hasError(key)) return false;
             return this.validate(key, options);
         },
         
@@ -4203,8 +4225,8 @@ define([
         }
         this.triggerMethod('before:render:select', options);
         this.ui.control.select2(options);
-        this.ui.control.select2('enable', !this.getAttribute('disabled'));
-        this.ui.control.select2('readonly', !!this.getAttribute('readonly'));
+        this.ui.control.select2('enable', !this.isDisabled());
+        this.ui.control.select2('readonly', this.isReadonly());
         this.triggerMethod('render:select', this.ui.control);
         this.once('before:destroy', function() {
             this.ui.control.select2('destroy');

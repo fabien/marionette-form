@@ -31,10 +31,6 @@ form .nested-controls.row > .col {
    color: red;
 }
 
-.form-group.invalid .control-label {
-   color: red;
-}
-
 .form-horizontal .nested-form .form-group,
 .form-horizontal .nested-controls.empty .form-group {
     margin-left: 0;
@@ -254,6 +250,10 @@ form .nested-controls.row > .col {
     font-size: 14px;
     line-height: 2.3;
     float: right;
+}
+
+.control-phone .intl-tel-input {
+    width: 100%;
 }
 
 .control-text .counter.warning {

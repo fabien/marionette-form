@@ -64,6 +64,7 @@
                         event.preventDefault();
                         if (this.commit()) {
                             console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            this.setReadonly();
                         } else {
                             console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
                         }
