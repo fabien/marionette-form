@@ -93,6 +93,24 @@
                     Cookies.set('uploads', form.getData());
                 });
                 
+                // Dialogs
+                
+                form.on('control:dialog:open', function(control, dialog) {
+                    console.log('Open dialog: %s', control.getKey());
+                });
+                
+                form.on('control:dialog:done', function(control, dialog, fileOrGroup) {
+                    console.log('Dialog done: %s', control.getKey());
+                });
+                
+                form.on('control:dialog:fail', function(control, dialog, lastSelectedFile) {
+                    console.log('Dialog fail: %s', control.getKey());
+                });
+                
+                form.on('control:dialog:tab', function(control, dialog, tab) {
+                    console.log('Dialog tag: %s - %s', control.getKey(), tab);
+                });
+                
                 // Validation and error handling
                 
                 form.on('control:validate:file', function(control, fileInfo) {

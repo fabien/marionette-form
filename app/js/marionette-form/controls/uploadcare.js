@@ -98,6 +98,7 @@ define([
                 this.listenTo(this.collection, 'reset sync change update', this._onCollectionUpdate);
                 this.on('update:files change:files delete:files', this._updateCollection);
             }
+            this.on('dialog:open', this._onDialogOpen);
             this.on('render', this._attachPlugin);
             this.on('destroy', this._detachPlugin);
         },
@@ -290,6 +291,16 @@ define([
                 }.bind(this), this.triggerMethod.bind(this, 'upload:error'));
             }
         },
+        
+        _onDialogOpen: function(dialog) {
+            this.dialog = dialog;
+            this.dialog.done(this.triggerMethod.bind(this, 'dialog:done', dialog));
+            this.dialog.fail(this.triggerMethod.bind(this, 'dialog:fail', dialog));
+            this.dialog.progress(this.triggerMethod.bind(this, 'dialog:tab', dialog));
+            this.dialog.always(function() { this.dialog = null; }.bind(this));
+        },
+        
+        // Plugin
         
         _attachPlugin: function() {
             this._detachPlugin(this.ui.control);
