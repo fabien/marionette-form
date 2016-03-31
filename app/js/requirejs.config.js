@@ -71,6 +71,7 @@ requirejs.config({
         'marionette.form.control.text': 'marionette-form/controls/text',
         'marionette.form.control.tree': 'marionette-form/controls/tree',
         'marionette.form.control.upload': 'marionette-form/controls/upload',
+        'marionette.form.control.uploadcare': 'marionette-form/controls/uploadcare',
         'marionette.form.control.urlify': 'marionette-form/controls/urlify'
     },
     shim: {

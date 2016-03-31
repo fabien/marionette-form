@@ -236,6 +236,10 @@ form .nested-controls.row > .col {
     margin: 5px 0;
 }
 
+.control-hidden {
+    display: none;
+}
+
 .control-switch .checkbox {
     display: inline-block;
 }

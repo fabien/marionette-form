@@ -136,6 +136,7 @@
                 var fullnameTemplate = '<strong>Fullname:</strong> <%- form.data.firstName ? form.data.firstName[0] + ". " : "" %><%- form.data.lastName %>';
                 
                 form.collection.reset([
+                    { id: 'revision', control: 'hidden', default: 1 },
                     { id: 'custom', key: '*', control: 'custom' },
                     { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
                     { id: 'lastName', control: 'input', required: true, omit: 'isBlank', addon: { icon: 'glyphicon glyphicon-remove', action: 'clear', button: true } },

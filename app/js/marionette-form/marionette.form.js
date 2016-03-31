@@ -210,6 +210,12 @@ define([
         '</div>'
     ].join('\n'));
     
+    Templates.HiddenControl = _.template([
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
+        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>"/>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>'
+    ].join('\n'));
+    
     Templates.TextareaControl = _.template([
         '<label class="<%= labelClassName %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
@@ -1058,7 +1064,8 @@ define([
             getAttributes: function() {
                 var attrs = _.flatten(arguments);
                 return _.reduce(attrs, function(hash, attr) {
-                    hash[attr] = this.getAttribute(attr);
+                    var value = this.getAttribute(attr);
+                    if (!_.isUndefined(value)) hash[attr] = value;
                     return hash;
                 }.bind(this), {});
             },
@@ -1890,6 +1897,14 @@ define([
         
     });
     
+    var HiddenControl = Marionette.Form.HiddenControl = InputControl.extend({
+        
+        template: Templates.HiddenControl,
+        
+        defaults: {}
+        
+    });
+    
     var TextareaControl = Marionette.Form.TextareaControl = Control.extend({
         
         template: Templates.TextareaControl,
@@ -2179,7 +2194,7 @@ define([
             type: 'hidden',
             label: '',
             minlength: 2,
-            maxlength: 1024,
+            maxlength: 4096,
             extraClasses: [],
             helpMessage: null
         },

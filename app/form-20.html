@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <!-- load jquery as normal, instead of through requirejs -->
+        <script src="/js/vendor/jquery/dist/jquery.js"></script>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <!-- use jquery from script tag above with requirejs -->
+        <script>define('jquery', [], function() { return jQuery; });</script>
+        <script src="/js/requirejs.config.js"></script>
+        <!-- global upload-care config -->
+        <script>UPLOADCARE_LIVE = false; UPLOADCARE_MANUAL_START = true;</script>
+        <script src="https://ucarecdn.com/widget/2.8.1/uploadcare/uploadcare.min.js" charset="utf-8"></script>
+        <script type="text/javascript">
+            require([
+                'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.0/js.cookie.js',
+                'filesize',
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'marionette.form.control.uploadcare',
+            ], function(Cookies, filesize, Backbone, Marionette, Form) {
+                
+                uploadcare.start({ publicKey: 'demopublickey', locale: 'en' });
+                
+                // Views
+                
+                var ListItem = Marionette.ItemView.extend({
+                    
+                    tagName: 'tr',
+                    
+                    template: '#list-item',
+                    
+                    modelEvents: {
+                        'change': 'render'
+                    },
+                    
+                    templateHelpers: {
+                        filesize: filesize
+                    }
+                    
+                });
+                
+                var ListView = Marionette.CollectionView.extend({
+                    
+                    tagName: 'table',
+                    
+                    className: 'table table-striped',
+                    
+                    childView: ListItem
+                    
+                });
+                
+                // Form
+                
+                var ExampleForm = Form.View.extend({
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            Cookies.set('uploads', this.getData());
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Model = Form.Model.extend();
+                
+                var doc = new Model(Cookies.getJSON('uploads') || {});
+                
+                var form = new ExampleForm({ model: doc });
+                
+                form.collection.reset([
+                    { id: 'file', control: 'uploadcare', maxFileSize: 1024 },
+                    { id: 'files', control: 'uploadcare', multiple: true },
+                    { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook' },
+                    { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1' },
+                    { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024, panel: true }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                    Cookies.set('uploads', form.getData());
+                });
+                
+                // Validation and error handling
+                
+                form.on('control:validate:file', function(control, fileInfo) {
+                    if (fileInfo.stored === false) console.log('Validate', fileInfo);
+                });
+                
+                form.on('control:upload:error', function(control, errorCode) {
+                    console.warn('Upload Error', errorCode);
+                });
+                
+                // Initial setup
+                
+                form.on('control:update:file', function(control, fileInfo) {
+                    console.log('Updated %s:', control.getKey(), fileInfo.uuid);
+                });
+                
+                form.on('control:update:files', function(control, fileGroup) {
+                    console.log('Updated %s:', control.getKey(), fileGroup.uuid);
+                });
+                
+                // Changes
+                
+                form.on('control:before:change', function(control, change) {
+                    console.log('Before change:', control.getKey());
+                });
+                
+                form.on('control:change:file', function(control, fileInfo) {
+                    console.log('Changed %s:', control.getKey(), fileInfo);
+                    control.getFile().then(function(file) {
+                        console.log('File:', file.uuid);
+                    });
+                });
+                
+                form.on('control:change:files', function(control, fileGroup) {
+                    console.log('Changed %s:', control.getKey(), fileGroup.name);
+                    control.getFiles().then(function(files) {
+                        console.log('Files:', _.pluck(files, 'uuid'));
+                    });
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Collection
+                
+                var uploads = form.getCollection('uploads');
+                
+                uploads.on('update', function(collection, options) {
+                    console.log('Updated collection: %s items', collection.length);
+                });
+                
+                setTimeout(function() {
+                    if (uploads.isEmpty() && doc.has('image')) {
+                        uploads.add({ uuid: doc.get('image') });
+                    }
+                }, 1000);
+                
+                // Plain CollectionView integration
+                
+                var listView = new ListView({ collection: uploads });
+                listView.listenTo(listView.collection, 'sync reset update', listView.render);
+                
+                listView.render();
+                listView.$el.appendTo('#list');
+                
+                // Getter/Setter
+                
+                // form.getField('file').set(doc.get('image'));
+                // form.getField('files').set(doc.get('images'));
+                
+                // Set using array
+                
+                // form.getField('files').set([doc.get('image')]);
+                
+                // Setter (single file)
+                
+                // form.getField('file').setFile(doc.get('image'));
+                // form.getField('files').setFile(doc.get('image'));
+                
+                // Setter (multiple files)
+                
+                // form.getField('file').setFiles(doc.get('image'));
+                // form.getField('files').setFiles(doc.get('image'));
+                
+                // DISABLED/READONLY
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with UploadCare integration</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        <div class="container">
+            <h3>Uploads</h3>
+            <div id="list"></div>
+        </div>
+        
+        <script id="list-item" type="text/template">
+        <td><%- obj.uuid %></td><td><%- obj.cdnUrl %></td><td><%- obj.mimeType %></td><td><%- filesize(obj.size || 0) %></td>
+        </script>
+    </body>
+</html>
