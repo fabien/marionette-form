@@ -16,6 +16,9 @@
             .uploadcare-dialog-tabs-panel-recent .uploadcare-file-item {
                 cursor: pointer;
             }
+            .uploadcare-dialog-tabs-panel-recent td {
+                cursor: pointer;
+            }
         </style>
         <!-- load jquery as normal, instead of through requirejs -->
         <script src="/js/vendor/jquery/dist/jquery.js"></script>
@@ -45,6 +48,10 @@
                     tagName: 'tr',
                     
                     template: '#list-item',
+                    
+                    triggers: {
+                        'click': 'click'
+                    },
                     
                     modelEvents: {
                         'change': 'render'
@@ -88,17 +95,47 @@
                 
                 var RecentTabView = Form.UploadcareTabView.extend({
                     
+                    // Gather files from all other UploadcareControl controls of this form
+                    // and display them for selection.
+                    
                     template: '#recent-tab-view',
                     
                     initialize: function(options) {
-                        // this.on('dialog:tab:switch', this.render);
-                        // this.addRegion('list', '#file-list');
-                        // this.collection = new Form.UploadcareCollection();
-                        // this.bindToFileCollection(this.collection);
+                        this.on('render dialog:tab:switch', this.updateCollection);
+                        this.addRegion('list', '#file-list');
+                        this.on('childview:click', function(info) {
+                            if (this.collection) this.collection.remove(info.model);
+                            var file = info.model.toFile();
+                            this.dialog.addFiles([file]);
+                        });
                     },
                     
-                    onRender: function() {
-                        // this.showChildView('list', new ListView({ collection: this.collection }));
+                    gatherFiles: function() {
+                        var promises = [];
+                        this.control.form.children.each(function(control) {
+                            if (control !== this.control && control instanceof Form.UploadcareControl) {
+                                promises.push(control.getFiles());
+                            }
+                        }.bind(this));
+                        var dfd = $.Deferred();
+                        $.when.apply(null, promises).then(function() {
+                            dfd.resolve(_.flatten(arguments));
+                        }, dfd.reject);
+                        return dfd;
+                    },
+                    
+                    updateCollection: function() {
+                        $.when.apply(null, this.getFiles()).then(function() {
+                            var urls = _.pluck(_.flatten(arguments), 'cdnUrl'); // existing
+                            var collection = this.collection = new Form.UploadcareCollection();
+                            this.showChildView('list', new ListView({ collection: this.collection }));
+                            
+                            this.gatherFiles().then(function(files) {
+                                collection.set(_.reject(files, function(file) {
+                                    return _.include(urls, file.cdnUrl);
+                                }));
+                            });
+                        }.bind(this));
                     }
                     
                 });
@@ -216,6 +253,9 @@
                 
                 uploads.on('update', function(collection, options) {
                     console.log('Updated collection: %s items', collection.length);
+                    collection.toFileGroup().promise().then(function(fileGroup) {
+                        console.log('FileGroup: %s', fileGroup.name);
+                    });
                 });
                 
                 setTimeout(function() {
@@ -267,7 +307,7 @@
         </div>
         
         <script id="list-item" type="text/template">
-            <td><%- obj.cdnUrl %></td><td><%- obj.mimeType %></td><td><%- filesize(obj.size || 0) %></td>
+            <td><%- obj.cdnUrl %></td><td><%- filesize(obj.size || 0) %></td>
         </script>
         
         <script id="list-tab-view" type="text/template">

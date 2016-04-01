@@ -49,13 +49,24 @@ define([
     
     var UploadcareFile = Form.UploadcareFile = Form.Model.extend({
         
-        idAttribute: 'uuid'
+        idAttribute: 'uuid',
+        
+        toFile: function(settings) {
+            return uploadcare.fileFrom('uploaded', this.get('cdnUrl') || this.id, settings);
+        }
         
     });
     
     var UploadcareCollection = Form.UploadcareCollection = Form.Collection.extend({
         
-        model: UploadcareFile
+        model: UploadcareFile,
+        
+        toFileGroup: function(settings) {
+            var files = this.map(function(model) {
+                return model.toFile(settings);
+            });
+            return uploadcare.FileGroup(files, settings);
+        }
         
     });
     
@@ -97,10 +108,22 @@ define([
             }
         },
         
+        getFiles: function() {
+            var fileCollection = this.dialog.fileColl;
+            var files = [];
+            for (var i = 0; i < fileCollection.length(); i++) {
+                files.push(fileCollection.get(i));
+            }
+            return files;
+        },
+        
+        getFileGroup: function(settings) {
+            return uploadcare.FileGroup(this.getFiles(), settings);
+        },
+        
         _updateCollection: function(collection) {
             $.when.apply(null, this.dialog.fileColl.get()).then(function() {
-                var files = _.toArray(arguments);
-                collection.set(files);
+                collection.set(_.toArray(arguments));
             });
         }
         
@@ -260,6 +283,16 @@ define([
             } else {
                 return dfd.resolve([]).promise();
             }
+        },
+        
+        getFileGroup: function(settings) {
+            if (this.widget && this.isMultiple()) {
+                return this.widget.value();
+            } else if (this.widget) {
+                var file = this.widget.value();
+                if (file) return uploadcare.FileGroup([file], settings);
+            }
+            return uploadcare.FileGroup([], settings);
         },
         
         setFiles: function(files, from) {
@@ -449,19 +482,19 @@ define([
         
         // Utility methods/factories
         
-        fileFrom: function(source, from) {
-            return uploadcare.fileFrom(from || 'uploaded', source);
+        fileFrom: function(source, from, settings) {
+            return uploadcare.fileFrom(from || 'uploaded', source, settings);
         },
         
-        fileGroup: function(source, from) {
+        fileGroup: function(source, from, settings) {
             if (_.isArray(source)) {
                 from = from || 'uploaded';
                 var files = _.map(source, function(file) {
-                    return this.fileFrom(file, from);
+                    return this.fileFrom(file, from, settings);
                 }.bind(this));
-                return uploadcare.FileGroup(files);
+                return uploadcare.FileGroup(files, settings);
             } else {
-                return uploadcare.FileGroup(source);
+                return uploadcare.FileGroup(source, settings);
             }
         }
         
