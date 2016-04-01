@@ -140,6 +140,89 @@ define([
     
     Marionette.Form.CollectionMixin = CollectionMixin;
     
+    // A modal view can implement the following interface methods to comply with ModalViewMixin:
+    // 
+    // - getData() - to retrieve the view's data
+    // - setData() - to set the view's data
+    // - commit()  - to validate and set data before getData() is called (optional)
+    //               unless commit returns `true`, the dialog will not close on 'OK'
+    
+    var ModalViewMixin = {
+        
+        getModalViewContstructor: function(viewClass) {
+            viewClass = viewClass || this.getAttribute('modalView') || this.getAttribute('modal');
+            viewClass = viewClass || this.getOption('modalView');
+            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            viewClass = _.isFunction(viewClass) ? viewClass : Marionette.Form.DebugView;
+            return viewClass;
+        },
+        
+        getModalViewData: function() {
+            if (this.itemModel instanceof Backbone.Model) {
+                return this.itemModel.toJSON();
+            } else {
+                return this.getValue(true);
+            }
+        },
+        
+        createModalView: function(viewClass, options) {
+            viewClass = this.getModalViewContstructor(viewClass);
+            options = _.extend({}, _.result(this, 'modalViewOptions'), this.getAttribute('modalViewOptions'), options);
+            this.triggerMethod('modal:view:options', options, viewClass);
+            var view = new viewClass(options);
+            this.triggerMethod('modal:view', view, options);
+            return view;
+        },
+        
+        openModalWithView: function(view, modalOptions, callback) {
+            if (_.isFunction(modalOptions)) callback = modalOptions, modalOptions = {};
+            modalOptions = _.extend({}, _.result(this, 'modalOptions'), this.getAttribute('modalOptions'), modalOptions);
+            _.extend(modalOptions, _.result(view, 'modalOptions'));
+            callback = callback || _.noop;
+            var dfd = $.Deferred();
+            var BootstrapModal = this.bootstrapModal;
+            var dialog = new BootstrapModal(_.extend({
+                id: 'dialog-' + this.getId(),
+                content: view, enterTriggersOk: true,
+                focusOk: false, animate: true
+            }, modalOptions));
+            dialog.on('all', function(eventName) {
+                var args = _.rest(arguments);
+                this.triggerMethod.apply(this, ['modal:' + eventName, dialog, view].concat(args));
+                view.triggerMethod.apply(view, ['modal:' + eventName, dialog, this].concat(args));
+            }.bind(this));
+            dialog.on('shown', function() {
+                view.$(':input:enabled:visible:first').focus();
+            });
+            dialog.once('close', function(action) {
+                if (action === 'cancel') {
+                    dfd.reject(view);
+                } else {
+                    dfd.resolve(view);
+                }
+            }.bind(this));
+            if (_.isFunction(view.setData)) view.setData(this.getModalViewData());
+            this.triggerMethod('modal:init', dialog, view, modalOptions);
+            view.triggerMethod('modal:init', dialog, this, modalOptions);
+            if (_.isObject(view.deferred) && _.isFunction(view.deferred.promise)) {
+                this.triggerMethod('modal:load:start', dialog, view);
+                view.deferred.always(function() {
+                    this.triggerMethod('modal:load:stop', dialog, view);
+                }.bind(this));
+                view.deferred.done(function() {
+                    dialog.open(callback.bind(null, dialog));
+                }.bind(this));
+                view.deferred.fail(dfd.reject.bind(dfd, view));
+            } else {
+                dialog.open(callback.bind(null, dialog));
+            }
+            return dfd.promise();
+        }
+        
+    };
+    
+    Marionette.Form.ModalViewMixin = ModalViewMixin;
+    
     Marionette.Form.Model = NestedModel;
     Marionette.Form.Collection = NestedCollection;
     
@@ -3392,6 +3475,8 @@ define([
             if (!(_.isString(data.value)
                 && (data.value.match(/^data:image\//) || data.value.match(/^http(s)?:\/\//)))) {
                 data.value = this.getAttribute('fallback') || TransparantPixel;
+            } else if (_.isString(data.value) && data.value.match(/~(\d+)\/$/)) {
+                data.value = data.value + 'nth/0/'; // Uploadcare FileGroup url
             }
         }
         

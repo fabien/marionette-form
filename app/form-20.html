@@ -168,7 +168,7 @@
                 var form = new ExampleForm({ model: doc });
                 
                 form.collection.reset([
-                    { id: 'preview', key: 'image', label: 'Preview', control: 'image' },
+                    { id: 'preview', key: 'image', label: 'Preview', control: 'image' }, // works with FileGroup urls too
                     { id: 'file', control: 'uploadcare', maxFileSize: 1024 },
                     { id: 'files', control: 'uploadcare', multiple: true },
                     { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook', preview: true },
@@ -300,7 +300,7 @@
                 
                 // Disabled form state
                 
-                // form.setDisabled(true);
+                form.setDisabled(true);
                 
             });
         </script>

@@ -3,7 +3,8 @@ define([
     'underscore',
     'backbone',
     'marionette',
-    'marionette.form'
+    'marionette.form',
+    'backbone.bootstrap-modal'
 ], function($, _, Backbone, Marionette, Form) {
     
     // Documentation:
@@ -47,7 +48,12 @@ define([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <input id="control-<%= id %>-disabled" class="<%= controlClassName %> hidden" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '  <div class="input-group disabled-control hidden">',
+        '    <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '    <div class="input-group-btn">',
+        '      <button data-action="show" type="button" class="btn btn-default"><span class="<%= showIcon %>" aria-hidden="true"></span></button>',
+        '    </div>',
+        '  </div>',
         '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
@@ -203,6 +209,27 @@ define([
         
     });
     
+    Form.UploadcareView = Marionette.LayoutView.extend({
+        
+        template: _.template('UploadcareView'),
+        
+        modalOptions: {
+            allowCancel: false
+        },
+        
+        constructor: function(options) {
+            Marionette.LayoutView.prototype.constructor.apply(this, arguments);
+            this.deferred = $.Deferred();
+            if (options && options.src) this.setData(options.src);
+        },
+        
+        setData: function(src) {
+            console.log('SET SRC', src);
+            this.deferred.resolve();
+        }
+        
+    });
+    
     var UploadcareControl = Form.UploadcareControl = Form.Control.extend(_.extend({}, Form.CollectionMixin, {
         
         template: Form.Templates.UploadcareControl,
@@ -213,17 +240,22 @@ define([
             helpMessage: null,
             multiple: false,
             clearable: true,
-            preview: false
+            preview: false,
+            showIcon: 'glyphicon glyphicon-eye-open'
         },
         
         ui: {
             control: '[role="uploadcare-uploader"]',
-            disabledControl: '[role="uploadcare-disabled"]'
+            disabledControl: '.disabled-control'
         },
         
-        events: {
+        controlEvents: {
             'click .form-control': '_openDialog'
         },
+        
+        bootstrapModal: Backbone.BootstrapModal,
+        
+        modalView: Form.UploadcareView,
         
         collectionConstructor: UploadcareCollection,
         
@@ -270,6 +302,10 @@ define([
         
         isMultiple: function() {
             return this.getAttribute('multiple') === true;
+        },
+        
+        isImagesOnly: function() {
+            return this.getAttribute('imagesOnly') === true;
         },
         
         hasPreview: function() {
@@ -391,6 +427,30 @@ define([
             }
         },
         
+        // Modal View
+        
+        showModal: function(event) {
+            if (event instanceof $.Event) {
+                event.preventDefault();
+                $(event.currentTarget).blur();
+            }
+            if (this.modal || this.isBlank()) return; // singleton
+            var view = this.createModalView();
+            var dfd = $.Deferred();
+            this.modal = this.openModalWithView(view, function(dialog) {
+                dfd.resolve(dialog);
+            }.bind(this)).fail(function(err) {
+                dfd.reject(err);
+            }).always(function() {
+                delete this.modal;
+            }.bind(this));
+            return dfd.promise();
+        },
+        
+        onActionShow: function(event) {
+            this.showModal(event);
+        },
+        
         // Validation
         
         validateFile: function(fileInfo) {}, // Hook
@@ -487,6 +547,7 @@ define([
         _attachPlugin: function() {
             this._detachPlugin(this.ui.control);
             
+            var defaults = _.extend({}, _.result(this.constructor, 'defaults'));
             var settings = this.getSettings();
             this.triggerMethod('attach:plugin', settings);
             this.ui.control.data(settings); // pre-configure widget
@@ -497,9 +558,15 @@ define([
                 this.widget = uploadcare.SingleWidget(this.ui.control);
             }
             
+            var $widget = this.$('.uploadcare-widget');
+            
             var isReadonly = this.isReadonly() || this.isDisabled();
-            this.$('.uploadcare-widget').addClass('form-control').toggleClass('hidden', isReadonly);
+            $widget.toggleClass('hidden', isReadonly);
             this.ui.disabledControl.toggleClass('hidden', !isReadonly);
+            
+            if (defaults.formControl !== false && this.getAttribute('formControl') !== false) {
+                $widget.addClass('form-control'); // Bootstrap style by default
+            }
             
             var validators = [this._validateFile.bind(this)];
             var maxFileSize = this.getAttribute('maxFileSize');
@@ -563,7 +630,7 @@ define([
             this.setFiles(files);
         }
         
-    }), {
+    }, Form.ModalViewMixin), {
         
         // Global settings
         
