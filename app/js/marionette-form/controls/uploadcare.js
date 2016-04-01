@@ -6,32 +6,21 @@ define([
     'marionette.form'
 ], function($, _, Backbone, Marionette, Form) {
     
+    // Documentation:
+    //
+    // https://uploadcare.com/documentation/widget/
+    // https://uploadcare.com/documentation/javascript_api/
     
-    // Locale string
-    // 
-    // Global: UPLOADCARE_LOCALE 
-    // Local: N/A 
-    // Object key: N/A 
-    // 
-    // The widget supports a great list of languages.
-    // 
-    // Currently there are:
-    // en  ar  az  ca  cs  da  de  es  fr  he  it  ja  lv  nb  nl  pl  pt  ru  sv  tr  zhTW  zh
-    // English is used by default.
-    // 
-    // 
-    // Locale translations object
-    // 
-    // Global: UPLOADCARE_LOCALE_TRANSLATIONS 
-    // Local: N/A 
-    // Object key: N/A 
-    // 
-    // Custom localization options (see below).
-    // 
-    // 
-    // Locale pluralize object
-    
-    
+    // Setup instructions:
+    //
+    // <!-- load jquery as normal, instead of through requirejs -->
+    // <script src="/js/vendor/jquery/dist/jquery.js"></script>
+    // <script src="/js/vendor/requirejs/require.js"></script>
+    // <!-- use jquery from script tag above with requirejs -->
+    // <script>define('jquery', [], function() { return jQuery; });</script>
+    // <!-- global upload-care config -->
+    // <script>UPLOADCARE_LIVE = false; UPLOADCARE_MANUAL_START = true;</script>
+    // <script src="https://ucarecdn.com/widget/2.8.1/uploadcare/uploadcare.min.js" charset="utf-8"></script>
     
     if (!window.uploadcare) throw new Error('Uploadcare has not been loaded');
     
@@ -58,10 +47,7 @@ define([
         '</div>'
     ].join('\n'));
     
-    // SET/GET individual images as array of objects
-    // custom tab pane(s)
-    
-    var UploadcareFile = Form.Model.extend({
+    var UploadcareFile = Form.UploadcareFile = Form.Model.extend({
         
         idAttribute: 'uuid'
         
@@ -70,6 +56,77 @@ define([
     var UploadcareCollection = Form.UploadcareCollection = Form.Collection.extend({
         
         model: UploadcareFile
+        
+    });
+    
+    var UploadcareTabView = Form.UploadcareTabView = Marionette.LayoutView.extend({
+        
+        constructor: function(options) {
+            options = _.extend({}, options);
+            var settings = _.extend({}, options.settings);
+            if (options.el) settings.el = options.el;
+            this.tabName = options.name;
+            this.dialog = options.dialog;
+            this.button = options.button;
+            this.control = settings.control;
+            if (!this.control instanceof UploadcareControl) {
+                throw new Error('Invalid UploadcareControl instance');
+            }
+            _.extend(settings, this.control.getTabSettings());
+            Marionette.LayoutView.prototype.constructor.call(this, settings);
+            this.control.triggerMethod('dialog:tab:init', this.dialog, this);
+        },
+        
+        bindToFileCollection: function(collection) {
+            if (collection instanceof UploadcareCollection) {
+                var fileCollection = this.dialog.fileColl;
+                var updateCollectionFn = this._updateCollection.bind(this, collection);
+                updateCollectionFn(); // initial call
+                fileCollection.onAdd.add(updateCollectionFn);
+                fileCollection.onRemove.add(updateCollectionFn);
+                fileCollection.onSort.add(updateCollectionFn);
+                fileCollection.onReplace.add(updateCollectionFn);
+                this.on('destroy', function() {
+                    fileCollection.onAdd.remove(updateCollectionFn);
+                    fileCollection.onRemove.remove(updateCollectionFn);
+                    fileCollection.onSort.remove(updateCollectionFn);
+                    fileCollection.onReplace.remove(updateCollectionFn);
+                });
+            } else {
+                throw new Error('Invalid UploadcareCollection');
+            }
+        },
+        
+        _updateCollection: function(collection) {
+            $.when.apply(null, this.dialog.fileColl.get()).then(function() {
+                var files = _.toArray(arguments);
+                collection.set(files);
+            });
+        }
+        
+    }, {
+        
+        register: function(name, options) {
+            var self = this;
+            uploadcare.registerTab(name, function(container, button, dialogApi, settings, name) {
+                settings = _.extend({}, options, settings);
+                self.attach(container, button, dialogApi, settings, name);
+            });
+        },
+        
+        attach: function(container, button, dialog, settings, name) {
+            var view = new this({
+                name: name, dialog: dialog, button: button, el: container,
+                settings: settings
+            });
+            dialog.done(view.triggerMethod.bind(view, 'dialog:done', dialog));
+            dialog.fail(view.triggerMethod.bind(view, 'dialog:fail', dialog));
+            dialog.progress(function(tabName) {
+                if (tabName === name) view.triggerMethod('dialog:tab:switch', dialog);
+            });
+            dialog.always(view.destroy.bind(view));
+            view.render();
+        }
         
     });
     
@@ -136,7 +193,13 @@ define([
         
         getSettings: function() {
             var defaults = _.extend({}, _.result(this.constructor, 'defaults'));
-            return _.defaults(this.getAttributes(attributes), defaults);
+            var settings = _.defaults(this.getAttributes(attributes), defaults);
+            settings.control = this;
+            return settings;
+        },
+        
+        getTabSettings: function(tabName) {
+            return _.extend({}, this.getAttribute(tabName + 'Tab') || {});
         },
         
         get: function() {
@@ -296,7 +359,7 @@ define([
             this.dialog = dialog;
             this.dialog.done(this.triggerMethod.bind(this, 'dialog:done', dialog));
             this.dialog.fail(this.triggerMethod.bind(this, 'dialog:fail', dialog));
-            this.dialog.progress(this.triggerMethod.bind(this, 'dialog:tab', dialog));
+            this.dialog.progress(this.triggerMethod.bind(this, 'dialog:tab:switch', dialog));
             this.dialog.always(function() { this.dialog = null; }.bind(this));
         },
         
