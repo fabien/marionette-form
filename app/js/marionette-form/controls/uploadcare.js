@@ -33,11 +33,21 @@ define([
     
     var dataAttr = 'uploadcareWidget';
     
+    Form.Templates.UploadcareGalleryControl = _.template([
+        '<% if (obj.label) { %><label class="<%= labelClassName %>"><%= obj.label %></label><% } %>',
+        '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
+        '  <iframe src="<%- value %>" width="<%- width %>" height="<%- height %>" allowfullscreen="true" frameborder="0"></iframe>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '</div>'
+    ].join('\n'));
+    
     Form.Templates.UploadcareControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '  <input id="control-<%= id %>-disabled" class="<%= controlClassName %> hidden" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
         '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
@@ -146,6 +156,49 @@ define([
             });
             dialog.always(view.destroy.bind(view));
             view.render();
+        }
+        
+    });
+    
+    Form.UploadcareGalleryControl = Form.BaseControl.extend({
+        
+        template: Form.Templates.UploadcareGalleryControl,
+        
+        defaults: {
+            label: '',
+            extraClasses: [],
+            helpMessage: null,
+            settings: '/nav/thumbs/-/fit/cover/-/loop/true/-/allowfullscreen/native/-/thumbwidth/100/',
+            width: '100%',
+            height: '450'
+        },
+        
+        ui: {
+            iframe: 'iframe'
+        },
+        
+        constructor: function(options) {
+            Form.BaseControl.prototype.constructor.apply(this, arguments);
+            this.on('value:change', function(model, value, options) {
+                this.ui.iframe.toggleClass('hidden', !this.isValidUrl(value));
+            });
+        },
+        
+        isValidUrl: function(value) {
+            return (_.isString(value) && !!value.match(/~(\d+)\/$/));
+        },
+        
+        serializeValue: function() {
+            var settings = this.getAttribute('settings');
+            var value = this.getValue(true);
+            value = this.formatter.fromRaw(value);
+            if (this.isValidUrl(value) && _.isString(settings) && !isBlank(settings)) {
+                if (settings.indexOf('/') === 0) settings = settings.slice(1);
+                value += 'gallery/-/' + settings;
+            } else {
+                value = '';
+            }
+            return value;
         }
         
     });
@@ -445,8 +498,8 @@ define([
             }
             
             var isReadonly = this.isReadonly() || this.isDisabled();
-            this.$('.uploadcare-widget').addClass('form-control')[isReadonly ? 'hide' : 'show']();
-            this.ui.disabledControl[isReadonly ? 'show' : 'hide']();
+            this.$('.uploadcare-widget').addClass('form-control').toggleClass('hidden', isReadonly);
+            this.ui.disabledControl.toggleClass('hidden', !isReadonly);
             
             var validators = [this._validateFile.bind(this)];
             var maxFileSize = this.getAttribute('maxFileSize');
@@ -462,7 +515,12 @@ define([
             this.widget.onUploadComplete(this.triggerMethod.bind(this, 'upload:complete'));
             this.widget.onDialogOpen(this.triggerMethod.bind(this, 'dialog:open'));
             
-            if (this.hasPreview()) this.on('change update', this._updatePreview);
+            if (this.hasPreview()) {
+                this.$el.addClass('control-uploadcare-with-preview');
+                this.on('change update', this._updatePreview);
+            } else {
+                this.$el.removeClass('control-uploadcare-with-preview');
+            }
         },
         
         _detachPlugin: function() {
@@ -478,6 +536,7 @@ define([
         
         _updatePreview: function() {
             var preview = this.getAttribute('preview');
+            console.log('PREVIEW', preview);
         },
         
         // Collection handling
@@ -559,5 +618,11 @@ define([
     };
     
     return UploadcareControl;
+    
+    function isBlank(obj) {
+        if (_.isNumber(obj)) return false;
+        return _.isNull(obj) || _.isUndefined(obj) || _.isEmpty(obj) ||
+            (_.isString(obj) && /^[\s\t\r\n]*$/.test(obj));
+    };
     
 });

@@ -152,6 +152,7 @@
                         event.preventDefault();
                         if (this.commit()) {
                             console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            this.setDisabled(true);
                             Cookies.set('uploads', this.getData());
                         } else {
                             console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
@@ -173,7 +174,8 @@
                     { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook', preview: true },
                     { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: 3 },
                     { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024 },
-                    { id: 'custom', control: 'uploadcare', multiple: true, tabs: 'file recent list' }
+                    { id: 'custom', control: 'uploadcare', multiple: true, tabs: 'file recent list' },
+                    { id: 'gallery', key: 'images', control: 'uploadcare-gallery' }
                 ]);
                 
                 form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
@@ -296,7 +298,7 @@
                 // form.getField('file').setFiles(doc.get('image'));
                 // form.getField('files').setFiles(doc.get('image'));
                 
-                // Disable form controls
+                // Disabled form state
                 
                 // form.setDisabled(true);
                 
@@ -314,7 +316,7 @@
         </div>
         
         <script id="list-item" type="text/template">
-            <td><a href="<%- obj.cdnUrl %>" target="_blank"><%- obj.cdnUrl %></a></td><td><%- filesize(obj.size || 0) %></td>
+            <td><a href="<%- obj.cdnUrl %>" target="_blank"><%- obj.cdnUrl %></a></td><td class="text-right"><%- filesize(obj.size || 0) %></td>
         </script>
         
         <script id="list-tab-view" type="text/template">
