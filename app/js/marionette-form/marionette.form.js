@@ -733,7 +733,7 @@ define([
                     this.setValue(this.getAttribute('default'), { silent: true });
                 }
                 
-                this.observeKey(this.getKey());
+                if (this.getOption('renderOnValueChange') !== false) this.observeKey(this.getKey());
                 this.observeKey(this.getKey(), this.triggerMethod.bind(this, 'value:change'));
                 
                 this.listenTo(this.model, 'change:key', function(model, key) {
@@ -1151,7 +1151,8 @@ define([
                 
                 if (!_.isString(data.controlsClassName)) {
                     data.controlsClassName = this.getClassName('controls', 'nested');
-                    if (this.collection && this.collection.isEmpty()) {
+                    if (this.collection && this.collection.isEmpty() &&
+                        this.renderOnValueChange !== false) {
                         data.controlsClassName += ' empty';
                     }
                 }

@@ -162,15 +162,16 @@
                 
                 var Model = Form.Model.extend();
                 
-                var doc = new Model(Cookies.getJSON('uploads') || {});
+                var doc = new Model();
                 
                 var form = new ExampleForm({ model: doc });
                 
                 form.collection.reset([
+                    { id: 'preview', key: 'image', label: 'Preview', control: 'image' },
                     { id: 'file', control: 'uploadcare', maxFileSize: 1024 },
                     { id: 'files', control: 'uploadcare', multiple: true },
-                    { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook' },
-                    { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1' },
+                    { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook', preview: true },
+                    { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: 3 },
                     { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024 },
                     { id: 'custom', control: 'uploadcare', multiple: true, tabs: 'file recent list' }
                 ]);
@@ -247,6 +248,10 @@
                 form.render();
                 form.$el.appendTo('#layout');
                 
+                // Set initial document data
+                
+                doc.set(Cookies.getJSON('uploads') || {});
+                
                 // Collection
                 
                 var uploads = form.getCollection('uploads');
@@ -291,7 +296,9 @@
                 // form.getField('file').setFiles(doc.get('image'));
                 // form.getField('files').setFiles(doc.get('image'));
                 
-                // DISABLED/READONLY
+                // Disable form controls
+                
+                // form.setDisabled(true);
                 
             });
         </script>
@@ -307,7 +314,7 @@
         </div>
         
         <script id="list-item" type="text/template">
-            <td><%- obj.cdnUrl %></td><td><%- filesize(obj.size || 0) %></td>
+            <td><a href="<%- obj.cdnUrl %>" target="_blank"><%- obj.cdnUrl %></a></td><td><%- filesize(obj.size || 0) %></td>
         </script>
         
         <script id="list-tab-view" type="text/template">

@@ -37,11 +37,8 @@ define([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <% if (disabled || readonly) { %>',
-        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="text" value="<%- value %>" readonly/>',
-        '  <% } else { %>',
+        '  <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
         '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
-        '  <% } %>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
@@ -88,6 +85,19 @@ define([
             this.control.triggerMethod('dialog:tab:init', this.dialog, this);
         },
         
+        getFiles: function() {
+            var fileCollection = this.dialog.fileColl;
+            var files = [];
+            for (var i = 0; i < fileCollection.length(); i++) {
+                files.push(fileCollection.get(i));
+            }
+            return files;
+        },
+        
+        getFileGroup: function(settings) {
+            return uploadcare.FileGroup(this.getFiles(), settings);
+        },
+        
         bindToFileCollection: function(collection) {
             if (collection instanceof UploadcareCollection) {
                 var fileCollection = this.dialog.fileColl;
@@ -106,19 +116,6 @@ define([
             } else {
                 throw new Error('Invalid UploadcareCollection');
             }
-        },
-        
-        getFiles: function() {
-            var fileCollection = this.dialog.fileColl;
-            var files = [];
-            for (var i = 0; i < fileCollection.length(); i++) {
-                files.push(fileCollection.get(i));
-            }
-            return files;
-        },
-        
-        getFileGroup: function(settings) {
-            return uploadcare.FileGroup(this.getFiles(), settings);
         },
         
         _updateCollection: function(collection) {
@@ -162,14 +159,22 @@ define([
             extraClasses: [],
             helpMessage: null,
             multiple: false,
-            clearable: true
+            clearable: true,
+            preview: false
         },
         
         ui: {
-            control: 'input'
+            control: '[role="uploadcare-uploader"]',
+            disabledControl: '[role="uploadcare-disabled"]'
+        },
+        
+        events: {
+            'click .form-control': '_openDialog'
         },
         
         collectionConstructor: UploadcareCollection,
+        
+        renderOnValueChange: false,
         
         constructor: function(options) {
             Form.Control.prototype.constructor.apply(this, arguments);
@@ -183,9 +188,9 @@ define([
             this.on('destroy', this._detachPlugin);
         },
         
-        openDialog: function() {
+        openDialog: function(tab) {
             if (this.widget) {
-                return this.widget.openDialog.apply(this.widget, arguments);
+                return this.widget.openDialog(tab);
             } else {
                 return $.Deferred().reject().promise();
             }
@@ -214,6 +219,11 @@ define([
             return this.getAttribute('multiple') === true;
         },
         
+        hasPreview: function() {
+            var preview = this.getAttribute('preview');
+            return preview === true || (_.isNumber(preview) && preview > 0);
+        },
+        
         getSettings: function() {
             var defaults = _.extend({}, _.result(this.constructor, 'defaults'));
             var settings = _.defaults(this.getAttributes(attributes), defaults);
@@ -223,6 +233,18 @@ define([
         
         getTabSettings: function(tabName) {
             return _.extend({}, this.getAttribute(tabName + 'Tab') || {});
+        },
+        
+        // Value/File(s) handling
+        
+        onValueChange: function(model, value, options) {
+            if (this.widget && _.isString(value)) {
+                this.ui.disabledControl.val(value);
+                this.widget.value(value);
+            } else if (this.widget) {
+                this.ui.disabledControl.val('');
+                this.widget.value(null);
+            }
         },
         
         get: function() {
@@ -396,10 +418,22 @@ define([
             this.dialog.always(function() { this.dialog = null; }.bind(this));
         },
         
+        _openDialog: function(event) {
+            if (this.getAttribute('clickable') === false) return;
+            var $target = $(event.target);
+            if (this.widget && ($target.hasClass('form-control') || $target.hasClass('uploadcare-widget-text'))) {
+                var isReadonly = this.isReadonly() || this.isDisabled();
+                event.preventDefault();
+                event.stopPropagation();
+                if (!isReadonly) this.widget.openDialog();
+            }
+        },
+        
         // Plugin
         
         _attachPlugin: function() {
             this._detachPlugin(this.ui.control);
+            
             var settings = this.getSettings();
             this.triggerMethod('attach:plugin', settings);
             this.ui.control.data(settings); // pre-configure widget
@@ -409,6 +443,10 @@ define([
             } else {
                 this.widget = uploadcare.SingleWidget(this.ui.control);
             }
+            
+            var isReadonly = this.isReadonly() || this.isDisabled();
+            this.$('.uploadcare-widget').addClass('form-control')[isReadonly ? 'hide' : 'show']();
+            this.ui.disabledControl[isReadonly ? 'show' : 'hide']();
             
             var validators = [this._validateFile.bind(this)];
             var maxFileSize = this.getAttribute('maxFileSize');
@@ -423,14 +461,23 @@ define([
             this.widget.onChange(this._onChange.bind(this));
             this.widget.onUploadComplete(this.triggerMethod.bind(this, 'upload:complete'));
             this.widget.onDialogOpen(this.triggerMethod.bind(this, 'dialog:open'));
+            
+            if (this.hasPreview()) this.on('change update', this._updatePreview);
         },
         
         _detachPlugin: function() {
             this.triggerMethod('detach:plugin');
-            cleanupWidget(this.ui.control);
+            this.ui.control.off('.uploadcare');
+            this.$('.uploadcare-widget').remove();
             this._previousValue = null;
             this._previousUrl = null;
             this.widget = null;
+        },
+        
+        // Preview handling
+        
+        _updatePreview: function() {
+            var preview = this.getAttribute('preview');
         },
         
         // Collection handling
@@ -512,16 +559,5 @@ define([
     };
     
     return UploadcareControl;
-    
-    function cleanupWidget(input) {
-        return input.off('.uploadcare').each(function() {
-            var widget, widgetElement;
-            widgetElement = $(this).next('.uploadcare-widget');
-            widget = widgetElement.data(dataAttr);
-            if (widget && widget.inputElement === this) {
-                return widgetElement.remove();
-            }
-        });
-    };
     
 });
