@@ -42,6 +42,17 @@ define([
         nestedControls: 'col-controls'
     };
     
+    Marionette.Form.utils = {
+        formatName: formatName,
+        evaluateCondition: evaluateCondition,
+        pickAttributes: pickAttributes,
+        formatDataLabel: formatDataLabel,
+        camelize: camelize,
+        resolveNameToClass: resolveNameToClass,
+        isBlank: isBlank,
+        truncate: truncate
+    };
+    
     var CollectionMixin = {
         
         collectionConstructor: NestedCollection,
@@ -4460,6 +4471,8 @@ define([
         return JSON.stringify(key);
     };
     
+    // Utils
+    
     function formatName(str) {
         return (str || '').replace(/_/g, '-')
             .replace(/ /g, '-')
@@ -4540,6 +4553,17 @@ define([
         if (_.isNumber(obj)) return false;
         return _.isNull(obj) || _.isUndefined(obj) || _.isEmpty(obj) ||
             (_.isString(obj) && /^[\s\t\r\n]*$/.test(obj));
+    };
+    
+    function truncate(text, max) {
+        var head, tail;
+        if (text.length > max) {
+            head = Math.ceil((max - 3) / 2);
+            tail = Math.floor((max - 3) / 2);
+            return text.slice(0, head) + '...' + text.slice(-tail);
+        } else {
+            return text;
+        }
     };
     
 });

@@ -37,6 +37,7 @@ requirejs.config({
         'bootstrap-datepicker': 'vendor/bootstrap-datepicker/dist/js/bootstrap-datepicker',
         'bootstrap-daterangepicker': 'vendor/bootstrap-daterangepicker/daterangepicker',
         'bootstrap-filestyle': 'vendor/bootstrap-filestyle/src/bootstrap-filestyle',
+        'clipboard': 'lib/clipboard', // in lib, but is simply vendored
         'dragula': 'vendor/dragula.js/dist/dragula',
         'dropzone': 'vendor/dropzone/dist/dropzone-amd-module',
         'ion.rangeslider': 'vendor/ion.rangeslider/js/ion.rangeslider',

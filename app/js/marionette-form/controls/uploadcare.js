@@ -4,8 +4,10 @@ define([
     'backbone',
     'marionette',
     'marionette.form',
+    'filesize',
+    'clipboard',
     'backbone.bootstrap-modal'
-], function($, _, Backbone, Marionette, Form) {
+], function($, _, Backbone, Marionette, Form, filesize, Clipboard) {
     
     // Documentation:
     //
@@ -24,6 +26,16 @@ define([
     // <script src="https://ucarecdn.com/widget/2.8.1/uploadcare/uploadcare.min.js" charset="utf-8"></script>
     
     if (!window.uploadcare) throw new Error('Uploadcare has not been loaded');
+    
+    var utils = Form.utils;
+    
+    var templateHelpers = {
+        formatName: utils.formatName,
+        isBlank: utils.isBlank,
+        camelize: utils.camelize,
+        truncate: utils.truncate,
+        filesize: filesize
+    };
     
     var attributes = [
         'multiple', 'multipleMin', 'multipleMax', 'imagesOnly', 
@@ -49,8 +61,15 @@ define([
         '<div class="<%= controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="input-group disabled-control hidden">',
+        '    <% if (obj.input) { %>',
         '    <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
-        '    <div class="input-group-btn">',
+        '    <% } else { %>',
+        '    <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
+        '      <% if (obj.icon) { %><span class="<%= icon %>" aria-hidden="true" data-action="copy" role="uploadcare-icon"></span><% } %>',
+        '      <span class="synopsis"><%- obj.synopsis %></span>',
+        '    </div>',
+        '    <% } %>',
+        '    <div class="input-group-btn" role="group">',
         '      <button data-action="show" type="button" class="btn btn-default"><span class="<%= showIcon %>" aria-hidden="true"></span></button>',
         '    </div>',
         '  </div>',
@@ -226,7 +245,9 @@ define([
         setData: function(src) {
             console.log('SET SRC', src);
             this.deferred.resolve();
-        }
+        },
+        
+        templateHelpers: templateHelpers
         
     });
     
@@ -236,17 +257,27 @@ define([
         
         defaults: {
             label: '',
+            placeholder: '',
             extraClasses: [],
             helpMessage: null,
             multiple: false,
             clearable: true,
             preview: false,
-            showIcon: 'glyphicon glyphicon-eye-open'
+            input: false,
+            blankIcon:  'blank',
+            emptyIcon:  'empty',
+            showIcon:   'glyphicon glyphicon-eye-open',
+            fileIcon:   'glyphicon glyphicon-file',
+            filesIcon:  'glyphicon glyphicon-th-list',
+            imageIcon:  'glyphicon glyphicon-picture',
+            imagesIcon: 'glyphicon glyphicon-th'
         },
         
         ui: {
             control: '[role="uploadcare-uploader"]',
-            disabledControl: '.disabled-control'
+            disabledControl: '.disabled-control',
+            synopsis: '.synopsis',
+            synopsisIcon: '[role="uploadcare-icon"]'
         },
         
         controlEvents: {
@@ -261,16 +292,26 @@ define([
         
         renderOnValueChange: false,
         
+        synopsisTemplate: _.template([
+            '<span class="synopsis-name"><%- truncate(obj.name, 32) %></span>, ',
+            '<span class="synopsis-size"><%- filesize(obj.size) %></span>'
+        ].join('\n')),
+        
         constructor: function(options) {
             Form.Control.prototype.constructor.apply(this, arguments);
+            var synopsis = this.getAttribute('synopsis');
+            if (_.isString(synopsis)) this.synopsisTemplate = _.template(synopsis);
+            
             if (this.isMultiple() && this.getAttribute('collection') !== false) {
                 this.collection = this.collection || this.getCollection(options);
                 this.listenTo(this.collection, 'reset sync change update', this._onCollectionUpdate);
                 this.on('update:files change:files delete:files', this._updateCollection);
             }
+            
+            this.on('change update', this._updateSynopsis);
             this.on('dialog:open', this._onDialogOpen);
-            this.on('render', this._attachPlugin);
-            this.on('destroy', this._detachPlugin);
+            this.on('render', this._attachPlugins);
+            this.on('destroy', this._detachPlugins);
         },
         
         openDialog: function(tab) {
@@ -309,8 +350,44 @@ define([
         },
         
         hasPreview: function() {
-            var preview = this.getAttribute('preview');
-            return preview === true || (_.isNumber(preview) && preview > 0);
+            return this.getAttribute('preview') === true;
+        },
+        
+        getIcon: function() {
+            var isBlank = this.isBlank();
+            var isMultiple = this.isMultiple();
+            var isImagesOnly = this.isImagesOnly();
+            if (isMultiple && isBlank) {
+                return this.getAttribute('emptyIcon')
+            } else if (isBlank) {
+                return this.getAttribute('blankIcon');
+            } else if (isMultiple && isImagesOnly) {
+                return this.getAttribute('imagesIcon');
+            } else if (isImagesOnly) {
+                return this.getAttribute('imageIcon');
+            } else if (isMultiple) {
+                return this.getAttribute('filesIcon');
+            } else {
+                return this.getAttribute('fileIcon');
+            }
+        },
+        
+        serializeSynopsis: function(resolvedValue) {
+            resolvedValue = resolvedValue || this.resolvedValue;
+            if (this.isBlank() || !resolvedValue) {
+                return this.getAttribute('placeholder') || '';
+            } else {
+                var template = this.getOption('synopsisTemplate');
+                var data = _.extend({}, templateHelpers, resolvedValue);
+                return template(data);
+            }
+        },
+        
+        serializeField: function() {
+            var data = Form.Control.prototype.serializeField.apply(this, arguments);
+            data.synopsis = this.serializeSynopsis();
+            data.icon = this.getIcon();
+            return data;
         },
         
         getSettings: function() {
@@ -419,6 +496,10 @@ define([
             return this.getFiles();
         },
         
+        getUrl: function() {
+            if (this.resolvedValue) return this.resolvedValue.cdnUrl;
+        },
+        
         reloadInfo: function() {
             if (this.widget) {
                 return this.widget.reloadInfo.apply(this.widget, arguments);
@@ -486,36 +567,36 @@ define([
         _onChange: function(change) {
             var isMultiple = this.isMultiple();
             if (!change) {
-                this.triggerMethod(isMultiple ? 'delete:files' : 'delete:file', this._previousValue);
-                this._previousValue = null;
-                this._previousUrl = null;
+                this.triggerMethod(isMultiple ? 'delete:files' : 'delete:file', this.resolvedValue);
+                this.resolvedValue = null;
+                this.resolvedUrl = null;
                 this.triggerMethod('change');
             } else if (isMultiple) {
-                if (this.isBlank() || this._previousValue) this.triggerMethod('before:change', change);
+                if (this.isBlank() || this.resolvedValue) this.triggerMethod('before:change', change);
                 change.promise().then(function(fileGroup) {
-                    if (this.isBlank() || (this._previousUrl && fileGroup.cdnUrl !== this._previousUrl)) {
-                        this._previousValue = fileGroup;
-                        this._previousUrl = fileGroup.cdnUrl;
+                    if (this.isBlank() || (this.resolvedUrl && fileGroup.cdnUrl !== this.resolvedUrl)) {
+                        this.resolvedValue = fileGroup;
+                        this.resolvedUrl = fileGroup.cdnUrl;
                         this.triggerMethod('change:files', fileGroup);
                         this.triggerMethod('change', fileGroup);
                     } else {
-                        this._previousValue = fileGroup;
-                        this._previousUrl = fileGroup.cdnUrl;
+                        this.resolvedValue = fileGroup;
+                        this.resolvedUrl = fileGroup.cdnUrl;
                         this.triggerMethod('update:files', fileGroup);
                         this.triggerMethod('update', fileGroup);
                     }
                 }.bind(this), this.triggerMethod.bind(this, 'upload:error'));
             } else {
-                if (this.isBlank() || this._previousValue) this.triggerMethod('before:change', change);
+                if (this.isBlank() || this.resolvedValue) this.triggerMethod('before:change', change);
                 change.then(function(file) {
-                    if (this.isBlank() || (this._previousUrl && file.cdnUrl !== this._previousUrl)) {
-                        this._previousValue = file;
-                        this._previousUrl = file.cdnUrl;
+                    if (this.isBlank() || (this.resolvedUrl && file.cdnUrl !== this.resolvedUrl)) {
+                        this.resolvedValue = file;
+                        this.resolvedUrl = file.cdnUrl;
                         this.triggerMethod('change:file', file);
                         this.triggerMethod('change', file);
                     } else {
-                        this._previousValue = file;
-                        this._previousUrl = file.cdnUrl;
+                        this.resolvedValue = file;
+                        this.resolvedUrl = file.cdnUrl;
                         this.triggerMethod('update:file', file);
                         this.triggerMethod('update', file);
                     }
@@ -535,17 +616,16 @@ define([
             if (this.getAttribute('clickable') === false) return;
             var $target = $(event.target);
             if (this.widget && ($target.hasClass('form-control') || $target.hasClass('uploadcare-widget-text'))) {
-                var isReadonly = this.isReadonly() || this.isDisabled();
                 event.preventDefault();
                 event.stopPropagation();
-                if (!isReadonly) this.widget.openDialog();
+                if (!this.isImmutable()) this.widget.openDialog();
             }
         },
         
         // Plugin
         
-        _attachPlugin: function() {
-            this._detachPlugin(this.ui.control);
+        _attachPlugins: function() {
+            this._detachPlugins(this.ui.control);
             
             var defaults = _.extend({}, _.result(this.constructor, 'defaults'));
             var settings = this.getSettings();
@@ -560,9 +640,9 @@ define([
             
             var $widget = this.$('.uploadcare-widget');
             
-            var isReadonly = this.isReadonly() || this.isDisabled();
-            $widget.toggleClass('hidden', isReadonly);
-            this.ui.disabledControl.toggleClass('hidden', !isReadonly);
+            var isImmutable = this.isImmutable();
+            $widget.toggleClass('hidden', isImmutable);
+            this.ui.disabledControl.toggleClass('hidden', !isImmutable);
             
             if (defaults.formControl !== false && this.getAttribute('formControl') !== false) {
                 $widget.addClass('form-control'); // Bootstrap style by default
@@ -582,6 +662,14 @@ define([
             this.widget.onUploadComplete(this.triggerMethod.bind(this, 'upload:complete'));
             this.widget.onDialogOpen(this.triggerMethod.bind(this, 'dialog:open'));
             
+            // Clipboard
+            var copyButton = this.$('[data-action="copy"]')[0];
+            if (copyButton) {
+                this.clipboard = new Clipboard(copyButton, {
+                    text: this.getUrl.bind(this)
+                });
+            }
+            
             if (this.hasPreview()) {
                 this.$el.addClass('control-uploadcare-with-preview');
                 this.on('change update', this._updatePreview);
@@ -590,16 +678,23 @@ define([
             }
         },
         
-        _detachPlugin: function() {
+        _detachPlugins: function() {
             this.triggerMethod('detach:plugin');
+            if (this.clipboard) this.clipboard.destroy();
             this.ui.control.off('.uploadcare');
             this.$('.uploadcare-widget').remove();
-            this._previousValue = null;
-            this._previousUrl = null;
+            this.resolvedValue = null;
+            this.resolvedUrl = null;
             this.widget = null;
         },
         
-        // Preview handling
+        // Preview/Synopsis handling
+        
+        _updateSynopsis: function(resolvedValue) {
+            var synopsis = this.serializeSynopsis(resolvedValue);
+            this.ui.synopsis.html(synopsis || '');
+            this.ui.synopsisIcon.attr('class', this.getIcon() || '');
+        },
         
         _updatePreview: function() {
             var preview = this.getAttribute('preview');

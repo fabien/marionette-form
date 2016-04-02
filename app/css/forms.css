@@ -481,6 +481,18 @@ th.sort.sort-desc .sort-dir:after {
 
 /* Uploadcare */
 
+.control-uploadcare [role="uploadcare-icon"] {
+    color: #858585;
+    margin-right: 0.5ex;
+    cursor: pointer;
+}
+
+.control-uploadcare [role="uploadcare-icon"].blank,
+.control-uploadcare [role="uploadcare-icon"].empty {
+    margin-right: 0;
+    cursor: default;
+}
+
 .uploadcare-widget > .uploadcare-widget-button {
     position: absolute;
     top: 4px;

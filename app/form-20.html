@@ -169,10 +169,10 @@
                 
                 form.collection.reset([
                     { id: 'preview', key: 'image', label: 'Preview', control: 'image' }, // works with FileGroup urls too
-                    { id: 'file', control: 'uploadcare', maxFileSize: 1024 },
-                    { id: 'files', control: 'uploadcare', multiple: true },
+                    { id: 'file', control: 'uploadcare', maxFileSize: 1024, copy: true },
+                    { id: 'files', control: 'uploadcare', multiple: true, copy: true },
                     { id: 'image', control: 'uploadcare', imagesOnly: true, crop: '1:1', tabs: 'file url facebook', preview: true },
-                    { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: 3 },
+                    { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: true },
                     { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024 },
                     { id: 'custom', control: 'uploadcare', multiple: true, tabs: 'file recent list' },
                     { id: 'gallery', key: 'images', control: 'uploadcare-gallery' }
