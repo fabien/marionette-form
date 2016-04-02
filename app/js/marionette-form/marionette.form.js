@@ -3590,6 +3590,14 @@ define([
             this.observeWindowResize();
         },
         
+        id: function() {
+            return _.uniqueId('form-');
+        },
+        
+        getId: function() {
+            return this.$el.attr('id') || _.result(this, 'id');
+        },
+        
         className: function() {
             var className = this.getClassName(null, 'form');
             if (this.isReadonly()) className += ' readonly';

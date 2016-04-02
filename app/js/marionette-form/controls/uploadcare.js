@@ -60,20 +60,22 @@ define([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
         '<div class="<%= controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <div class="input-group disabled-control hidden">',
-        '    <% if (obj.input) { %>',
-        '    <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
-        '    <% } else { %>',
-        '    <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
-        '      <% if (obj.icon) { %><span class="<%= icon %>" aria-hidden="true" data-action="copy" role="uploadcare-icon"></span><% } %>',
-        '      <span class="synopsis"><%- obj.synopsis %></span>',
+        '  <div class="control-inputs">',
+        '    <div class="input-group disabled-control hidden">',
+        '      <% if (obj.input) { %>',
+        '      <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '      <% } else { %>',
+        '      <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
+        '        <% if (obj.icon) { %><span class="<%= icon %>" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
+        '        <span class="synopsis"><%- obj.synopsis %></span>',
+        '      </div>',
+        '      <% } %>',
+        '      <div class="input-group-btn" role="group">',
+        '        <button data-action="show" type="button" class="btn btn-default"><span class="<%= showIcon %>" aria-hidden="true"></span></button>',
+        '      </div>',
         '    </div>',
-        '    <% } %>',
-        '    <div class="input-group-btn" role="group">',
-        '      <button data-action="show" type="button" class="btn btn-default"><span class="<%= showIcon %>" aria-hidden="true"></span></button>',
-        '    </div>',
+        '    <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
         '  </div>',
-        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
@@ -262,8 +264,10 @@ define([
             helpMessage: null,
             multiple: false,
             clearable: true,
-            preview: false,
             input: false,
+            copy: true,
+            preview: false,
+            previewSize: { width: 128, height: 128 },
             blankIcon:  'blank',
             emptyIcon:  'empty',
             showIcon:   'glyphicon glyphicon-eye-open',
@@ -276,8 +280,11 @@ define([
         ui: {
             control: '[role="uploadcare-uploader"]',
             disabledControl: '.disabled-control',
+            inputs: '.control-inputs',
             synopsis: '.synopsis',
-            synopsisIcon: '[role="uploadcare-icon"]'
+            synopsisIcon: '[role="uploadcare-icon"]',
+            copyButton: '[data-action="copy"]',
+            showButton: '[data-action="show"]'
         },
         
         controlEvents: {
@@ -350,6 +357,7 @@ define([
         },
         
         hasPreview: function() {
+            if (!this.isImagesOnly()) return false;
             return this.getAttribute('preview') === true;
         },
         
@@ -498,6 +506,10 @@ define([
         
         getUrl: function() {
             if (this.resolvedValue) return this.resolvedValue.cdnUrl;
+        },
+        
+        copyToCliploard: function() {
+            if (this.clipboard) this.ui.copyButton.click();
         },
         
         reloadInfo: function() {
@@ -662,25 +674,14 @@ define([
             this.widget.onUploadComplete(this.triggerMethod.bind(this, 'upload:complete'));
             this.widget.onDialogOpen(this.triggerMethod.bind(this, 'dialog:open'));
             
-            // Clipboard
-            var copyButton = this.$('[data-action="copy"]')[0];
-            if (copyButton) {
-                this.clipboard = new Clipboard(copyButton, {
-                    text: this.getUrl.bind(this)
-                });
-            }
-            
-            if (this.hasPreview()) {
-                this.$el.addClass('control-uploadcare-with-preview');
-                this.on('change update', this._updatePreview);
-            } else {
-                this.$el.removeClass('control-uploadcare-with-preview');
-            }
+            if (this.getAttribute('copy')) this._initClipboard();
+            if (this.hasPreview()) this._initPopover();
         },
         
         _detachPlugins: function() {
             this.triggerMethod('detach:plugin');
             if (this.clipboard) this.clipboard.destroy();
+            this._destroyPopover();
             this.ui.control.off('.uploadcare');
             this.$('.uploadcare-widget').remove();
             this.resolvedValue = null;
@@ -690,15 +691,51 @@ define([
         
         // Preview/Synopsis handling
         
+        getPopoverContent: function() {
+            if (!this.resolvedValue || !this.resolvedValue.cdnUrl) return;
+            var src = this.resolvedValue.cdnUrl;
+            if (this.isMultiple()) src += 'nth/0/';
+            var size = this.getAttribute('previewSize');
+            src += '-/scale_crop/' + size.width + 'x' + size.height + '/';
+            return '<img src="' + src + '" width="' + size.width + '" height="' + size.height + '"/>';
+        },
+        
         _updateSynopsis: function(resolvedValue) {
             var synopsis = this.serializeSynopsis(resolvedValue);
             this.ui.synopsis.html(synopsis || '');
             this.ui.synopsisIcon.attr('class', this.getIcon() || '');
         },
         
-        _updatePreview: function() {
-            var preview = this.getAttribute('preview');
-            console.log('PREVIEW', preview);
+        _initClipboard: function() {
+            var copyButton = this.ui.copyButton[0];
+            if (copyButton) {
+                this.clipboard = new Clipboard(copyButton, {
+                    text: this.getUrl.bind(this)
+                });
+            }
+        },
+        
+        _initPopover: function() {
+            if (!_.isFunction(this.ui.inputs.popover)) return; // bootstrap.js not loaded
+            var popoverOptions = _.extend({}, _.result(this, 'popoverOptions'), this.getAttribute('popover'));
+            var self = this;
+            this.ui.inputs.popover(_.extend({
+                content: function() {
+                    var $popover = $(this).data('bs.popover').$tip;
+                    $popover.addClass('popover-img');
+                    return self.getPopoverContent();
+                },
+                trigger: 'hover', placement: 'auto top', html: true,
+                delay: { show: 300, hide: 100 }
+            }, popoverOptions));
+            this.ui.inputs.on('show.bs.popover', function(event) {
+                if (!this.resolvedValue || !this.resolvedValue.cdnUrl) event.preventDefault();
+            }.bind(this));
+        },
+        
+        _destroyPopover: function() {
+            if (!_.isFunction(this.ui.inputs.popover)) return; // bootstrap.js not loaded
+            this.ui.inputs.popover('destroy');
         },
         
         // Collection handling

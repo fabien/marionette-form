@@ -481,16 +481,31 @@ th.sort.sort-desc .sort-dir:after {
 
 /* Uploadcare */
 
+.popover.popover-img .popover-content {
+    padding: 0;
+}
+
+.popover.popover-img .popover-content img {
+    border-radius: 4px;
+}
+
 .control-uploadcare [role="uploadcare-icon"] {
     color: #858585;
     margin-right: 0.5ex;
+}
+
+.control-uploadcare [data-action="copy"] {
     cursor: pointer;
+}
+
+.control-uploadcare [data-action="copy"]:hover {
+    color: #000;
 }
 
 .control-uploadcare [role="uploadcare-icon"].blank,
 .control-uploadcare [role="uploadcare-icon"].empty {
     margin-right: 0;
-    cursor: default;
+    cursor: default !important;
 }
 
 .uploadcare-widget > .uploadcare-widget-button {
