@@ -30,6 +30,7 @@ define([
     var uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
     var fileIdRegex = new RegExp('' + uuidRegex.source + '\/?$', 'i');
     var groupIdRegex = new RegExp('' + uuidRegex.source + '~[0-9]+\/?$', 'i');
+    var cdnUrlRegex = new RegExp("/(" + uuidRegex.source + ")(?:/(-/(?:[^/]+/)+)?([^/]*))?$", 'i');
     
     var utils = Form.utils;
     
@@ -85,7 +86,34 @@ define([
         '</div>'
     ].join('\n'));
     
-    var UploadcareFile = Form.UploadcareFile = Form.Model.extend({
+    Form.Templates.UploadcareView = _.template([
+        '<div data-region="header"></div>',
+        '<div data-region="main"></div>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareHeaderView = _.template([
+        '<h4><%- truncate(obj.name, 32) %> <small><%- filesize(obj.size) %></small></h4>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareEmptyView = _.template([
+        'No data'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareSingleView = _.template([
+        'Name: <%- obj.name %>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareMultipleView = _.template([
+        '<div role="container"></div>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareItemView = _.template([
+        'Name: <%- obj.name %>'
+    ].join('\n'));
+    
+    // Model & Collection
+    
+    Form.UploadcareFile = Form.Model.extend({
         
         idAttribute: 'uuid',
         
@@ -95,9 +123,9 @@ define([
         
     });
     
-    var UploadcareCollection = Form.UploadcareCollection = Form.Collection.extend({
+    Form.UploadcareFiles = Form.Collection.extend({
         
-        model: UploadcareFile,
+        model: Form.UploadcareFile,
         
         toFileGroup: function(settings) {
             var files = this.map(function(model) {
@@ -107,6 +135,28 @@ define([
         }
         
     });
+    
+    Form.UploadcareFileGroup = Form.Model.extend({
+        
+        idAttribute: 'uuid',
+        
+        constructor: function(attributes, options) {
+            attributes = attributes || {};
+            Form.Model.prototype.constructor.call(this, _.omit(attributes, 'files'), options);
+            this.files = new Form.UploadcareFiles(_.isArray(attributes.files) ? attributes.files : []);
+        },
+        
+        toFileGroup: function(settings) {
+            if (this.files instanceof Form.UploadcareFiles) {
+                return this.files.toFileGroup(settings);
+            } else {
+                return UploadcareControl.fileGroup([], settings);
+            }
+        }
+        
+    });
+    
+    // Views
     
     var UploadcareTabView = Form.UploadcareTabView = Marionette.LayoutView.extend({
         
@@ -140,7 +190,7 @@ define([
         },
         
         bindToFileCollection: function(collection) {
-            if (collection instanceof UploadcareCollection) {
+            if (collection instanceof Form.UploadcareFiles) {
                 var fileCollection = this.dialog.fileColl;
                 var updateCollectionFn = this._updateCollection.bind(this, collection);
                 updateCollectionFn(); // initial call
@@ -155,7 +205,7 @@ define([
                     fileCollection.onReplace.remove(updateCollectionFn);
                 });
             } else {
-                throw new Error('Invalid UploadcareCollection');
+                throw new Error('Invalid UploadcareFiles');
             }
         },
         
@@ -234,9 +284,78 @@ define([
         
     });
     
+    // View to display File or FileGroup contents
+    
+    Form.UploadcareHeaderView = Marionette.ItemView.extend({
+        
+        template: Form.Templates.UploadcareHeaderView,
+        
+        templateHelpers: templateHelpers,
+        
+        modelEvents: {
+            change: 'render'
+        },
+        
+        getTemplate: function() {
+            var template = this.getOption('multiple') ? this.multipleTemplate : this.singleTemplate;
+            return template || this.getOption('template')
+        }
+        
+    });
+    
+    Form.UploadcareEmptyView = Marionette.ItemView.extend({
+        
+        template: Form.Templates.UploadcareEmptyView,
+        
+        templateHelpers: templateHelpers
+        
+    });
+    
+    Form.UploadcareSingleView = Marionette.ItemView.extend({
+        
+        template: Form.Templates.UploadcareSingleView,
+        
+        templateHelpers: templateHelpers,
+        
+        modelEvents: {
+            change: 'render'
+        }
+        
+    });
+    
+    Form.UploadcareItemView = Marionette.LayoutView.extend({
+        
+        template: Form.Templates.UploadcareItemView,
+        
+        templateHelpers: templateHelpers
+        
+    });
+    
+    Form.UploadcareMultipleView = Marionette.CompositeView.extend({
+        
+        template: Form.Templates.UploadcareMultipleView,
+        
+        templateHelpers: templateHelpers,
+        
+        childView: Form.UploadcareItemView,
+        
+        childViewContainer: '[role="container"]'
+        
+    });
+    
     Form.UploadcareView = Marionette.LayoutView.extend({
         
-        template: _.template('UploadcareView'),
+        template: Form.Templates.UploadcareView,
+        
+        templateHelpers: templateHelpers,
+        
+        headerView: Form.UploadcareHeaderView,
+        
+        singleView: Form.UploadcareSingleView,
+        
+        multipleView: Form.UploadcareMultipleView,
+        
+        emptyView: Form.UploadcareEmptyView,
         
         modalOptions: {
             allowCancel: false
@@ -245,11 +364,8 @@ define([
         constructor: function(options) {
             Marionette.LayoutView.prototype.constructor.apply(this, arguments);
             this.deferred = $.Deferred();
-            if (options && options.src) this.setData(options.src);
-            
-            this.on('resolve', function(ev) {
-                console.log(ev);
-            });
+            if (options && options.source) this.setData(options.source);
+            this.on('render', this._onRender);
         },
         
         isMultiple: function() {
@@ -266,8 +382,55 @@ define([
             return _.omit(this.getOption('settings') || {}, 'control');
         },
         
+        // Childviews
+        
+        onResolve: function(result) {
+            if (!this.isRendered) {
+                return this.once('render', this.onResolve.bind(this, result));
+            }
+            this.isRendered = true; // force to prevent any infinite loops
+            var Model = this.isMultiple() ? Form.UploadcareFileGroup : Form.UploadcareFile;
+            this.model = new Model(result);
+            return $.when(this.showHeaderView(this.model), this.showMainView(this.model));
+        },
+        
+        showMainView: function(model) {
+            var view = this.buildChildView(model, this.getChildView(model));
+            this.triggerMethod('show:main:view', view);
+            return this.showChildView('main', view);
+        },
+        
+        showHeaderView: function(model) {
+            var ChildViewClass = this.getOption('headerView');
+            var view = this.buildChildView(model, ChildViewClass);
+            this.triggerMethod('show:header:view', view);
+            return this.showChildView('header', view);
+        },
+        
+        buildChildView: function(model, ChildViewClass, childViewOptions) {
+            childViewOptions = _.extend({}, _.result(this, 'childViewOptions', childViewOptions));
+            var options = {
+                model: model, settings: this.getSettings(),
+                multiple: this.isMultiple(), imagesOnly: this.isImagesOnly()
+            };
+            if (model && model.files instanceof Form.UploadcareFiles) options.collection = model.files;
+            return new ChildViewClass(_.extend(options, childViewOptions));
+        },
+        
+        getChildView: function(model) {
+            var childView;
+            if (model instanceof Form.UploadcareFileGroup) {
+                childView = this.getOption('multipleView');
+            } else if (model instanceof Form.UploadcareFile) {
+                childView = this.getOption('singleView');
+            }
+            return childView || this.getOption('emptyView');
+        },
+        
+        // Value
+        
         setValue: function(source) {
-            var dfd = $.Deferred();
+            var dfd = this.deferredValue = $.Deferred();
             var deferredValue, self = this;
             var settings = _.extend({}, this.getOption('settings'));
             var isMultiple = this.isMultiple();
@@ -318,9 +481,22 @@ define([
             return this.setValue(source).then(this.deferred.resolve.bind(this.deferred));
         },
         
-        templateHelpers: templateHelpers
+        // Marionette.TransitionRegion deferred integration
+        
+        onTransition: function() {
+            return this.deferredValue || this.deferred;
+        },
+        
+        // Private
+        
+        _onRender: function() {
+            this.addRegion('header', this.$('[data-region="header"]'));
+            this.addRegion('main', this.$('[data-region="main"]'));
+        }
         
     });
+    
+    // Form Control View
     
     var UploadcareControl = Form.UploadcareControl = Form.Control.extend(_.extend({}, Form.CollectionMixin, {
         
@@ -360,15 +536,7 @@ define([
             'click .form-control': '_openDialog'
         },
         
-        bootstrapModal: Backbone.BootstrapModal,
-        
-        modalView: Form.UploadcareView,
-        
-        modalViewOptions: function() {
-            return { settings: this.getSettings() };
-        },
-        
-        collectionConstructor: UploadcareCollection,
+        collectionConstructor: Form.UploadcareFiles,
         
         renderOnValueChange: false,
         
@@ -376,6 +544,14 @@ define([
             '<span class="synopsis-name"><%- truncate(obj.name, 32) %></span>, ',
             '<span class="synopsis-size"><%- filesize(obj.size) %></span>'
         ].join('\n')),
+        
+        bootstrapModal: Backbone.BootstrapModal,
+        
+        modalView: Form.UploadcareView,
+        
+        modalViewOptions: function() {
+            return { settings: this.getSettings() };
+        },
         
         constructor: function(options) {
             Form.Control.prototype.constructor.apply(this, arguments);
@@ -874,7 +1050,9 @@ define([
         fileGroup: function(source, from, settings) {
             if (_.isObject(from)) settings = from, from = null;
             if (isFileReference(source)) source = [source];
-            if (_.isArray(source)) {
+            if (isFileGroup(source)) {
+                return source;
+            } else if (_.isArray(source)) {
                 from = from || 'uploaded';
                 var files = _.map(source, function(file) {
                     return this.fileFrom(file, from, settings);
@@ -903,11 +1081,15 @@ define([
     return UploadcareControl;
     
     function isFileReference(value) {
-        return (_.isString(value) && !!value.match(fileIdRegex));
+        return (_.isString(value) && (value.match(fileIdRegex) || value.match(cdnUrlRegex)));
     };
     
     function isFileGroupReference(value) {
         return (_.isString(value) && !!value.match(groupIdRegex));
+    };
+    
+    function isFileGroup(value) {
+        return _.isObject(value) && _.isFunction(value.files) && _.isFunction(value.promise);
     };
     
 });
