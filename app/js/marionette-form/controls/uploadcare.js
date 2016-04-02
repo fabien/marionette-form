@@ -27,6 +27,10 @@ define([
     
     if (!window.uploadcare) throw new Error('Uploadcare has not been loaded');
     
+    var uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+    var fileIdRegex = new RegExp('' + uuidRegex.source + '\/?$', 'i');
+    var groupIdRegex = new RegExp('' + uuidRegex.source + '~[0-9]+\/?$', 'i');
+    
     var utils = Form.utils;
     
     var templateHelpers = {
@@ -99,7 +103,7 @@ define([
             var files = this.map(function(model) {
                 return model.toFile(settings);
             });
-            return uploadcare.FileGroup(files, settings);
+            return UploadcareControl.fileGroup(files, settings);
         }
         
     });
@@ -132,7 +136,7 @@ define([
         },
         
         getFileGroup: function(settings) {
-            return uploadcare.FileGroup(this.getFiles(), settings);
+            return UploadcareControl.fileGroup(this.getFiles(), settings);
         },
         
         bindToFileCollection: function(collection) {
@@ -212,14 +216,14 @@ define([
         },
         
         isValidUrl: function(value) {
-            return (_.isString(value) && !!value.match(/~(\d+)\/$/));
+            return isFileGroupReference(value);
         },
         
         serializeValue: function() {
             var settings = this.getAttribute('settings');
             var value = this.getValue(true);
             value = this.formatter.fromRaw(value);
-            if (this.isValidUrl(value) && _.isString(settings) && !isBlank(settings)) {
+            if (this.isValidUrl(value) && _.isString(settings) && !utils.isBlank(settings)) {
                 if (settings.indexOf('/') === 0) settings = settings.slice(1);
                 value += 'gallery/-/' + settings;
             } else {
@@ -242,11 +246,76 @@ define([
             Marionette.LayoutView.prototype.constructor.apply(this, arguments);
             this.deferred = $.Deferred();
             if (options && options.src) this.setData(options.src);
+            
+            this.on('resolve', function(ev) {
+                console.log(ev);
+            });
         },
         
-        setData: function(src) {
-            console.log('SET SRC', src);
-            this.deferred.resolve();
+        isMultiple: function() {
+            return this.getOption('multiple') ||
+                this.getSettings().multiple === true;
+        },
+        
+        isImagesOnly: function() {
+            return this.getOption('imagesOnly') ||
+                this.getSettings().imagesOnly === true;
+        },
+        
+        getSettings: function() {
+            return _.omit(this.getOption('settings') || {}, 'control');
+        },
+        
+        setValue: function(source) {
+            var dfd = $.Deferred();
+            var deferredValue, self = this;
+            var settings = _.extend({}, this.getOption('settings'));
+            var isMultiple = this.isMultiple();
+            var isFileGroupRef = isFileGroupReference(source);
+            var forceSingle = isFileGroupRef && !isMultiple;
+            
+            if (isMultiple || isFileGroupRef) {
+                deferredValue = UploadcareControl.fileGroup(source, settings);
+            } else if (isFileReference(source)) {
+                deferredValue = UploadcareControl.fileFrom(source, 'uploaded', settings);
+            } else if (_.isObject(source) && source.sourceName === 'uploaded') {
+                deferredValue = UploadcareControl.fileFrom(source, 'object', settings);
+            } else if (_.isObject(source) && source.sourceName === 'ready') {
+                deferredValue = UploadcareControl.fileFrom(source, 'ready', settings);
+            }
+            
+            if (isMultiple && _.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
+                deferredValue.fail(failed);
+                deferredValue.done(function(ref) {
+                    var promises = [ref.promise()].concat(ref.files());
+                    $.when.apply($, promises).then(function(fileGroup) {
+                        fileGroup.files = _.rest(arguments);
+                        resolved(forceSingle ? _.first(fileGroup.files) : fileGroup);
+                        return fileGroup;
+                    }, failed);
+                }.bind(this));
+            } else if (_.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
+                deferredValue.done(resolved);
+                deferredValue.fail(failed);
+            } else {
+                failed('invalid-source');
+            }
+            
+            return dfd.promise();
+            
+            function resolved(result) {
+                self.triggerMethod('resolve', result);
+                dfd.resolve(result);
+            };
+            
+            function failed(error) {
+                self.triggerMethod('fail', error);
+                dfd.fail(error);
+            };
+        },
+        
+        setData: function(source) {
+            return this.setValue(source).then(this.deferred.resolve.bind(this.deferred));
         },
         
         templateHelpers: templateHelpers
@@ -294,6 +363,10 @@ define([
         bootstrapModal: Backbone.BootstrapModal,
         
         modalView: Form.UploadcareView,
+        
+        modalViewOptions: function() {
+            return { settings: this.getSettings() };
+        },
         
         collectionConstructor: UploadcareCollection,
         
@@ -446,11 +519,11 @@ define([
         setFile: function(source, from) {
             if (this.widget && this.isMultiple()) {
                 var files = [].concat(source || []);
-                var group = this.constructor.fileGroup(files, from);
+                var group = UploadcareControl.fileGroup(files, from);
                 this.widget.value(group);
                 return group;
             } else if (this.widget) {
-                var file = this.constructor.fileFrom(source, from);
+                var file = UploadcareControl.fileFrom(source, from);
                 this.widget.value(file);
                 return file;
             }
@@ -486,9 +559,11 @@ define([
                 return this.widget.value();
             } else if (this.widget) {
                 var file = this.widget.value();
-                if (file) return uploadcare.FileGroup([file], settings);
+                if (file) return UploadcareControl.fileGroup([file], settings);
+            } else if (this.isMultiple() && !this.isBlank()) {
+                return UploadcareControl.fileGroup(this.getValue(true), settings);
             }
-            return uploadcare.FileGroup([], settings);
+            return UploadcareControl.fileGroup([], settings);
         },
         
         setFiles: function(files, from) {
@@ -496,7 +571,7 @@ define([
             if (_.isEmpty(files)) {
                 this.widget.value(null);
             } else if (this.widget && this.isMultiple()) {
-                var group = this.constructor.fileGroup(files, from);
+                var group = UploadcareControl.fileGroup(files, from);
                 this.widget.value(group);
             } else if (this.widget) {
                 this.widget.value(_.first(files));
@@ -787,19 +862,28 @@ define([
         
         // Utility methods/factories
         
+        isFileReference: isFileReference,
+        
+        isFileGroupReference: isFileGroupReference,
+        
         fileFrom: function(source, from, settings) {
+            if (_.isObject(from)) settings = from, from = null;
             return uploadcare.fileFrom(from || 'uploaded', source, settings);
         },
         
         fileGroup: function(source, from, settings) {
+            if (_.isObject(from)) settings = from, from = null;
+            if (isFileReference(source)) source = [source];
             if (_.isArray(source)) {
                 from = from || 'uploaded';
                 var files = _.map(source, function(file) {
                     return this.fileFrom(file, from, settings);
                 }.bind(this));
                 return uploadcare.FileGroup(files, settings);
+            } else if (isFileGroupReference(source)) {
+                return uploadcare.loadFileGroup(source, settings);
             } else {
-                return uploadcare.FileGroup(source, settings);
+                return uploadcare.FileGroup([], settings);
             }
         }
         
@@ -818,10 +902,12 @@ define([
     
     return UploadcareControl;
     
-    function isBlank(obj) {
-        if (_.isNumber(obj)) return false;
-        return _.isNull(obj) || _.isUndefined(obj) || _.isEmpty(obj) ||
-            (_.isString(obj) && /^[\s\t\r\n]*$/.test(obj));
+    function isFileReference(value) {
+        return (_.isString(value) && !!value.match(fileIdRegex));
+    };
+    
+    function isFileGroupReference(value) {
+        return (_.isString(value) && !!value.match(groupIdRegex));
     };
     
 });
