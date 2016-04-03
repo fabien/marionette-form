@@ -32,6 +32,13 @@ define([
     var groupIdRegex = new RegExp('' + uuidRegex.source + '~[0-9]+\/?$', 'i');
     var cdnUrlRegex = new RegExp("/(" + uuidRegex.source + ")(?:/(-/(?:[^/]+/)+)?([^/]*))?$", 'i');
     
+    var uploadcareViewOptions = [
+        'multiple', 'imagesOnly', 'gallery',
+        'details', 'header',
+        'thumbnailSize', 'thumbnailSettings',
+        'previewSize', 'previewSettings'
+    ];
+    
     var utils = Form.utils;
     
     var templateHelpers = {
@@ -55,15 +62,10 @@ define([
     
     var dataAttr = 'uploadcareWidget';
     
-    Form.Templates.UploadcareGalleryControl = _.template([
-        '<% if (obj.label) { %><label class="<%= labelClassName %>"><%= obj.label %></label><% } %>',
-        '<div class="<%= controlsClassName %>">',
-        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <iframe src="<%- value %>" width="<%- width %>" height="<%- height %>" allowfullscreen="true" frameborder="0"></iframe>',
-        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
-        '</div>'
-    ].join('\n'));
+    Form.Templates.UploadcareControlSynopis = _.template([
+        '<span class="synopsis-name"><%- truncate(obj.name, 32) %></span>, ',
+        '<span class="synopsis-size"><%- filesize(obj.size) %></span>'
+    ].join('\n')),
     
     Form.Templates.UploadcareControl = _.template([
         '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
@@ -87,6 +89,21 @@ define([
         '  </div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
         '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '</div>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcareStaticControl = _.template([
+        '<label class="<%= labelClassName %>"><%= label %></label>',
+        '<div class="<%= controlsClassName %>">',
+        '  <div class="input-group">',
+        '    <div class="<%= controlClassName %> immutable" role="control">',
+        '      <% if (obj.icon) { %><span class="<%= icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-clipboard-text="<%- obj.cdnUrl %>" data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
+        '      <span class="synopsis"><%- obj.value %></span>',
+        '    </div>',
+        '    <div class="input-group-btn" role="group">',
+        '      <button data-action="show" type="button" class="btn btn-default"><span class="<%- showIcon %>" aria-hidden="true"></span></button>',
+        '    </div>',
+        '  </div>',
         '</div>'
     ].join('\n'));
     
@@ -151,7 +168,7 @@ define([
         '  </a>',
         '</div>',
         '<div class="media-body">',
-        '  <h4 class="media-heading"><a href="<%- obj.originalUrl %>" title="<% obj.name %>" target="_blank"><%- truncate(obj.name, 32) %></a></h4>',
+        '  <h4 class="media-heading"><a href="<%- obj.originalUrl %>" title="<% obj.name %>" target="_blank"><%- obj.name %></a></h4>',
         '  <p class="media-summary"><%- filesize(obj.size) %> | <%- obj.mimeType %> | <%- obj.isStored ? "Stored" : "Not Stored" %></p>',
         '</div>',
     ].join('\n'));
@@ -175,6 +192,10 @@ define([
     Form.UploadcareFile = Form.Model.extend({
         
         idAttribute: 'uuid',
+        
+        isImage: function() {
+            return this.get('isImage') === true;
+        },
         
         toFile: function(settings) {
             return uploadcare.fileFrom('uploaded', this.get('cdnUrl') || this.id, settings);
@@ -203,6 +224,10 @@ define([
             attributes = attributes || {};
             Form.Model.prototype.constructor.call(this, _.omit(attributes, 'files'), options);
             this.files = new Form.UploadcareFiles(_.isArray(attributes.files) ? attributes.files : []);
+        },
+        
+        isImagesOnly: function() {
+            return this.files.all(function(file) { return file.isImage(); });
         },
         
         toFileGroup: function(settings) {
@@ -300,48 +325,6 @@ define([
         
     });
     
-    Form.UploadcareGalleryControl = Form.BaseControl.extend({
-        
-        template: Form.Templates.UploadcareGalleryControl,
-        
-        defaults: {
-            label: '',
-            extraClasses: [],
-            helpMessage: null,
-            settings: defaultGallerySettings,
-            width: '100%',
-            height: '450'
-        },
-        
-        ui: {
-            iframe: 'iframe'
-        },
-        
-        constructor: function(options) {
-            Form.BaseControl.prototype.constructor.apply(this, arguments);
-            this.on('value:change', function(model, value, options) {
-                this.ui.iframe.toggleClass('hidden', !this.isValidUrl(value));
-            });
-        },
-        
-        isValidUrl: function(value) {
-            return isFileGroupReference(value);
-        },
-        
-        serializeValue: function() {
-            var settings = this.getAttribute('settings');
-            var value = this.getValue(true);
-            value = this.formatter.fromRaw(value);
-            if (this.isValidUrl(value) && _.isString(settings) && !utils.isBlank(settings)) {
-                value = utils.joinUrl(value, 'gallery/-/', settings) + '/';
-            } else {
-                value = '';
-            }
-            return value;
-        }
-        
-    });
-    
     // Content views for displaying File or FileGroup contents
     
     Form.UploadcareBaseView = Marionette.LayoutView.extend({
@@ -361,11 +344,11 @@ define([
         
         serializeData: function() {
             var data = Marionette.LayoutView.prototype.serializeData.apply(this, arguments);
-            data.isGroup = this.getOption('multiple') || _.has(data, 'count');
-            data.isImage = data.isImage || (data.isGroup && this.getOption('imagesOnly'));
             data.showDetails = this.getOption('details') !== false;
+            data.isGroup = this.model instanceof Form.UploadcareFileGroup;
+            data.isImage = data.isImage || (data.isGroup && this.model.isImagesOnly());
             
-            var iconType = getIconType(this.getOption('multiple'), this.getOption('imagesOnly') || data.isImage);
+            var iconType = getIconType(data.isGroup, data.isImage);
             data.icon = getIcon(data.mimeType, type);
             
             var isImageGroup = data.isGroup && data.isImage && isFileGroupReference(data.cdnUrl);
@@ -519,23 +502,13 @@ define([
         constructor: function(options) {
             Marionette.LayoutView.prototype.constructor.apply(this, arguments);
             this.deferred = $.Deferred();
-            if (options && options.source) this.setData(options.source);
+            if (options && options.source) {
+                this.setData(options.source);
+            } else if (this.model) {
+                this.setModel(this.model);
+            }
             this.on('render', this._onRender);
             this.on('destroy', this._onDestroy);
-        },
-        
-        isMultiple: function() {
-            return this.getOption('multiple') ||
-                this.getSettings().multiple === true;
-        },
-        
-        isImagesOnly: function() {
-            return this.getOption('imagesOnly') ||
-                this.getSettings().imagesOnly === true;
-        },
-        
-        getSettings: function() {
-            return _.extend({}, this.getOption('settings'));
         },
         
         // Childviews
@@ -547,6 +520,9 @@ define([
         },
         
         showHeaderView: function(model) {
+            if (this.getOption('header') === false) {
+                return $.Deferred().resolve().promise(); // OK
+            }
             var ChildViewClass = this.getOption('headerView');
             var view = this.buildChildView(model, ChildViewClass);
             this.triggerMethod('show:header:view', view);
@@ -555,9 +531,12 @@ define([
         
         buildChildView: function(model, ChildViewClass, childViewOptions) {
             childViewOptions = _.extend({}, _.result(this, 'childViewOptions', childViewOptions));
+            var isMultiple = model instanceof Form.UploadcareFileGroup;
+            var isImagesOnly = this.getOption('imagesOnly');
+            isImagesOnly = isImagesOnly || (isImagesOnly !== false && isMultiple && model.isImagesOnly());
+            var showDetails = this.getOption('details');
             var options = {
-                model: model, settings: this.getSettings(),
-                multiple: this.isMultiple(), imagesOnly: this.isImagesOnly()
+                model: model, multiple: isMultiple, imagesOnly: isImagesOnly, details: showDetails
             };
             if (model && model.files instanceof Form.UploadcareFiles) options.collection = model.files;
             return new ChildViewClass(_.extend(options, childViewOptions));
@@ -566,7 +545,8 @@ define([
         getChildView: function(model) {
             var childView;
             if (model instanceof Form.UploadcareFileGroup) {
-                var isImagesOnly = this.isImagesOnly();
+                var isImagesOnly = this.getOption('imagesOnly');
+                isImagesOnly = isImagesOnly || (isImagesOnly !== false && model.isImagesOnly());
                 if (isImagesOnly && this.getOption('gallery')) {
                     childView = this.getChildViewClass('gallery');
                 } else if (isImagesOnly) {
@@ -585,6 +565,19 @@ define([
         
         // Value
         
+        setModel: function(model) {
+            if (model instanceof Form.UploadcareFileGroup || model instanceof Form.UploadcareFile) {
+                if (!this.isRendered) return this.once('render', this.onResolve.bind(this, model));
+                this.isRendered = true; // force to prevent any infinite loops
+                this.model = model;
+                return $.when(this.showHeaderView(this.model), this.showMainView(this.model)).then(function() {
+                    this.triggerMethod('set:model', model);
+                }.bind(this));
+            } else {
+                return $.Deferred().reject().promise();
+            }
+        },
+        
         getUrl: function() {
             return this.model && this.model.get('cdnUrl');
         },
@@ -594,24 +587,28 @@ define([
         },
         
         setValue: function(source) {
-            var dfd = this.deferredValue = this.convertValue(source);
-            dfd.done(this.triggerMethod.bind(this, 'resolve'));
-            dfd.fail(this.triggerMethod.bind(this, 'fail'));
-            return dfd;
+            if (source instanceof Form.UploadcareFileGroup || source instanceof Form.UploadcareFile) {
+                return this.setModel(source);
+            } else if ($.isPlainObject(source)) {
+                var Model = _.isArray(source.files) ? Form.UploadcareFileGroup : Form.UploadcareFile;
+                return this.setModel(new Model(source));
+            } else {
+                var dfd = this.deferredValue = this.convertValue(source);
+                dfd.done(this.triggerMethod.bind(this, 'resolve'));
+                dfd.fail(this.triggerMethod.bind(this, 'fail'));
+                return dfd;
+            }
         },
         
-        convertValue: function(source, settings) {
-            settings = _.extend({}, this.getOption('settings'), settings);
-            settings.multiple = this.isMultiple();
-            return Form.UploadcareControl.resolveSource(source, settings);
+        convertValue: function(source, options) {
+            var settings = _.extend({}, this.getOption('settings'));
+            settings.multiple = this.getOption('multiple');
+            settings.imagesOnly = this.getOption('imagesOnly');
+            return Form.UploadcareControl.resolveSource(source, _.extend(settings, options));
         },
         
-        onResolve: function(result) {
-            if (!this.isRendered) return this.once('render', this.onResolve.bind(this, result));
-            this.isRendered = true; // force to prevent any infinite loops
-            var Model = this.isMultiple() ? Form.UploadcareFileGroup : Form.UploadcareFile;
-            this.model = new Model(result);
-            return $.when(this.showHeaderView(this.model), this.showMainView(this.model));
+        onResolve: function(data) {
+            return this.setValue(data);
         },
         
         // ModalViewMixin integration
@@ -644,7 +641,60 @@ define([
         
     });
     
-    // Form Control View
+    // Form Control Views for display
+    
+    Form.UploadcareViewControl = Form.RegionControl.extend({
+        
+        defaults: {
+            multiple: 'auto'
+        },
+        
+        viewConstructor: Form.UploadcareView,
+        
+        constructor: function(options) {
+            Form.RegionControl.prototype.constructor.apply(this, arguments);
+            this.on('value:change', this.updateView);
+        },
+        
+        viewOptions: function() {
+            var options = this.getAttributes(uploadcareViewOptions);
+            if (!this.isBlank()) options.source = this.getValue(true);
+            return options;
+        },
+        
+        updateView: function(model, value, options) {
+            var view = this.getView();
+            if (view) view.setValue(value);
+        }
+        
+    });
+    
+    Form.UploadcareStaticControl = Form.ImmutableControl.extend(_.extend({}, {
+        
+        template: Form.Templates.UploadcareStaticControl,
+        
+        defaults: {
+            label: '',
+            multiple: 'auto',
+            header: false,
+            extraClasses: [],
+            multiple: 'auto',
+            copy: true,
+            helpMessage: null,
+            showIcon: 'glyphicon glyphicon-eye-open'
+        },
+        
+        bootstrapModal: Backbone.BootstrapModal,
+        
+        modalView: Form.UploadcareView,
+        
+        onActionShow: function(event) {
+            this.showModal(event);
+        }
+        
+    }, Form.ModalViewMixin));
+    
+    // Form Control View for editing
     
     var UploadcareControl = Form.UploadcareControl = Form.Control.extend(_.extend({}, Form.CollectionMixin, {
         
@@ -661,14 +711,7 @@ define([
             copy: true,
             preview: false,
             previewSize: { width: 128, height: 128 },
-            showIcon:   'glyphicon glyphicon-eye-open',
-            
-            blankIcon:  'blank',
-            emptyIcon:  'empty',
-            fileIcon:   'glyphicon glyphicon-file',
-            filesIcon:  'glyphicon glyphicon-th-list',
-            imageIcon:  'glyphicon glyphicon-picture',
-            imagesIcon: 'glyphicon glyphicon-th'
+            showIcon: 'glyphicon glyphicon-eye-open'
         },
         
         ui: {
@@ -689,17 +732,17 @@ define([
         
         renderOnValueChange: false,
         
-        synopsisTemplate: _.template([
-            '<span class="synopsis-name"><%- truncate(obj.name, 32) %></span>, ',
-            '<span class="synopsis-size"><%- filesize(obj.size) %></span>'
-        ].join('\n')),
+        synopsisTemplate: Form.Templates.UploadcareControlSynopis,
         
         bootstrapModal: Backbone.BootstrapModal,
         
         modalView: Form.UploadcareView,
         
         modalViewOptions: function() {
-            return { settings: this.getSettings(), gallery: this.getAttribute('gallery') };
+            var defaults = { multiple: this.isMultiple(), imagesOnly: this.isImagesOnly() };
+            var options = this.getAttributes(uploadcareViewOptions);
+            _.defaults(options, defaults);
+            return options;
         },
         
         constructor: function(options) {
@@ -913,24 +956,6 @@ define([
         },
         
         // Modal View
-        
-        showModal: function(event) {
-            if (event instanceof $.Event) {
-                event.preventDefault();
-                $(event.currentTarget).blur();
-            }
-            if (this.modal || this.isBlank()) return; // singleton
-            var view = this.createModalView();
-            var dfd = $.Deferred();
-            this.modal = this.openModalWithView(view, function(dialog) {
-                dfd.resolve(dialog);
-            }.bind(this)).fail(function(err) {
-                dfd.reject(err);
-            }).always(function() {
-                delete this.modal;
-            }.bind(this));
-            return dfd.promise();
-        },
         
         onActionShow: function(event) {
             this.showModal(event);
@@ -1239,12 +1264,13 @@ define([
             var isFileGroupObj = isFileGroup(source);
             var isFileGroupRef = isFileGroupReference(source);
             if (settings.multiple === 'auto') isMultiple = isFileGroupObj || isFileGroupRef;
+            var handleMultiple = isMultiple || isFileGroupObj || isFileGroupRef;
             var forceSingle = (isFileGroupObj || isFileGroupRef) && !isMultiple;
             
             var resolved = dfd.resolve.bind(dfd);
             var failed = dfd.fail.bind(dfd);
             
-            if (isMultiple || isFileGroupObj || isFileGroupRef) {
+            if (handleMultiple) {
                 deferredValue = UploadcareControl.fileGroup(source, settings);
             } else if (isFileReference(source)) {
                 deferredValue = UploadcareControl.fileFrom(source, 'uploaded', settings);
@@ -1254,16 +1280,11 @@ define([
                 deferredValue = UploadcareControl.fileFrom(source, 'ready', settings);
             }
             
-            if (isMultiple && _.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
+            if (_.isObject(deferredValue) && _.isFunction(deferredValue.files)) {
+                resolveGroupRef(deferredValue);
+            } else if (handleMultiple && _.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
                 deferredValue.fail(failed);
-                deferredValue.done(function(ref) {
-                    var promises = [ref.promise()].concat(ref.files());
-                    $.when.apply($, promises).then(function(fileGroup) {
-                        fileGroup.files = _.rest(arguments);
-                        resolved(forceSingle ? _.first(fileGroup.files) : fileGroup);
-                        return fileGroup;
-                    }, failed);
-                }.bind(this));
+                deferredValue.done(resolveGroupRef.bind(this));
             } else if (_.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
                 deferredValue.done(resolved);
                 deferredValue.fail(failed);
@@ -1272,6 +1293,15 @@ define([
             }
             
             return dfd.promise();
+            
+            function resolveGroupRef(ref) {
+                var promises = [ref.promise()].concat(ref.files());
+                $.when.apply($, promises).then(function(fileGroup) {
+                    fileGroup.files = _.rest(arguments);
+                    resolved(forceSingle ? _.first(fileGroup.files) : fileGroup);
+                    return fileGroup;
+                }, failed);
+            }
         }
         
     });

@@ -54,6 +54,8 @@ define([
         joinUrl: joinUrl
     };
     
+    Marionette.Form.DefaultRegion = Marionette.Region;
+    
     var CollectionMixin = {
         
         collectionConstructor: NestedCollection,
@@ -160,6 +162,24 @@ define([
     //               unless commit returns `true`, the dialog will not close on 'OK'
     
     var ModalViewMixin = {
+        
+        showModal: function(event) {
+            if (event instanceof $.Event) {
+                event.preventDefault();
+                $(event.currentTarget).blur();
+            }
+            if (this.modal || this.isBlank()) return; // singleton
+            var view = this.createModalView();
+            var dfd = $.Deferred();
+            this.modal = this.openModalWithView(view, function(dialog) {
+                dfd.resolve(dialog);
+            }.bind(this)).fail(function(err) {
+                dfd.reject(err);
+            }).always(function() {
+                delete this.modal;
+            }.bind(this));
+            return dfd.promise();
+        },
         
         getModalViewContstructor: function(viewClass) {
             viewClass = viewClass || this.getAttribute('modalView') || this.getAttribute('modal');
@@ -1158,11 +1178,15 @@ define([
             
             getAttributes: function() {
                 var attrs = _.flatten(arguments);
-                return _.reduce(attrs, function(hash, attr) {
-                    var value = this.getAttribute(attr);
-                    if (!_.isUndefined(value)) hash[attr] = value;
-                    return hash;
-                }.bind(this), {});
+                if (attrs.length === 0) {
+                    return _.defaults({}, this.model.toJSON(), this.defaults);
+                } else {
+                    return _.reduce(attrs, function(hash, attr) {
+                        var value = this.getAttribute(attr);
+                        if (!_.isUndefined(value)) hash[attr] = value;
+                        return hash;
+                    }.bind(this), {});
+                }
             },
             
             onChange: function(event) {
@@ -1666,7 +1690,7 @@ define([
         childViewContainer: '[data-region="main"]',
         
         constructor: function(options) {
-            StaticControl.prototype.constructor.apply(this, arguments);
+            Control.prototype.constructor.apply(this, arguments);
             this.on('after:render', this.updateView);
             this.on('control:change', this.handleChange);
         },
@@ -1681,25 +1705,22 @@ define([
             var viewClass = this.getAttribute('view') || this.getOption('viewConstructor');
             if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
             if (viewClass) {
-                var options = _.extend({}, _.result(this, 'viewOptions'), this.getAttribute('viewOptions'), options);
-                var data = this.mixinTemplateHelpers(this.serializeData());
+                var options = _.extend({}, _.result(this, 'viewOptions'), this.getAttribute('viewOptions'));
                 this.view = new viewClass(options);
-                if (_.isFunction(this.initView)) this.initView(this.view);
+                this.triggerMethod('init:view', this.view);
                 this.listenTo(this.view, 'all', function(eventName) {
                     var args = ['view:' + eventName].concat(_.rest(arguments));
                     this.triggerMethod.apply(this, args);
                 });
-                this.triggerMethod('view:render', this.view);
                 this.view.render();
                 if (_.isString(this.childViewContainer)) {
-                    StaticControl.prototype._renderTemplate.apply(this, arguments);
                     this.$(this.childViewContainer).html(this.view.el);
                 } else {
                     this.attachElContent(this.view.el);
                 }
                 return this;
             } else {
-                return StaticControl.prototype._renderTemplate.apply(this, arguments);
+                return Control.prototype._renderTemplate.apply(this, arguments);
             }
         }
         
@@ -1721,6 +1742,62 @@ define([
             this.setValue(data);
         }
         
+    });
+    
+    var RegionControl = Marionette.Form.RegionControl = extendView(Marionette.ItemView, {
+        
+        template: false,
+        
+        commit: function() {}, // disabled
+        
+        getView: function() {
+            return this.region.currentView;
+        },
+        
+        showView: function(view, options) {
+            return this.region.show(view, options);
+        },
+        
+        renderView: function(showOptions) {
+            if (!this.region) this.setupRegion();
+            var viewClass = this.getAttribute('view') || this.getOption('viewConstructor');
+            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            if (!viewClass) return this.triggerMethod('invalid:view', viewClass);
+            var options = _.extend({}, _.result(this, 'viewOptions'), this.getAttribute('viewOptions'));
+            
+            var view = new viewClass(options);
+            view.parent = this;
+            view.control = this;
+            view.form = this.form;
+            
+            this.triggerMethod('init:view', view);
+            this.listenTo(view, 'all', function(eventName) {
+                var args = ['view:' + eventName].concat(_.rest(arguments));
+                this.triggerMethod.apply(this, args);
+            });
+            return this.showView(view, showOptions);
+        },
+        
+        setupRegion: function() {
+            var regionClass = this.getAttribute('regionClass') || 'default';
+            if (_.isString(regionClass)) regionClass = resolveNameToClass(regionClass, 'Region');
+            if (_.isObject(regionClass) && (regionClass === Marionette.Region || regionClass.prototype instanceof Marionette.Region)) {
+                var childviewContainer = this.getOption('childviewContainer');
+                var el = _.isString(childviewContainer) ? this.$(childviewContainer) : this.el;
+                this.region = new regionClass(_.extend({}, this.getOption('regionOptions'), { el: el }));
+            } else {
+                throw new Error('Invalid Region');
+            }
+        },
+        
+        destroyRegion: function() {
+            if (this.region) this.region.destroy();
+        }
+        
+    }, function(options) {
+        this.on('render', this.renderView);
+        this.on('destroy', this.destroyRegion);
+        this.listenTo(this.model, 'change:view', this.renderView);
     });
     
     var LayoutControl = Marionette.Form.LayoutControl = extendView(Marionette.LayoutView, {
@@ -4570,7 +4647,7 @@ define([
     
     function truncate(text, max) {
         var head, tail;
-        if (text.length > max) {
+        if (_.isString(text) && text.length > max) {
             head = Math.ceil((max - 3) / 2);
             tail = Math.floor((max - 3) / 2);
             return text.slice(0, head) + '...' + text.slice(-tail);

@@ -541,6 +541,11 @@ th.sort.sort-desc .sort-dir:after {
     padding: 0;
 }
 
+.uploadcare-view-header {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
 .uploadcare-view-img {
     display: block;
     margin-bottom: 5px;
@@ -588,6 +593,10 @@ th.sort.sort-desc .sort-dir:after {
     color: #858585;
 }
 
+.uploadcare-view .media .media-heading {
+    font-size: 1em;
+}
+
 .uploadcare-view .media .media-heading a {
     text-decoration: none;
     color: #444;
@@ -606,6 +615,11 @@ th.sort.sort-desc .sort-dir:after {
 
 .uploadcare-view .uploadcare-view-images {
     margin-bottom: -30px;
+}
+
+.uploadcare-view .uploadcare-view-img img {
+    display: block;
+    margin: 0 auto;
 }
 
 .uploadcare-view .uploadcare-view-image-item {

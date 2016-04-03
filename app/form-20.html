@@ -19,6 +19,9 @@
             .uploadcare-dialog-tabs-panel-recent td {
                 cursor: pointer;
             }
+            .control-uploadcare-view {
+                margin: 30px 0;
+            }
         </style>
         <!-- load jquery as normal, instead of through requirejs -->
         <script src="/js/vendor/jquery/dist/jquery.js"></script>
@@ -80,7 +83,7 @@
                     template: '#list-tab-view',
                     
                     initialize: function(options) {
-                        this.collection = new Form.UploadcareCollection();
+                        this.collection = new Form.UploadcareFiles();
                         this.bindToFileCollection(this.collection);
                         this.addRegion('list', '#file-list');
                     },
@@ -127,7 +130,7 @@
                     updateCollection: function() {
                         $.when.apply(null, this.getFiles()).then(function() {
                             var urls = _.pluck(_.flatten(arguments), 'cdnUrl'); // existing
-                            var collection = this.collection = new Form.UploadcareCollection();
+                            var collection = this.collection = new Form.UploadcareFiles();
                             this.showChildView('list', new ListView({ collection: this.collection }));
                             
                             this.gatherFiles().then(function(files) {
@@ -176,7 +179,11 @@
                     { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: true },
                     { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024 },
                     { id: 'custom', control: 'uploadcare', imagesOnly: true, multiple: true, tabs: 'file recent list', gallery: true },
-                    { id: 'gallery', key: 'images', control: 'uploadcare-gallery' },
+                    { id: 'display-compact', key: 'image', control: 'uploadcare-static' },
+                    { id: 'display-image', key: 'image', control: 'uploadcare-view', multiple: 'auto', details: true },
+                    { id: 'display-images', key: 'images', control: 'uploadcare-view', multiple: true, gallery: false },
+                    { id: 'display-file', key: 'file', control: 'uploadcare-view', multiple: 'auto', details: true },
+                    { id: 'display-files', key: 'files', control: 'uploadcare-view', multiple: true, imagesOnly: false }
                 ]);
                 
                 form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
