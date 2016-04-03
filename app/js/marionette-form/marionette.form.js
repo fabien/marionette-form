@@ -50,7 +50,8 @@ define([
         camelize: camelize,
         resolveNameToClass: resolveNameToClass,
         isBlank: isBlank,
-        truncate: truncate
+        truncate: truncate,
+        joinUrl: joinUrl
     };
     
     var CollectionMixin = {
@@ -3483,12 +3484,16 @@ define([
         },
         
         _serializeData: function(data) {
+            var fallback = false;
             if (!(_.isString(data.value)
                 && (data.value.match(/^data:image\//) || data.value.match(/^http(s)?:\/\//)))) {
                 data.value = this.getAttribute('fallback') || TransparantPixel;
+                fallback = true;
             } else if (_.isString(data.value) && data.value.match(/~(\d+)\/$/)) {
                 data.value = data.value + 'nth/0/'; // Uploadcare FileGroup url
             }
+            var urlSuffix = this.getAttribute('urlSuffix');
+            if (!fallback && urlSuffix) data.value = joinUrl(data.value, urlSuffix) + '/';
         }
         
     });
@@ -4572,6 +4577,15 @@ define([
         } else {
             return text;
         }
+    };
+    
+    function joinUrl(url) {
+        var segments = _.compact(_.flatten(arguments));
+        return _.map(segments, function(segment, index) {
+            if (index > 0 && segment.indexOf('/') === 0) segment = segment.slice(1);
+            if (segment.lastIndexOf('/') === segment.length -1) segment = segment.slice(0, -1);
+            return segment;
+        }).join('/');
     };
     
 });

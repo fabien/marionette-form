@@ -39,8 +39,12 @@ define([
         isBlank: utils.isBlank,
         camelize: utils.camelize,
         truncate: utils.truncate,
-        filesize: filesize
+        filesize: filesize,
+        getIcon: getIcon,
+        getIconType: getIconType
     };
+    
+    var defaultGallerySettings = '/nav/thumbs/-/fit/cover/-/loop/true/-/allowfullscreen/native/-/thumbwidth/100/';
     
     var attributes = [
         'multiple', 'multipleMin', 'multipleMax', 'imagesOnly', 
@@ -71,12 +75,12 @@ define([
         '      <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
         '      <% } else { %>',
         '      <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
-        '        <% if (obj.icon) { %><span class="<%= icon %>" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
-        '        <span class="synopsis"><%- obj.synopsis %></span>',
+        '        <% if (obj.icon) { %><span class="<%= icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
+        '        <span class="synopsis"><%= obj.synopsis %></span>',
         '      </div>',
         '      <% } %>',
         '      <div class="input-group-btn" role="group">',
-        '        <button data-action="show" type="button" class="btn btn-default"><span class="<%= showIcon %>" aria-hidden="true"></span></button>',
+        '        <button data-action="show" type="button" class="btn btn-default"><span class="<%- showIcon %>" aria-hidden="true"></span></button>',
         '      </div>',
         '    </div>',
         '    <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
@@ -92,23 +96,78 @@ define([
     ].join('\n'));
     
     Form.Templates.UploadcareHeaderView = _.template([
-        '<h4><%- truncate(obj.name, 32) %> <small><%- filesize(obj.size) %></small></h4>'
+        '<h4>',
+        '  <span class="<%- obj.icon %> icon" aria-hidden="true" data-clipboard-text="<%- obj.cdnUrl %>" data-action="copy" title="Copy URL to clipboard"></span>',
+        '  <% if (obj.isGroup) { %>',
+        '  <%- obj.name %> <small><%- filesize(obj.size) %></small>',
+        '  <% } else { %>',
+        '  <%- truncate(obj.name, 32) %>',
+        '  <% } %>',
+        '</h4>'
     ].join('\n'));
     
     Form.Templates.UploadcareEmptyView = _.template([
-        'No data'
+        '<div class="text-center"><span class="glyphicon glyphicon-exclamation-sign icon" aria-hidden="true"></span></div>'
     ].join('\n'));
     
     Form.Templates.UploadcareSingleView = _.template([
-        'Name: <%- obj.name %>'
+        '<% if (obj.previewUrl) { %>',
+        '<a href="<%- obj.cdnUrl %>" title="<%- obj.name %>" target="_blank" class="uploadcare-view-img">',
+        '  <img src="<%- obj.previewUrl %>" class="img-responsive"/>',
+        '</a>',
+        '<% } %>',
+        '<% if (obj.showDetails) { %>',
+        '  <div class="uploadcare-view-details">',
+        '    <table class="table uploadcare-view-table">',
+        '    <% if (!obj.isImage || (obj.originalUrl && obj.originalUrl === obj.cdnUrl)) { %>',
+        '      <tr><td class="key">Url</td><td><a href="<%- obj.originalUrl %>" title="<%- obj.name %>" target="_blank"><%- truncate(obj.originalUrl, 48) %></a></td></tr>',
+        '    <% } else { %>',
+        '      <% if (obj.cdnUrl) { %><tr><td class="key">Url</td><td><a href="<%- obj.cdnUrl %>" title="<%- obj.name %>" target="_blank"><%- truncate(obj.cdnUrl, 48) %></a></td></tr><% } %>',
+        '      <% if (obj.originalUrl) { %><tr><td class="key">Original Url</td><td><a href="<%- obj.originalUrl %>" title="<%- obj.name %>" target="_blank"><%- truncate(obj.originalUrl, 48) %></a></td></tr><% } %>',
+        '    <% } %>',
+        '    <tr><td class="key">File Size</td><td><%- filesize(obj.size || 0) %></td></tr>',
+        '    <% if (obj.mimeType) { %><tr><td class="key">File Type</td><td><%- obj.mimeType %></td></tr><% } %>',
+        '    <% if (obj.isStored) { %><tr><td class="key">Stored</td><td><%- obj.isStored ? "Yes" : "No" %></td></tr><% } %>',
+        '    <% if (obj.isImage && obj.originalImageInfo) { %><tr><td class="key">Dimensions</td><td><%- obj.originalImageInfo.width + " x " + obj.originalImageInfo.height + " px" %></td></tr><% } %>',
+        '    </table>',
+        '  </div>',
+        '<% } %>'
     ].join('\n'));
     
     Form.Templates.UploadcareMultipleView = _.template([
         '<div role="container"></div>'
     ].join('\n'));
     
-    Form.Templates.UploadcareItemView = _.template([
-        'Name: <%- obj.name %>'
+    Form.Templates.UploadcareImagesView = Form.Templates.UploadcareMultipleView,
+    
+    Form.Templates.UploadcareFileItemView = _.template([
+        '<div class="media-left">',
+        '  <a href="<%- obj.cdnUrl %>" title="<% obj.name %>" target="_blank" class="media-object-href">',
+        '    <% if (obj.thumbnailUrl) { %>',
+        '    <img class="media-object" src="<%- obj.thumbnailUrl %>" alt="<%- obj.name %>"/>',
+        '    <% } else { %>',
+        '    <span class="<%= icon %> media-object media-object-icon" aria-hidden="true"></span>',
+        '    <% } %>',
+        '  </a>',
+        '</div>',
+        '<div class="media-body">',
+        '  <h4 class="media-heading"><a href="<%- obj.originalUrl %>" title="<% obj.name %>" target="_blank"><%- truncate(obj.name, 32) %></a></h4>',
+        '  <p class="media-summary"><%- filesize(obj.size) %> | <%- obj.mimeType %> | <%- obj.isStored ? "Stored" : "Not Stored" %></p>',
+        '</div>',
+    ].join('\n'));
+    
+    Form.Templates.UploadcareImageItemView = _.template([
+        '<a href="<%- obj.cdnUrl %>" title="<% obj.name %>" target="_blank" class="media-object-href">',
+        '  <% if (obj.thumbnailUrl) { %>',
+        '  <img class="media-object img-responsive" src="<%- obj.thumbnailUrl %>" alt="<%- obj.name %>"/>',
+        '  <% } else { %>',
+        '  <span class="<%= icon %> media-object media-object-icon" aria-hidden="true"></span>',
+        '  <% } %>',
+        '</a>',
+    ].join('\n'));
+    
+    Form.Templates.UploadcareGalleryView = _.template([
+        '<iframe src="<%- obj.galleryUrl %>" width="<%- obj.galleryInfo && obj.galleryInfo.width %>" height="<%- obj.galleryInfo && obj.galleryInfo.height %>" allowfullscreen="true" frameborder="0"></iframe>'
     ].join('\n'));
     
     // Model & Collection
@@ -249,7 +308,7 @@ define([
             label: '',
             extraClasses: [],
             helpMessage: null,
-            settings: '/nav/thumbs/-/fit/cover/-/loop/true/-/allowfullscreen/native/-/thumbwidth/100/',
+            settings: defaultGallerySettings,
             width: '100%',
             height: '450'
         },
@@ -274,8 +333,7 @@ define([
             var value = this.getValue(true);
             value = this.formatter.fromRaw(value);
             if (this.isValidUrl(value) && _.isString(settings) && !utils.isBlank(settings)) {
-                if (settings.indexOf('/') === 0) settings = settings.slice(1);
-                value += 'gallery/-/' + settings;
+                value = utils.joinUrl(value, 'gallery/-/', settings) + '/';
             } else {
                 value = '';
             }
@@ -284,38 +342,99 @@ define([
         
     });
     
-    // View to display File or FileGroup contents
+    // Content views for displaying File or FileGroup contents
     
-    Form.UploadcareHeaderView = Marionette.ItemView.extend({
+    Form.UploadcareBaseView = Marionette.LayoutView.extend({
+        
+        templateHelpers: templateHelpers,
+        
+        thumbnailSize: { width: 64, height: 64 },
+        
+        previewSize: { width: 600, height: 450 },
+        
+        gallerySettings: defaultGallerySettings,
+        
+        galleryOptions: {
+            width: '100%',
+            height: '450'
+        },
+        
+        serializeData: function() {
+            var data = Marionette.LayoutView.prototype.serializeData.apply(this, arguments);
+            data.isGroup = this.getOption('multiple') || _.has(data, 'count');
+            data.isImage = data.isImage || (data.isGroup && this.getOption('imagesOnly'));
+            data.showDetails = this.getOption('details') !== false;
+            
+            var iconType = getIconType(this.getOption('multiple'), this.getOption('imagesOnly') || data.isImage);
+            data.icon = getIcon(data.mimeType, type);
+            
+            var isImageGroup = data.isGroup && data.isImage && isFileGroupReference(data.cdnUrl);
+            var imageUrl = isImageGroup ? data.cdnUrl + '/nth/0/' : data.cdnUrl;
+            
+            if (imageUrl && data.isImage) {
+                data.thumbnailUrl = this.getImageUrl(imageUrl, 'thumbnail');
+                data.previewUrl = this.getImageUrl(imageUrl, 'preview');
+            }
+            
+            if (isImageGroup) {
+                var gallerySettings = this.getOption('gallerySettings');
+                data.galleryUrl = utils.joinUrl(data.cdnUrl, 'gallery/-/', gallerySettings) + '/';
+                data.galleryInfo = _.extend({}, this.getOption('galleryOptions'));
+            }
+            
+            return data;
+        },
+        
+        getImageUrl: function(baseUrl, name) {
+            var variantSettings = _.result(this, name + 'Settings');
+            var variantSize = _.result(this, name + 'Size');
+            if (_.isString(variantSettings) && !utils.isBlank(variantSettings)) {
+                return utils.joinUrl(baseUrl, variantSettings) + '/';
+            } else if (_.isObject(variantSize)) {
+                var spec = '/-/scale_crop/' + variantSize.width + 'x' + variantSize.height + '/center/-/format/jpg/';
+                return utils.joinUrl(baseUrl, spec) + '/';
+            }
+        }
+        
+    });
+    
+    Form.UploadcareHeaderView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-view-header',
         
         template: Form.Templates.UploadcareHeaderView,
         
-        templateHelpers: templateHelpers,
-        
         modelEvents: {
             change: 'render'
-        },
-        
-        getTemplate: function() {
-            var template = this.getOption('multiple') ? this.multipleTemplate : this.singleTemplate;
-            return template || this.getOption('template')
         }
         
     });
     
-    Form.UploadcareEmptyView = Marionette.ItemView.extend({
+    Form.UploadcareEmptyView = Form.UploadcareBaseView.extend({
         
-        template: Form.Templates.UploadcareEmptyView,
+        className: 'uploadcare-view-content uploadcare-view-empty',
         
-        templateHelpers: templateHelpers
+        template: Form.Templates.UploadcareEmptyView
         
     });
     
-    Form.UploadcareSingleView = Marionette.ItemView.extend({
+    Form.UploadcareSingleView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-view-content uploadcare-view-single',
         
         template: Form.Templates.UploadcareSingleView,
         
-        templateHelpers: templateHelpers,
+        modelEvents: {
+            change: 'render'
+        }
+        
+    });
+    
+    Form.UploadcareFileItemView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-view-item uploadcare-view-file-item media',
+        
+        template: Form.Templates.UploadcareFileItemView,
         
         modelEvents: {
             change: 'render'
@@ -323,27 +442,57 @@ define([
         
     });
     
-    Form.UploadcareItemView = Marionette.LayoutView.extend({
+    Form.UploadcareImageItemView = Form.UploadcareFileItemView.extend({
         
-        template: Form.Templates.UploadcareItemView,
+        className: 'uploadcare-view-item uploadcare-view-image-item col-xs-6 col-md-3',
         
-        templateHelpers: templateHelpers
+        template: Form.Templates.UploadcareImageItemView,
+        
+        thumbnailSize: { width: 320, height: 320 },
         
     });
     
     Form.UploadcareMultipleView = Marionette.CompositeView.extend({
         
+        className: 'uploadcare-view-content uploadcare-view-multiple',
+        
         template: Form.Templates.UploadcareMultipleView,
         
         templateHelpers: templateHelpers,
         
-        childView: Form.UploadcareItemView,
+        childView: Form.UploadcareFileItemView,
         
         childViewContainer: '[role="container"]'
         
     });
     
-    Form.UploadcareView = Marionette.LayoutView.extend({
+    Form.UploadcareImagesView = Form.UploadcareMultipleView.extend({
+        
+        className: 'uploadcare-view-content uploadcare-view-images row',
+        
+        template: Form.Templates.UploadcareImagesView,
+        
+        childView: Form.UploadcareImageItemView
+        
+    });
+    
+    Form.UploadcareGalleryView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-view-content uploadcare-view-gallery',
+        
+        template: Form.Templates.UploadcareGalleryView,
+        
+        modelEvents: {
+            change: 'render'
+        }
+        
+    });
+    
+    // Container View
+    
+    Form.UploadcareView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-view',
         
         template: Form.Templates.UploadcareView,
         
@@ -351,14 +500,20 @@ define([
         
         headerView: Form.UploadcareHeaderView,
         
-        singleView: Form.UploadcareSingleView,
-        
-        multipleView: Form.UploadcareMultipleView,
-        
-        emptyView: Form.UploadcareEmptyView,
+        childViews: {
+            single: Form.UploadcareSingleView,
+            multiple: Form.UploadcareMultipleView,
+            images: Form.UploadcareImagesView,
+            gallery: Form.UploadcareGalleryView,
+            empty: Form.UploadcareEmptyView
+        },
         
         modalOptions: {
             allowCancel: false
+        },
+        
+        id: function() {
+            return _.uniqueId('uc-');
         },
         
         constructor: function(options) {
@@ -366,6 +521,7 @@ define([
             this.deferred = $.Deferred();
             if (options && options.source) this.setData(options.source);
             this.on('render', this._onRender);
+            this.on('destroy', this._onDestroy);
         },
         
         isMultiple: function() {
@@ -379,20 +535,10 @@ define([
         },
         
         getSettings: function() {
-            return _.omit(this.getOption('settings') || {}, 'control');
+            return _.extend({}, this.getOption('settings'));
         },
         
         // Childviews
-        
-        onResolve: function(result) {
-            if (!this.isRendered) {
-                return this.once('render', this.onResolve.bind(this, result));
-            }
-            this.isRendered = true; // force to prevent any infinite loops
-            var Model = this.isMultiple() ? Form.UploadcareFileGroup : Form.UploadcareFile;
-            this.model = new Model(result);
-            return $.when(this.showHeaderView(this.model), this.showMainView(this.model));
-        },
         
         showMainView: function(model) {
             var view = this.buildChildView(model, this.getChildView(model));
@@ -420,62 +566,55 @@ define([
         getChildView: function(model) {
             var childView;
             if (model instanceof Form.UploadcareFileGroup) {
-                childView = this.getOption('multipleView');
+                var isImagesOnly = this.isImagesOnly();
+                if (isImagesOnly && this.getOption('gallery')) {
+                    childView = this.getChildViewClass('gallery');
+                } else if (isImagesOnly) {
+                    childView = this.getChildViewClass('images');
+                }
+                childView = childView || this.getChildViewClass('multiple');
             } else if (model instanceof Form.UploadcareFile) {
-                childView = this.getOption('singleView');
+                childView = this.getChildViewClass('single');
             }
-            return childView || this.getOption('emptyView');
+            return childView || this.getChildViewClass('empty');
+        },
+        
+        getChildViewClass: function(type) {
+            return (_.result(this, 'childViews') || {})[type];
         },
         
         // Value
         
-        setValue: function(source) {
-            var dfd = this.deferredValue = $.Deferred();
-            var deferredValue, self = this;
-            var settings = _.extend({}, this.getOption('settings'));
-            var isMultiple = this.isMultiple();
-            var isFileGroupRef = isFileGroupReference(source);
-            var forceSingle = isFileGroupRef && !isMultiple;
-            
-            if (isMultiple || isFileGroupRef) {
-                deferredValue = UploadcareControl.fileGroup(source, settings);
-            } else if (isFileReference(source)) {
-                deferredValue = UploadcareControl.fileFrom(source, 'uploaded', settings);
-            } else if (_.isObject(source) && source.sourceName === 'uploaded') {
-                deferredValue = UploadcareControl.fileFrom(source, 'object', settings);
-            } else if (_.isObject(source) && source.sourceName === 'ready') {
-                deferredValue = UploadcareControl.fileFrom(source, 'ready', settings);
-            }
-            
-            if (isMultiple && _.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
-                deferredValue.fail(failed);
-                deferredValue.done(function(ref) {
-                    var promises = [ref.promise()].concat(ref.files());
-                    $.when.apply($, promises).then(function(fileGroup) {
-                        fileGroup.files = _.rest(arguments);
-                        resolved(forceSingle ? _.first(fileGroup.files) : fileGroup);
-                        return fileGroup;
-                    }, failed);
-                }.bind(this));
-            } else if (_.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
-                deferredValue.done(resolved);
-                deferredValue.fail(failed);
-            } else {
-                failed('invalid-source');
-            }
-            
-            return dfd.promise();
-            
-            function resolved(result) {
-                self.triggerMethod('resolve', result);
-                dfd.resolve(result);
-            };
-            
-            function failed(error) {
-                self.triggerMethod('fail', error);
-                dfd.fail(error);
-            };
+        getUrl: function() {
+            return this.model && this.model.get('cdnUrl');
         },
+        
+        getValue: function() {
+            return $.when(this.deferredValue);
+        },
+        
+        setValue: function(source) {
+            var dfd = this.deferredValue = this.convertValue(source);
+            dfd.done(this.triggerMethod.bind(this, 'resolve'));
+            dfd.fail(this.triggerMethod.bind(this, 'fail'));
+            return dfd;
+        },
+        
+        convertValue: function(source, settings) {
+            settings = _.extend({}, this.getOption('settings'), settings);
+            settings.multiple = this.isMultiple();
+            return Form.UploadcareControl.resolveSource(source, settings);
+        },
+        
+        onResolve: function(result) {
+            if (!this.isRendered) return this.once('render', this.onResolve.bind(this, result));
+            this.isRendered = true; // force to prevent any infinite loops
+            var Model = this.isMultiple() ? Form.UploadcareFileGroup : Form.UploadcareFile;
+            this.model = new Model(result);
+            return $.when(this.showHeaderView(this.model), this.showMainView(this.model));
+        },
+        
+        // ModalViewMixin integration
         
         setData: function(source) {
             return this.setValue(source).then(this.deferred.resolve.bind(this.deferred));
@@ -492,6 +631,15 @@ define([
         _onRender: function() {
             this.addRegion('header', this.$('[data-region="header"]'));
             this.addRegion('main', this.$('[data-region="main"]'));
+            
+            if (this.clipboard) this.clipboard.destroy();
+            var viewId = this.$el.attr('id');
+            var sel = '#' + viewId + ' [data-action="copy"]';
+            this.clipboard = new Clipboard(sel);
+        },
+        
+        _onDestroy: function() {
+            if (this.clipboard) this.clipboard.destroy();
         }
         
     });
@@ -513,9 +661,10 @@ define([
             copy: true,
             preview: false,
             previewSize: { width: 128, height: 128 },
+            showIcon:   'glyphicon glyphicon-eye-open',
+            
             blankIcon:  'blank',
             emptyIcon:  'empty',
-            showIcon:   'glyphicon glyphicon-eye-open',
             fileIcon:   'glyphicon glyphicon-file',
             filesIcon:  'glyphicon glyphicon-th-list',
             imageIcon:  'glyphicon glyphicon-picture',
@@ -550,7 +699,7 @@ define([
         modalView: Form.UploadcareView,
         
         modalViewOptions: function() {
-            return { settings: this.getSettings() };
+            return { settings: this.getSettings(), gallery: this.getAttribute('gallery') };
         },
         
         constructor: function(options) {
@@ -610,23 +759,15 @@ define([
             return this.getAttribute('preview') === true;
         },
         
-        getIcon: function() {
+        getIcon: function(type) {
             var isBlank = this.isBlank();
             var isMultiple = this.isMultiple();
             var isImagesOnly = this.isImagesOnly();
-            if (isMultiple && isBlank) {
-                return this.getAttribute('emptyIcon')
-            } else if (isBlank) {
-                return this.getAttribute('blankIcon');
-            } else if (isMultiple && isImagesOnly) {
-                return this.getAttribute('imagesIcon');
-            } else if (isImagesOnly) {
-                return this.getAttribute('imageIcon');
-            } else if (isMultiple) {
-                return this.getAttribute('filesIcon');
-            } else {
-                return this.getAttribute('fileIcon');
-            }
+            var iconType = getIconType(isMultiple, isImagesOnly, isBlank);
+            type = type || iconType;
+            type = normalizeIconName(type);
+            var icon = this.getAttribute(type) || this.getAttribute(iconType);
+            return icon || UploadcareControl.getIcon(type, iconType);
         },
         
         serializeSynopsis: function(resolvedValue) {
@@ -943,12 +1084,18 @@ define([
         // Preview/Synopsis handling
         
         getPopoverContent: function() {
-            if (!this.resolvedValue || !this.resolvedValue.cdnUrl) return;
+            if (!this.resolvedValue || !this.resolvedValue.isImage || !this.resolvedValue.cdnUrl) return;
             var src = this.resolvedValue.cdnUrl;
             if (this.isMultiple()) src += 'nth/0/';
-            var size = this.getAttribute('previewSize');
-            src += '-/scale_crop/' + size.width + 'x' + size.height + '/';
-            return '<img src="' + src + '" width="' + size.width + '" height="' + size.height + '"/>';
+            var previewSettings = _.result(this, 'previewSettings');
+            if (_.isString(previewSettings) && !utils.isBlank(previewSettings)) {
+                src = utils.joinUrl(src, previewSettings) + '/';
+                return '<img src="' + src + '" class="img-responsive"/>';
+            } else {
+                var size = this.getAttribute('previewSize');
+                src += '-/scale_crop/' + size.width + 'x' + size.height + '/center/-/format/jpg/';
+                return '<img src="' + src + '" width="' + size.width + '" height="' + size.height + '"/>';
+            }
         },
         
         _updateSynopsis: function(resolvedValue) {
@@ -980,7 +1127,9 @@ define([
                 delay: { show: 300, hide: 100 }
             }, popoverOptions));
             this.ui.inputs.on('show.bs.popover', function(event) {
-                if (!this.resolvedValue || !this.resolvedValue.cdnUrl) event.preventDefault();
+                if (!this.resolvedValue || !this.resolvedValue.isImage || !this.resolvedValue.cdnUrl) {
+                    event.preventDefault();
+                }
             }.bind(this));
         },
         
@@ -1021,6 +1170,15 @@ define([
         
         validators: [],
         
+        icons: {
+            blankIcon:  'blank',
+            emptyIcon:  'empty',
+            fileIcon:   'glyphicon glyphicon-file',
+            filesIcon:  'glyphicon glyphicon-th-list',
+            imageIcon:  'glyphicon glyphicon-picture',
+            imagesIcon: 'glyphicon glyphicon-th'
+        },
+        
         validator: function(name) {
             var validatorFn = UploadcareControl.Validation[name];
             return _.isFunction(validatorFn) && validatorFn.apply(null, _.rest(arguments));
@@ -1037,6 +1195,14 @@ define([
         },
         
         // Utility methods/factories
+        
+        getIcon: function(type, fallback) {
+            fallback = fallback || 'blankIcon';
+            type = type || fallback;
+            type = normalizeIconName(type);
+            fallback = normalizeIconName(fallback);
+            return this.icons[type] || this.icons[fallback];
+        },
         
         isFileReference: isFileReference,
         
@@ -1063,6 +1229,49 @@ define([
             } else {
                 return uploadcare.FileGroup([], settings);
             }
+        },
+        
+        resolveSource: function(source, settings) {
+            settings = _.extend({}, settings);
+            var dfd = $.Deferred();
+            var deferredValue;
+            var isMultiple = settings.multiple === true;
+            var isFileGroupObj = isFileGroup(source);
+            var isFileGroupRef = isFileGroupReference(source);
+            if (settings.multiple === 'auto') isMultiple = isFileGroupObj || isFileGroupRef;
+            var forceSingle = (isFileGroupObj || isFileGroupRef) && !isMultiple;
+            
+            var resolved = dfd.resolve.bind(dfd);
+            var failed = dfd.fail.bind(dfd);
+            
+            if (isMultiple || isFileGroupObj || isFileGroupRef) {
+                deferredValue = UploadcareControl.fileGroup(source, settings);
+            } else if (isFileReference(source)) {
+                deferredValue = UploadcareControl.fileFrom(source, 'uploaded', settings);
+            } else if (_.isObject(source) && source.sourceName === 'uploaded') {
+                deferredValue = UploadcareControl.fileFrom(source, 'object', settings);
+            } else if (_.isObject(source) && source.sourceName === 'ready') {
+                deferredValue = UploadcareControl.fileFrom(source, 'ready', settings);
+            }
+            
+            if (isMultiple && _.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
+                deferredValue.fail(failed);
+                deferredValue.done(function(ref) {
+                    var promises = [ref.promise()].concat(ref.files());
+                    $.when.apply($, promises).then(function(fileGroup) {
+                        fileGroup.files = _.rest(arguments);
+                        resolved(forceSingle ? _.first(fileGroup.files) : fileGroup);
+                        return fileGroup;
+                    }, failed);
+                }.bind(this));
+            } else if (_.isObject(deferredValue) && _.isFunction(deferredValue.promise)) {
+                deferredValue.done(resolved);
+                deferredValue.fail(failed);
+            } else {
+                failed('invalid-source');
+            }
+            
+            return dfd.promise();
         }
         
     });
@@ -1090,6 +1299,36 @@ define([
     
     function isFileGroup(value) {
         return _.isObject(value) && _.isFunction(value.files) && _.isFunction(value.promise);
+    };
+    
+    function getIcon(type, fallback) {
+        return UploadcareControl.getIcon(type, fallback);
+    };
+    
+    function getIconType(isMultiple, isImagesOnly, isBlank) {
+        if (isMultiple && isBlank) {
+            type = 'emptyIcon';
+        } else if (isBlank) {
+            type = 'blankIcon';
+        } else if (isMultiple && isImagesOnly) {
+            type = 'imagesIcon';
+        } else if (isImagesOnly) {
+            type = 'imageIcon';
+        } else if (isMultiple) {
+            type = 'filesIcon';
+        } else {
+            type = 'fileIcon';
+        }
+        return type;
+    };
+    
+    function normalizeIconName(name) {
+        // mime/type to: iconMimeType
+        if (_.isString(name) && name.indexOf('/') > -1) {
+            return 'icon' + utils.camelize(utils.formatName(name));
+        } else {
+            return name;
+        }
     };
     
 });
