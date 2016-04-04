@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style>
+            .uploadcare-dialog-tab-recent:before {
+                background-image: url(data:image/png;base64,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) !important;
+                background-position: 0 0;
+            }
+            .uploadcare-dialog-tab_current.uploadcare-dialog-tab-recent:before {
+                background-position: 0 50px;
+            }
+            .uploadcare-dialog-tabs-panel-recent .uploadcare-file-item {
+                cursor: pointer;
+            }
+            .uploadcare-dialog-tabs-panel-recent td {
+                cursor: pointer;
+            }
+            .control-uploadcare-view {
+                margin: 30px 0;
+            }
+        </style>
+        <!-- load jquery as normal, instead of through requirejs -->
+        <script src="/js/vendor/jquery/dist/jquery.js"></script>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <!-- use jquery from script tag above with requirejs -->
+        <script>define('jquery', [], function() { return jQuery; });</script>
+        <script src="/js/requirejs.config.js"></script>
+        <!-- global upload-care config -->
+        <script>UPLOADCARE_LIVE = false; UPLOADCARE_MANUAL_START = true;</script>
+        <script src="https://ucarecdn.com/widget/2.8.1/uploadcare/uploadcare.min.js" charset="utf-8"></script>
+        <script type="text/javascript">
+            require([
+                'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.0/js.cookie.js',
+                'filesize',
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'marionette.form.control.uploadcare',
+            ], function(Cookies, filesize, Backbone, Marionette, Form) {
+                
+                uploadcare.start({ publicKey: 'demopublickey', locale: 'en' });
+                
+                // Form
+                
+                var ExampleForm = Form.View.extend({
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            Cookies.set('uploads', this.getData());
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Model = Form.Model.extend();
+                
+                var doc = new Model({ title: 'Document' });
+                
+                var form = new ExampleForm({ model: doc });
+                
+                form.collection.reset([
+                    { id: 'title', control: 'input' },
+                    { id: 'readonly', control: 'boolean' },
+                    { id: 'panel-file', key: 'file', control: 'uploadcare-panel', tabs: 'file url facebook' },
+                    { id: 'panel-files', key: 'files', control: 'uploadcare-panel', multiple: true }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                    Cookies.set('uploads', form.getData());
+                });
+                
+                form.model.on('change:readonly', function(model, bool, options) {
+                    form.children.each(function(control) {
+                        if (control instanceof Form.UploadcarePanelControl) {
+                            control.setAttribute('readonly', bool);
+                        }
+                    });
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Set initial document data
+                
+                doc.set(Cookies.getJSON('uploads') || {});
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with UploadCare integration</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

@@ -511,7 +511,13 @@ th.sort.sort-desc .sort-dir:after {
     cursor: default !important;
 }
 
-.uploadcare-widget > .uploadcare-widget-button {
+.uploadcare-widget.form-control > .uploadcare-widget-dragndrop-area {
+    border-radius: 4px;
+    padding: 0 2px;
+    left: -2px;
+}
+
+.uploadcare-widget.form-control > .uploadcare-widget-button {
     position: absolute;
     top: 4px;
     right: 4px;
