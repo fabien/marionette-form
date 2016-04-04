@@ -271,6 +271,10 @@
                     });
                 });
                 
+                form.on('control:clipboard:copy', function(control, data) {
+                    console.log('Copy to clipboard:', data.value);
+                });
+                
                 form.render();
                 form.$el.appendTo('#layout');
                 

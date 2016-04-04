@@ -1081,11 +1081,16 @@ define([
         
         // Preview/Synopsis handling
         
+        valueForClipboard: function() {
+            var data = { value: this.getUrl() };
+            this.triggerMethod('clipboard:copy', data);
+            return data.value;
+        },
+        
         _initClipboard: function() {
-            var copyButton = this.ui.copyButton[0];
-            if (copyButton) {
-                this.clipboard = new Clipboard(copyButton, {
-                    text: this.getUrl.bind(this)
+            if (this.ui.copyButton[0]) {
+                this.clipboard = new Clipboard(this.ui.copyButton[0], {
+                    text: this.valueForClipboard.bind(this)
                 });
             }
         },
