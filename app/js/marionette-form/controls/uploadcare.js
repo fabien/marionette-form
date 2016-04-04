@@ -32,12 +32,23 @@ define([
     var groupIdRegex = new RegExp('' + uuidRegex.source + '~[0-9]+\/?$', 'i');
     var cdnUrlRegex = new RegExp("/(" + uuidRegex.source + ")(?:/(-/(?:[^/]+/)+)?([^/]*))?$", 'i');
     
+    var dataAttr = 'uploadcareWidget';
+    
     var uploadcareViewOptions = [
         'multiple', 'imagesOnly', 'gallery',
         'details', 'header',
         'thumbnailSize', 'thumbnailSettings',
         'previewSize', 'previewSettings'
     ];
+    
+    var uploadcareAttributes = [
+        'multiple', 'multipleMin', 'multipleMax', 'imagesOnly', 
+        'previewStep', 'crop', 'imageShrink', 'clearable',
+        'tabs', 'inputAcceptTypes', 'preferredTypes',
+        'systemDialog', 'cdnBase', 'doNotStore'
+    ];
+    
+    var uploadcareOptions = _.uniq(uploadcareViewOptions.concat(uploadcareAttributes));
     
     var utils = Form.utils;
     
@@ -52,15 +63,6 @@ define([
     };
     
     var defaultGallerySettings = '/nav/thumbs/-/fit/cover/-/loop/true/-/allowfullscreen/native/-/thumbwidth/100/';
-    
-    var attributes = [
-        'multiple', 'multipleMin', 'multipleMax', 'imagesOnly', 
-        'previewStep', 'crop', 'imageShrink', 'clearable',
-        'tabs', 'inputAcceptTypes', 'preferredTypes',
-        'systemDialog', 'cdnBase', 'doNotStore'
-    ];
-    
-    var dataAttr = 'uploadcareWidget';
     
     Form.Templates.UploadcareControlSynopis = _.template([
         '<span class="synopsis-name"><%- truncate(obj.name, 32) %></span>, ',
@@ -120,6 +122,8 @@ define([
         '<div data-region="header"></div>',
         '<div data-region="main"></div>'
     ].join('\n'));
+    
+    Form.Templates.UploadcareConfirmView = Form.Templates.UploadcareView;
     
     Form.Templates.UploadcareHeaderView = _.template([
         '<h4>',
@@ -194,6 +198,20 @@ define([
     
     Form.Templates.UploadcareGalleryView = _.template([
         '<iframe src="<%- obj.galleryUrl %>" width="<%- obj.galleryInfo && obj.galleryInfo.width %>" height="<%- obj.galleryInfo && obj.galleryInfo.height %>" allowfullscreen="true" frameborder="0"></iframe>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcarePanelView = _.template([
+        '<div data-region="panel"></div>'
+    ].join('\n'));
+    
+    Form.Templates.UploadcarePanelControl = _.template([
+        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
+        '<div class="<%= controlsClassName %>">',
+        '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
+        '  <div data-region="main"></div>',
+        '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '</div>'
     ].join('\n'));
     
     // Model & Collection
@@ -365,7 +383,7 @@ define([
             data.icon = getIcon(data.mimeType, type);
             
             var isImageGroup = data.isGroup && data.isImage && isFileGroupReference(data.cdnUrl);
-            var imageUrl = isImageGroup ? data.cdnUrl + '/nth/0/' : data.cdnUrl;
+            var imageUrl = isImageGroup ? data.cdnUrl + 'nth/0/' : data.cdnUrl;
             
             if (imageUrl && data.isImage) {
                 data.thumbnailUrl = this.getImageUrl(imageUrl, 'thumbnail');
@@ -492,8 +510,6 @@ define([
         
         template: Form.Templates.UploadcareView,
         
-        templateHelpers: templateHelpers,
-        
         headerView: Form.UploadcareHeaderView,
         
         childViews: {
@@ -586,13 +602,20 @@ define([
         
         setModel: function(model) {
             if (model instanceof Form.UploadcareFileGroup || model instanceof Form.UploadcareFile) {
-                if (!this.isRendered) return this.once('render', this.onResolve.bind(this, model));
-                if (this.model) this.stopListening(this.model);
-                this.isRendered = true; // force to prevent any infinite loops
-                this.model = model;
-                return this.updateChildViews().then(function() {
-                    this.triggerMethod('set:model', this.model);
-                }.bind(this));
+                if (!this.isRendered || !this.header || !this.main) {
+                    var dfd = $.Deferred();
+                    this.once('render', function() {
+                        this.setModel(model).then(dfd.resolve.bind(dfd), dfd.fail.bind(dfd));
+                    });
+                    return dfd;
+                } else {
+                    if (this.model) this.stopListening(this.model);
+                    this.isRendered = true; // force to prevent any infinite loops
+                    this.model = model;
+                    return this.updateChildViews().then(function() {
+                        this.triggerMethod('set:model', this.model);
+                    }.bind(this));
+                }
             } else {
                 return $.Deferred().reject().promise();
             }
@@ -606,7 +629,7 @@ define([
             return $.when(this.deferredValue);
         },
         
-        setValue: function(source) {
+        setValue: function(source, options) {
             if (source instanceof Form.UploadcareFileGroup || source instanceof Form.UploadcareFile) {
                 return this.setModel(source);
             } else if ($.isPlainObject(source)) {
@@ -661,6 +684,178 @@ define([
         
     });
     
+    Form.UploadcareConfirmView = Form.UploadcareView.extend({
+        
+        template: Form.Templates.UploadcareConfirmView,
+        
+        modalOptions: {
+            allowDelete: true,
+            allowCancel: false,
+            okText: 'Cancel',
+            deleteText: 'Remove'
+        }
+        
+    });
+    
+    Form.UploadcarePanelView = Form.UploadcareBaseView.extend({
+        
+        className: 'uploadcare-panel-view',
+        
+        template: Form.Templates.UploadcarePanelView,
+        
+        ui: {
+            panel: '[data-region="panel"]'
+        },
+        
+        keepOpen: true,
+        
+        defaultTab: 'preview',
+        
+        constructor: function(options) {
+            Form.UploadcareBaseView.prototype.constructor.apply(this, arguments);
+            this.once('render', function() { this.openPanel(); });
+            this.on('set:value', function() { this.openPanel() });
+            this.on('panel:tab:switch', function(tabName) {
+                this._panelHeight = this.$('.uploadcare-dialog-panel').height();
+            });
+        },
+        
+        getValue: function() {
+            return this.options.source;
+        },
+        
+        setValue: function(value) {
+            var changed = value !== this.getValue();
+            this.options.source = value;
+            if (changed) this.triggerMethod('set:value', value);
+        },
+        
+        getFiles: function() {
+            var dfd = $.Deferred();
+            var source = this.getOption('source');
+            if (utils.isBlank(source)) return dfd.resolve([]).promise();
+            
+            var settings = _.extend({}, this.getSettings());
+            if (isFileGroupReference(source)) {
+                Form.UploadcareControl.resolveSource(source, settings).then(function(result) {
+                    var files = _.map(_.isArray(result.files) ? result.files : [result], function(file) {
+                        return uploadcare.fileFrom('uploaded', file.cdnUrl, settings);
+                    });
+                    dfd.resolve(files);
+                }, dfd.reject.bind(dfd));
+            } else if (isFileReference(source)) {
+                var file = uploadcare.fileFrom('uploaded', source, settings);
+                dfd.resolve([file]);
+            } else {
+                return dfd.resolve([]).promise();
+            }
+            
+            return dfd.promise();
+        },
+        
+        validateFile: function(fileInfo) {}, // Hook
+        
+        getValidator: function(name) {
+            return UploadcareControl.getValidator(name);
+        },
+        
+        getSettings: function() {
+            var settings = _.extend({}, _.result(this, 'options'));
+            settings = _.pick(settings, uploadcareOptions);
+            
+            var validators = [this._validateFile.bind(this)];
+            var maxFileSize = this.getOption('maxFileSize');
+            if (_.isNumber(maxFileSize) && maxFileSize > 0) {
+                var validator = this.getValidator('maxFileSize', maxFileSize);
+                if (_.isFunction(validator)) validators.push(validator);
+            }
+            _.each(_.result(this.constructor, 'validators') || [], function(validator) {
+                if (_.isString(validator)) validator = this.getValidator(validator);
+                if (_.isFunction(validator)) validators.push(validator);
+            }.bind(this));
+            settings.validators = validators;
+            
+            return settings;
+        },
+        
+        // Panel
+        
+        openPanel: function(tab, settings) {
+            if (_.isObject(tab)) settings = tab, tab = null;
+            var dfd = $.Deferred();
+            dfd.done(this.triggerMethod.bind(this, 'panel:open:done'));
+            dfd.fail(this.triggerMethod.bind(this, 'panel:open:fail'));
+            
+            this.getFiles().then(function(files) {
+                if (this.panel) {
+                    this.updatePanel(files);
+                } else {
+                    var el = this.ui.panel[0];
+                    tab = tab || this.getOption('tab');
+                    settings = _.extend({}, this.getSettings(), settings);
+                    files = _.isEmpty(files) ? null : files;
+                    this.panel = uploadcare.openPanel(el, files, tab, settings);
+                    this.panel.done(this.triggerMethod.bind(this, 'panel:done', this.panel));
+                    this.panel.fail(this.triggerMethod.bind(this, 'panel:fail', this.panel));
+                    this.panel.progress(this.triggerMethod.bind(this, 'panel:tab:switch', this.panel));
+                    this.panel.always(function() {
+                        this.panel = null;
+                        this.triggerMethod('panel:close', this.panel);
+                    }.bind(this));
+                }
+                dfd.resolve(this.panel);
+            }.bind(this), function(error) {
+                this.panel = null;
+                dfd.reject(error);
+            }.bind(this));
+            return dfd;
+        },
+        
+        reopenPanel: function() {
+            if (this._panelHeight > 0) this.ui.panel.height(this._panelHeight);
+            return this.openPanel();
+        },
+        
+        updatePanel: function(files) {
+            if (!this.panel) return;
+            if (_.isEmpty(files)) {
+                this.panel.fileColl.clear();
+            } else {
+                this.panel.fileColl.clear();
+                this.panel.addFiles(files);
+                this.panel.switchTab(this.getOption('defaultTab'));
+            }
+        },
+        
+        onPanelDone: function(panel, ref) {
+            var resolved = this.triggerMethod.bind(this, 'change');
+            var failed = this.triggerMethod.bind(this, 'error');
+            if (isFileGroup(ref)) {
+                var promises = [ref.promise()].concat(ref.files());
+                $.when.apply($, promises).then(function(fileGroup) {
+                    fileGroup.files = _.rest(arguments);
+                    resolved(fileGroup);
+                }, failed);
+            } else if (_.isObject(ref) && _.isFunction(ref.then)) {
+                ref.then(function(fileInfo) {
+                    resolved(fileInfo);
+                }, failed);
+            }
+        },
+        
+        onPanelClose: function(panel) {
+            if (this.getOption('keepOpen')) this.reopenPanel();
+        },
+        
+        // Private
+        
+        _validateFile: function(fileInfo) {
+            this.validateFile(fileInfo);
+            this.triggerMethod('validate:file', fileInfo);
+        }
+        
+    });
+    
     // Form Control Views for display
     
     Form.UploadcareViewControl = Form.RegionControl.extend({
@@ -669,7 +864,7 @@ define([
             multiple: 'auto'
         },
         
-        viewConstructor: Form.UploadcareView,
+        childView: Form.UploadcareView,
         
         constructor: function(options) {
             Form.RegionControl.prototype.constructor.apply(this, arguments);
@@ -677,14 +872,55 @@ define([
         },
         
         viewOptions: function() {
-            var options = this.getAttributes(uploadcareViewOptions);
+            var options = this.getAttributes(uploadcareOptions);
             if (!this.isBlank()) options.source = this.getValue(true);
             return options;
         },
         
         updateView: function(model, value, options) {
             var view = this.getView();
-            if (view) view.setValue(value);
+            if (view) view.setValue(value, options);
+        }
+        
+    });
+    
+    Form.UploadcarePanelControl = Form.UploadcareViewControl.extend({
+        
+        template: Form.Templates.UploadcarePanelControl,
+        
+        childviewContainer: '[data-region="main"]',
+        
+        childView: Form.UploadcarePanelView,
+        
+        immutableChildView: Form.UploadcareView,
+        
+        defaults: {
+            label: '',
+            extraClasses: [],
+            helpMessage: null,
+            multiple: false
+        },
+        
+        constructor: function(options) {
+            Form.UploadcareViewControl.prototype.constructor.apply(this, arguments);
+            this.on('view:change', function(result) {
+                var isMultiple = this.getAttribute('multiple');
+                if (isMultiple && isFileGroupReference(result.cdnUrl)) {
+                    this.setValue(result.cdnUrl);
+                } else if (isFileReference(result.cdnUrl)) {
+                    this.setValue(result.cdnUrl);
+                } else {
+                    this.resetValue();
+                }
+            });
+        },
+        
+        getViewClass: function() {
+            if (this.isImmutable()) {
+                return this.getOption('immutableChildView') || Form.UploadcareView;
+            } else {
+                return Form.UploadcareViewControl.prototype.getViewClass.apply(this, arguments);
+            }
         }
         
     });
@@ -779,7 +1015,7 @@ define([
         
         getSettings: function() {
             var defaults = _.extend({}, _.result(this.constructor, 'defaults'));
-            var settings = _.defaults(this.getAttributes(attributes), defaults);
+            var settings = _.defaults(this.getAttributes(uploadcareAttributes), defaults);
             settings.control = this;
             return settings;
         },
@@ -801,6 +1037,11 @@ define([
             return options;
         },
         
+        confirmationViewOptions: function() {
+            var options = _.extend({ details: false }, this.getAttribute('confirmation'));
+            return _.defaults({}, this.modalViewOptions(), options);
+        },
+        
         onActionShow: function(event) {
             this.showModal(event);
         },
@@ -808,7 +1049,7 @@ define([
         // PLugin integration
         
         getPopoverContent: function() {
-            if (!this.isImagesOnly() || !this.resolvedValue.cdnUrl) return;
+            if (!this.isImagesOnly() || !this.resolvedValue || !this.resolvedValue.cdnUrl) return;
             var src = this.resolvedValue.cdnUrl;
             if (this.isMultiple()) src += 'nth/0/';
             var previewSettings = _.result(this, 'previewSettings');
@@ -897,7 +1138,7 @@ define([
             imagesIcon: 'glyphicon glyphicon-th'
         },
         
-        validator: function(name) {
+        getValidator: function(name) {
             var validatorFn = UploadcareControl.Validation[name];
             return _.isFunction(validatorFn) && validatorFn.apply(null, _.rest(arguments));
         },
@@ -1095,6 +1336,8 @@ define([
             'click .form-control': '_openDialog'
         },
         
+        confirmationView: Form.UploadcareConfirmView,
+        
         constructor: function(options) {
             Form.UploadcareBaseControl.prototype.constructor.apply(this, arguments);
             
@@ -1248,10 +1491,8 @@ define([
         
         // Validation
         
-        validateFile: function(fileInfo) {}, // Hook
-        
         getValidator: function(name) {
-            return this.constructor.validator.apply(this.constructor, arguments);
+            return this.constructor.getValidator.apply(this.constructor, arguments);
         },
         
         addValidator: function(fn) {
@@ -1270,6 +1511,8 @@ define([
             if (!this.widget) return;
             this.widget.validators.length = 0;
         },
+        
+        validateFile: function(fileInfo) {}, // Hook
         
         // Private
         
@@ -1358,6 +1601,12 @@ define([
             var $widget = this.$('.uploadcare-widget');
             $widget.toggleClass('hidden', isImmutable);
             
+            if (settings.clearable) {
+                var removeButton = $widget.find('.uploadcare-widget-button-remove');
+                removeButton.off('click');
+                removeButton.on('click', this._confirmRemove.bind(this));
+            }
+            
             if (defaults.formControl !== false && this.getAttribute('formControl') !== false) {
                 $widget.addClass('form-control'); // Bootstrap style by default
             }
@@ -1382,6 +1631,28 @@ define([
             this.ui.control.off('.uploadcare');
             this.$('.uploadcare-widget').remove();
             this.widget = null;
+        },
+        
+        _confirmRemove: function(event) {
+            if (event instanceof $.Event) event.preventDefault();
+            if (!this.resolvedValue || this.triggerMethod('confirm:remove') === false) return;
+            var dfd = Form.UploadcareControl.resolveSource(this.getValue(), this.getSettings());
+            dfd.then(function(resolved) {
+                var options = { attributeName: 'confirmation' };
+                if (_.isArray(resolved.files)) {
+                    options.model = new Form.UploadcareFileGroup(resolved);
+                } else {
+                    options.model = new Form.UploadcareFile(resolved);
+                }
+                var view = this.createModalView(null, options);
+                this.openModalWithView(view);
+            }.bind(this));
+        },
+        
+        onModalDelete: function(modal, view) {
+            if (this.widget && view instanceof this.confirmationView) {
+                this.widget.value(null);
+            }
         },
         
         // Collection handling

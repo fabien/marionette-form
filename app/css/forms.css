@@ -625,3 +625,21 @@ th.sort.sort-desc .sort-dir:after {
 .uploadcare-view .uploadcare-view-image-item {
     margin-bottom: 30px;
 }
+
+.uploadcare-panel-view [data-region="panel"] {
+    overflow: hidden;
+}
+
+.uploadcare-dialog-footer {
+    display: none !important;
+}
+
+.modal-preview {
+    padding: 30px;
+}
+
+.modal-preview img {
+    display: block;
+    margin: 0 auto;
+    border-radius: 6px;
+}

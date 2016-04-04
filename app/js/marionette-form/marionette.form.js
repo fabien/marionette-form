@@ -181,9 +181,10 @@ define([
             return dfd.promise();
         },
         
-        getModalViewContstructor: function(viewClass) {
-            viewClass = viewClass || this.getAttribute('modalView') || this.getAttribute('modal');
-            viewClass = viewClass || this.getOption('modalView');
+        getModalViewContstructor: function(viewClass, attributeName) {
+            attributeName = attributeName || 'modal';
+            viewClass = viewClass || this.getAttribute(attributeName + 'View') || this.getAttribute(attributeName);
+            viewClass = viewClass || this.getOption(attributeName + 'View');
             if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
             viewClass = _.isFunction(viewClass) ? viewClass : Marionette.Form.DebugView;
             return viewClass;
@@ -198,8 +199,10 @@ define([
         },
         
         createModalView: function(viewClass, options) {
-            viewClass = this.getModalViewContstructor(viewClass);
-            options = _.extend({}, _.result(this, 'modalViewOptions'), this.getAttribute('modalViewOptions'), options);
+            var attributeName = (_.isObject(options) && options.attributeName) || 'modal';
+            var optionsAttributeName = attributeName + 'ViewOptions';
+            options = _.extend({}, _.result(this, optionsAttributeName), this.getAttribute(optionsAttributeName), options);
+            viewClass = this.getModalViewContstructor(viewClass, attributeName);
             this.triggerMethod('modal:view:options', options, viewClass);
             var view = new viewClass(options);
             this.triggerMethod('modal:view', view, options);
@@ -1701,9 +1704,14 @@ define([
         
         handleChange: function() {},
         
-        _renderTemplate: function() {
-            var viewClass = this.getAttribute('view') || this.getOption('viewConstructor');
+        getViewClass: function() {
+            var viewClass = this.getAttribute('view') || this.getOption('viewConstructor')  || this.getOption('childView');
             if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            return viewClass;
+        },
+        
+        _renderTemplate: function() {
+            var viewClass = this.getViewClass();
             if (viewClass) {
                 var options = _.extend({}, _.result(this, 'viewOptions'), this.getAttribute('viewOptions'));
                 this.view = new viewClass(options);
@@ -1746,6 +1754,8 @@ define([
     
     var RegionControl = Marionette.Form.RegionControl = extendView(Marionette.ItemView, {
         
+        renderOnValueChange: false,
+        
         template: false,
         
         commit: function() {}, // disabled
@@ -1758,10 +1768,18 @@ define([
             return this.region.show(view, options);
         },
         
+        getViewClass: function() {
+            var viewClass = this.getAttribute('view') || this.getOption('viewConstructor')  || this.getOption('childView');
+            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            return viewClass;
+        },
+        
         renderView: function(showOptions) {
             if (!this.region) this.setupRegion();
-            var viewClass = this.getAttribute('view') || this.getOption('viewConstructor');
-            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            var currentView = this.getView();
+            if (currentView) this.stopListening(currentView);
+            
+            var viewClass = this.getViewClass();
             if (!viewClass) return this.triggerMethod('invalid:view', viewClass);
             var options = _.extend({}, _.result(this, 'viewOptions'), this.getAttribute('viewOptions'));
             
@@ -1775,10 +1793,13 @@ define([
                 var args = ['view:' + eventName].concat(_.rest(arguments));
                 this.triggerMethod.apply(this, args);
             });
+            
             return this.showView(view, showOptions);
         },
         
         setupRegion: function() {
+            this.destroyRegion(); // always cleanup first
+            
             var regionClass = this.getAttribute('regionClass') || 'default';
             if (_.isString(regionClass)) regionClass = resolveNameToClass(regionClass, 'Region');
             if (_.isObject(regionClass) && (regionClass === Marionette.Region || regionClass.prototype instanceof Marionette.Region)) {
@@ -1792,10 +1813,18 @@ define([
         
         destroyRegion: function() {
             if (this.region) this.region.destroy();
+        },
+        
+        _renderTemplate: function() {
+            if (this.region) {
+                return this;
+            } else {
+                return Marionette.ItemView.prototype._renderTemplate.apply(this, arguments);
+            }
         }
         
     }, function(options) {
-        this.on('render', this.renderView);
+        this.on('after:render', this.renderView);
         this.on('destroy', this.destroyRegion);
         this.listenTo(this.model, 'change:view', this.renderView);
     });

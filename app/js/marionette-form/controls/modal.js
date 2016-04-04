@@ -158,7 +158,7 @@ define([
             };
             
             var removeView = this.getAttribute('removeView') || 'confirm-remove';
-            var view =  this.createModalView(removeView);
+            var view = this.createModalView(removeView);
             this.modal = this.openModalWithView(view, options, function(dialog) {
                 dialog.once('close', this.unsetValue.bind(this));
             }.bind(this)).always(function() {
