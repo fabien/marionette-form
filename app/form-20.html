@@ -172,6 +172,7 @@
                 form.collection.reset([
                     { id: 'title', control: 'input' },
                     { id: 'readonly', control: 'boolean' },
+                    // Uploadcare Control
                     { id: 'preview', key: 'image', control: 'image', urlSuffix: '-/resize/200x/' }, // works with FileGroup urls too
                     { id: 'file', control: 'uploadcare', maxFileSize: 1024, copy: true },
                     { id: 'files', control: 'uploadcare', multiple: true, copy: true },
@@ -179,7 +180,14 @@
                     { id: 'images', control: 'uploadcare', imagesOnly: true, multiple: true, crop: '1:1', preview: true },
                     { id: 'uploads', control: 'uploadcare', registerCollection: true, multiple: true, maxFileSize: 1024 },
                     { id: 'custom', control: 'uploadcare', imagesOnly: true, multiple: true, tabs: 'file recent list', gallery: true },
-                    { id: 'display-compact', key: 'image', control: 'uploadcare-static' },
+                    // Static Controls
+                    { id: 'static-image', key: 'image', label: 'Image (static)', control: 'uploadcare-static', details: false, preview: true },
+                    { id: 'static-images', key: 'images', label: 'Images (static)', control: 'uploadcare-static', multiple: 'auto', gallery: true, preview: true },
+                    { id: 'static-first-image', key: 'images', label: 'First Image (static)', control: 'uploadcare-static', multiple: false },
+                    { id: 'static-file', key: 'file', label: 'File (static)', control: 'uploadcare-static', details: true },
+                    { id: 'static-files', key: 'files', label: 'Files (static)', control: 'uploadcare-static', multiple: true, imagesOnly: false, fileCollection: true },
+                    { id: 'static-first-file', key: 'files', label: 'First File (static)', control: 'uploadcare-static', multiple: false },
+                    // Views
                     { id: 'display-image', key: 'image', control: 'uploadcare-view', multiple: 'auto', details: true },
                     { id: 'display-images', key: 'images', control: 'uploadcare-view', multiple: true, gallery: false },
                     { id: 'display-file', key: 'file', control: 'uploadcare-view', multiple: 'auto', details: true },
