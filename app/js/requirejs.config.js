@@ -5,6 +5,7 @@ requirejs.config({
         'autoNumeric': 'lib/autoNumeric',
         'backbone': 'lib/backbone.extended',
         'backbone.file-upload': 'lib/backbone.model-file-upload',
+        'backbone.branched-model': 'lib/backbone.branched-model',
         'backbone.nested-model': 'lib/backbone.nested-model',
         'backbone.operation-queue': 'lib/operation-queue',
         'backbone.treeview': 'lib/backbone.treeview',

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <!-- load jquery as normal, instead of through requirejs -->
+        <script src="/js/vendor/jquery/dist/jquery.js"></script>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <!-- use jquery from script tag above with requirejs -->
+        <script>define('jquery', [], function() { return jQuery; });</script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.0/js.cookie.js',
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'marionette.form.control.text',
+                'backbone.branched-model'
+            ], function(Cookies, Backbone, Marionette, Form) {
+                
+                // Form
+                
+                var ExampleForm = Form.View.extend({
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                            Cookies.set('branching', this.getData());
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Model = Backbone.BranchedModel.extend();
+                
+                var doc = new Model({ title: 'Document' });
+                
+                var form = new ExampleForm({ model: doc });
+                
+                form.collection.reset([
+                    { id: 'title', control: 'input' },
+                    { id: 'body', control: 'text' }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                // Set initial document data
+                
+                doc.set(Cookies.getJSON('branching') || {});
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with UploadCare integration</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

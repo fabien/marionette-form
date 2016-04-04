@@ -35,12 +35,11 @@
         <script type="text/javascript">
             require([
                 'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.0/js.cookie.js',
-                'filesize',
                 'backbone',
                 'marionette',
                 'marionette.form',
-                'marionette.form.control.uploadcare',
-            ], function(Cookies, filesize, Backbone, Marionette, Form) {
+                'marionette.form.control.uploadcare'
+            ], function(Cookies, Backbone, Marionette, Form) {
                 
                 uploadcare.start({ publicKey: 'demopublickey', locale: 'en' });
                 
