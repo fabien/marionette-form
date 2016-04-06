@@ -80,6 +80,8 @@
                     
                     branchesAttribute: 'documentVersions',
                     
+                    branchAttributes: ['title', 'body'],
+                    
                     validation: {
                         title: {
                             required: true
@@ -95,9 +97,7 @@
                 
                 var data = Cookies.getJSON('branching') || {};
                 
-                var doc = new Document(data, { 
-                    branchAttributes: ['title', 'body']
-                });
+                var doc = new Document(data);
                 
                 doc.on('branches:add', function(branch) {
                     logVerbose('Added branch: %s (%s)', branch.id, doc.branches.length);
@@ -153,10 +153,6 @@
                         if (this.commit()) {
                             var data = this.getData({ branches: true });
                             Cookies.set('branching', data);
-                            
-                            console.log('Model Url: %s', this.model.url());
-                            console.log('Branches Url: %s', this.model.branches.url());
-                            console.log('Current branch Url: %s', this.model.branches.current.url());
                             console.log('Submit', JSON.stringify(data, null, 2));
                         } else {
                             console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
@@ -170,22 +166,11 @@
                 form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
                 
                 form.on('control:change', function(control) {
-                    if (control.getKey() !== 'locale') form.resetErrors();
-                });
-                
-                form.model.on('change:locale', function(model, lc, options) {
-                    var previous = model.previous('locale');
-                    var previousBranchAttrs = model.branches.getData(previous, true);
-                    var isEmpty = _.isEmpty(previousBranchAttrs);
-                    if (isEmpty || form.isValid()) {
-                        if (isEmpty) model.branches.delete(previous);
-                        model.branches.load(lc); // switch locale
-                    } else {
-                        model.set('locale', previous); // revert
-                    }
+                    this.resetErrors();
                 });
                 
                 form.on('change', function() {
+                    console.log('Current branch Url: %s', this.model.branches.current.url());
                     console.log('Model has changed branches: %s', this.model.branches.hasChanges() ? 'Y' : 'N');
                     console.log('Changed branches:', _.pluck(this.model.branches.getChanged(), 'id'));
                     console.log('Change', JSON.stringify(this.getData({ branches: true }), null, 2));
@@ -199,13 +184,27 @@
                 var locales = new Form.Collection(acceptedLocales);
                 
                 var factory = new Form.View({
-                    model: doc, rendering: false, layout: 'vertical'
+                    rendering: false, layout: 'vertical'
                 });
                 
                 factory.registerCollection('locales', locales);
                 
+                factory.model.set('locale', doc.branches.default().id);
+                
+                factory.model.on('change:locale', function(model, lc, options) {
+                    var previous = model.previous('locale');
+                    var previousBranch = doc.branches.branch(previous);
+                    var isEmpty = previousBranch.isEmpty();
+                    if (isEmpty || form.isValid()) {
+                        if (isEmpty) doc.branches.delete(previous);
+                        doc.branches.load(lc); // switch locale
+                    } else {
+                        model.set('locale', previous); // revert
+                    }
+                });
+                
                 var control = factory.getField('locale', { 
-                    control: 'select', collection: 'locales', omit: true
+                    control: 'select', collection: 'locales'
                 });
                 
                 control.render();

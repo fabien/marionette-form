@@ -23,6 +23,11 @@
     
     Backbone.Branch = TrackingModel.extend({
         
+        isEmpty: function() {
+            var data = _.omit(this.toBranch(), this.collection.branchDiscriminator);
+            return _.isEmpty(data);
+        },
+        
         isMainBranch: function() {
             return this.collection && this.collection.isMainBranch(this);
         },
@@ -73,13 +78,22 @@
             
             this.current = branch;
             
-            var attributes = this.getData(this.current);
-            if (!_.result(this, 'sparseBranches')) {
-                this.current.set(attributes);
-                attributes = this.extractData(this.current);
+            if (branch.isEmpty()) { // clear all existing values
+                var keys = _.without(_.keys(this.source.attributes), this.source.idAttribute);
+                var branchAttributes = _.result(this, 'branchAttributes') || [];
+                if (_.isArray(branchAttributes) && !_.isEmpty(branchAttributes)) {
+                    keys = _.intersection(keys, branchAttributes);
+                }
+                this.source.set(_.object(keys, []));
+            } else {
+                var attributes = this.getData(this.current);
+                if (!_.result(this, 'sparseBranches')) {
+                    this.current.set(attributes);
+                    attributes = this.extractData(this.current);
+                }
+                this.source.set(attributes, { branch: this.current });
             }
             
-            this.source.set(attributes, { branch: this.current });
             this.trigger('switch', this.current);
             return this.current;
         },
@@ -148,6 +162,7 @@
         commit: function(source, options) {
             if (!this.current) return; // skip
             var attrs = this.extractData(source.changedAttributes() || {});
+            attrs = _.omit(attrs, this.branchDiscriminator);
             this.trigger('before:commit', this.current, attrs);
             if (!_.isEmpty(attrs)) {
                 this.current.set(attrs, options);
@@ -204,9 +219,10 @@
         extractData: function(attrs, allowed) {
             if (attrs instanceof Backbone.Model) attrs = this.serialize(attrs);
             if (!_.isObject(attrs)) return {}; // invalid attrs
-            var branchAttributes = [].concat(allowed || []);
-            branchAttributes = branchAttributes.concat(_.result(this, 'branchAttributes') || []);
+            allowed = allowed || [];
+            var branchAttributes = _.result(this, 'branchAttributes') || [];
             if (_.isArray(branchAttributes) && !_.isEmpty(branchAttributes)) {
+                branchAttributes = branchAttributes.concat(allowed);
                 attrs = _.pick(attrs, branchAttributes);
             }
             return this.branchesAttribute ? _.omit(attrs, this.branchesAttribute) : attrs;
