@@ -35,6 +35,10 @@ define([
                 _.extend({}, this.getOption('countLabels'), this.getAttributes('countLabels'))[type];
         },
         
+        insertCounterEl: function(el) {
+            this.$('.col-controls').append(el);
+        },
+        
         onKeydown: function(e) {
             var k = e.keyCode;
             if($.inArray(k, [13, 16, 17, 18, 19, 20, 27, 35, 36, 37, 38, 39, 40, 91, 93, 224])) return;
@@ -50,7 +54,7 @@ define([
             var self = this;
             var $control = this.ui.control;
             var $counter = $('<span class="counter"></span>');
-            this.$('.col-controls').before($counter);
+            this.insertCounterEl($counter);
             Countable.live(this.ui.control[0], function(counter) {
                 var count = counter[options.count] || 0;
                 if (options.min > 0 && count < options.min) {

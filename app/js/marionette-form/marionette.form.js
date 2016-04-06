@@ -2142,6 +2142,16 @@ define([
         
         initChildView: function(view) {},
         
+        getItemLabel: function(model) {
+            if (_.isFunction(this.labelKey)) return this.labelKey(model);
+            return formatDataLabel(model.toJSON(), this.labelKey, this.formatTemplate);
+        },
+        
+        getItemValue: function(model) {
+            if (_.isFunction(this.labelValue)) return this.labelValue(model);
+            return model.get(this.valueKey);
+        },
+        
         isSelectedView: function(view) {
             var viewValue = view.getValue();
             var value = this.getValue(true);
@@ -2205,13 +2215,14 @@ define([
         this.bindCollection(this.collection);
         
         var rebindCollection = this.rebindCollection.bind(this, options);
+        this.listenTo(this.model, 'change:collection', rebindCollection);
         this.listenTo(this.model, 'change:options', rebindCollection);
         this.listenTo(this.model, 'change:url', rebindCollection);
         
         this.on('render:collection', this.ensureValue);
     });
     
-    var ControlItem = Marionette.Form.ControlItem = Marionette.ItemView.extend({
+    var ControlItem = Marionette.Form.ControlItem = Marionette.LayoutView.extend({
         
         template: _.template('<%- label %>'),
         
@@ -2226,16 +2237,15 @@ define([
             } else {
                 throw new Error('Cannot create Option without Control View');
             }
-            Marionette.ItemView.prototype.constructor.call(this, _.omit(options, 'control'));
+            Marionette.LayoutView.prototype.constructor.call(this, _.omit(options, 'control'));
         },
         
         getLabel: function() {
-            return formatDataLabel(this.model.toJSON(),
-                this.control.labelKey, this.control.formatTemplate);
+            return this.control.getItemLabel(this.model);
         },
         
         getValue: function() {
-            return this.model.get(this.control.valueKey);
+            return this.control.getItemValue(this.model);
         },
         
         isSelected: function() {
@@ -2533,10 +2543,12 @@ define([
         },
         
         getItemLabel: function(object) {
+            if (_.isFunction(this.labelKey)) return this.labelKey(object);
             return formatDataLabel(object, this.labelKey, this.formatTemplate);
         },
         
         getItemValue: function(object) {
+            if (_.isFunction(this.valueKey)) return this.valueKey(object);
             return object[this.valueKey];
         },
         
@@ -3616,7 +3628,7 @@ define([
         
         childViewEventPrefix: 'control',
         
-        modelConstructor: NestedModel,
+        modelConstructor: Marionette.Form.Model,
         
         enforceDefinitions: true,
         
@@ -3656,7 +3668,9 @@ define([
             
             this.collection = fields;
             
-            if (!(this.model instanceof Backbone.Model)) {
+            if (this.model instanceof Backbone.Model) {
+                this.modelConstructor = this.model.constructor;
+            } else if (!(this.model instanceof Backbone.Model)) {
                 this.model = new this.modelConstructor();
             } else if (!_.isEmpty(rootKey)) {
                 var source = this.model;
@@ -3692,7 +3706,7 @@ define([
             });
             
             this.errors = options.errors || _.result(this, 'errors');
-            this.errors = this.errors || new this.modelConstructor();
+            this.errors = this.errors || new Backbone.NestedModel();
             
             this.listenTo(this.errors, 'change', this.onErrorsChange);
             
@@ -3902,18 +3916,27 @@ define([
             return serialized;
         },
         
-        getData: function(asModel) {
-            var copy = new this.modelConstructor(this.model.toJSON());
+        getData: function(asModel, options) {
+            if (_.isObject(asModel)) options = asModel, asModel = false;
+            options = options || {};
+            asModel = asModel || options.asModel;
+            var copy = new this.modelConstructor();
+            var hasGetDataFn = _.isFunction(this.model.getData);
+            if (hasGetDataFn) {
+                copy.set(this.model.getData(options), options);
+            } else {
+                copy.set(this.model.toJSON(options), options);
+            }
             this.children.each(function(field) {
                 if (field.evaluateAttribute('ignore')) return; // skip
                 var key = field.getKey();
                 if (key && copy.has(key) && field.evaluateAttribute('omit')) {
                     copy.unset(key);
-                } else if (key && copy.has(key)) {
+                } else if (!hasGetDataFn && key && copy.has(key)) {
                     copy.set(key, field.getData());
                 }
             });
-            return asModel ? copy : copy.toJSON();
+            return asModel ? copy : copy.toJSON(options);
         },
         
         setData: function(data, options) {

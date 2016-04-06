@@ -18,8 +18,122 @@
                 'marionette',
                 'marionette.form',
                 'marionette.form.control.text',
-                'backbone.branched-model'
+                'backbone.validation',
+                'backbone.branches'
             ], function(Cookies, Backbone, Marionette, Form) {
+                
+                var verbose = false;
+                
+                function logVerbose() {
+                    if (verbose) console.log.apply(console, arguments);
+                };
+                
+                var acceptedLocales = [
+                    { id: 'de', label: 'Deutsch (DE)' },
+                    { id: 'en', label: 'English (EN)' },
+                    { id: 'es', label: 'Español (ES)' },
+                    { id: 'fr', label: 'Français (FR)' },
+                    { id: 'nl', label: 'Nederlands (NL)' }
+                ];
+                
+                // Views
+                
+                var ListItem = Marionette.ItemView.extend({
+                    
+                    tagName: 'tr',
+                    
+                    template: '#list-item',
+                    
+                    triggers: {
+                        'click': 'click'
+                    },
+                    
+                    modelEvents: {
+                        'change': 'render'
+                    }
+                    
+                });
+                
+                var ListView = Marionette.CollectionView.extend({
+                    
+                    tagName: 'table',
+                    
+                    className: 'table table-striped',
+                    
+                    childView: ListItem
+                    
+                });
+                
+                // Model
+                
+                var Document = Backbone.BranchedModel.extend({
+                    
+                    urlRoot: '/documents',
+                    
+                    branches: _.pluck(acceptedLocales, 'id'),
+                    
+                    mainBranch: 'en',
+                    
+                    mergeMainBranch: false,  // default: false
+                    
+                    sparseBranches: true,       // default: true
+                    
+                    branchesAttribute: 'documentVersions',
+                    
+                    validation: {
+                        title: {
+                            required: true
+                        },
+                        body: {
+                            required: true
+                        }
+                    }
+                    
+                });
+                
+                _.extend(Document.prototype, Backbone.Validation.mixin);
+                
+                var data = Cookies.getJSON('branching') || {};
+                
+                var doc = new Document(data, { 
+                    branchAttributes: ['title', 'body']
+                });
+                
+                doc.on('branches:add', function(branch) {
+                    logVerbose('Added branch: %s (%s)', branch.id, doc.branches.length);
+                });
+                
+                doc.on('branches:before:switch', function(branch, previous) {
+                    if (previous) logVerbose('Switching from %s to %s', branch.id, previous.id);
+                });
+                
+                doc.on('branches:switch', function(branch) {
+                    logVerbose('Switched to branch: %s', branch.id);
+                });
+                
+                doc.on('branches:before:load', function(id, attrs, options) {
+                    logVerbose('Loading branch: %s', id);
+                });
+                
+                doc.on('branches:load', function(branch) {
+                    logVerbose('Loaded branch: %s', branch.id);
+                });
+                
+                doc.on('branches:load:fail', function(id, error) {
+                    logVerbose('Failed to load branch: %s', id, error);
+                });
+                
+                doc.on('branches:before:commit', function(branch, attrs) {
+                    logVerbose('Committing branch: %s', branch.id);
+                });
+                
+                doc.on('branches:commit', function(branch, attrs) {
+                    logVerbose('Committed branch: %s', branch.id);
+                });
+                
+                doc.on('branches:serialize', function(branch, attrs) {
+                    logVerbose('Serializing branch: %s', branch.id);
+                });
                 
                 // Form
                 
@@ -27,11 +141,23 @@
                     
                     layout: 'vertical',
                     
+                    fields: [
+                        { id: 'title', control: 'input' },
+                        { id: 'body', control: 'text' },
+                        { id: 'author', control: 'input' },
+                        { id: 'published', control: 'boolean' }
+                    ],
+                    
                     onSubmit: function(control, event) {
                         event.preventDefault();
                         if (this.commit()) {
-                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
-                            Cookies.set('branching', this.getData());
+                            var data = this.getData({ branches: true });
+                            Cookies.set('branching', data);
+                            
+                            console.log('Model Url: %s', this.model.url());
+                            console.log('Branches Url: %s', this.model.branches.url());
+                            console.log('Current branch Url: %s', this.model.branches.current.url());
+                            console.log('Submit', JSON.stringify(data, null, 2));
                         } else {
                             console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
                         }
@@ -39,37 +165,74 @@
                     
                 });
                 
-                var Model = Backbone.BranchedModel.extend();
-                
-                var doc = new Model({ title: 'Document' });
-                
                 var form = new ExampleForm({ model: doc });
-                
-                form.collection.reset([
-                    { id: 'title', control: 'input' },
-                    { id: 'body', control: 'text' }
-                ]);
                 
                 form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
                 
+                form.on('control:change', function(control) {
+                    if (control.getKey() !== 'locale') form.resetErrors();
+                });
+                
+                form.model.on('change:locale', function(model, lc, options) {
+                    var previous = model.previous('locale');
+                    var previousBranchAttrs = model.branches.getData(previous, true);
+                    var isEmpty = _.isEmpty(previousBranchAttrs);
+                    if (isEmpty || form.isValid()) {
+                        if (isEmpty) model.branches.delete(previous);
+                        model.branches.load(lc); // switch locale
+                    } else {
+                        model.set('locale', previous); // revert
+                    }
+                });
+                
                 form.on('change', function() {
-                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                    console.log('Model has changed branches: %s', this.model.branches.hasChanges() ? 'Y' : 'N');
+                    console.log('Changed branches:', _.pluck(this.model.branches.getChanged(), 'id'));
+                    console.log('Change', JSON.stringify(this.getData({ branches: true }), null, 2));
                 });
                 
                 form.render();
-                form.$el.appendTo('#layout');
+                form.$el.appendTo('#form');
                 
-                // Set initial document data
+                // Create non-rendering factory form
                 
-                doc.set(Cookies.getJSON('branching') || {});
+                var locales = new Form.Collection(acceptedLocales);
+                
+                var factory = new Form.View({
+                    model: doc, rendering: false, layout: 'vertical'
+                });
+                
+                factory.registerCollection('locales', locales);
+                
+                var control = factory.getField('locale', { 
+                    control: 'select', collection: 'locales', omit: true
+                });
+                
+                control.render();
+                control.$el.appendTo('#list');
+                
+                // Plain CollectionView integration
+                
+                var listView = new ListView({ collection: doc.branches });
+                listView.render();
+                listView.$el.appendTo('#list');
                 
             });
         </script>
     </head>
     <body>
         <div class="container">
-            <h1>Form <small>with UploadCare integration</small></h1>
+            <h1>Form <small>with embedded branches</small></h1>
         </div>
-        <div id="layout" class="container"></div>
+        <div class="container">
+            <div class="row">
+                <div id="list" class="col col-md-6"></div>
+                <div id="form" class="col col-md-6"></div>
+            </div>
+        </div>
+        
+        <script id="list-item" type="text/template">
+            <td><%- obj._version %></td><td><%- obj.title %></td><td><%- obj.body %></td>
+        </script>
     </body>
 </html>
