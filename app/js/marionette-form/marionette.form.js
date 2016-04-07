@@ -719,6 +719,12 @@ define([
     
     // Views
     
+    Marionette.Form.OverlayView = Marionette.ItemView.extend({
+        
+        template: false
+        
+    });
+    
     var DebugView = Marionette.Form.DebugView = Marionette.ItemView.extend({
         
         template: _.template('<pre><%= JSON.stringify(obj, null, 4) %></pre>'),
@@ -3638,6 +3644,8 @@ define([
         
         enforceDefinitions: true,
         
+        overlayView: Marionette.Form.OverlayView,
+        
         constructor: function(options) {
             options = _.extend({}, options);
             var opts = _.omit(options, 'fields', 'parent', 'errors', 'classes', 'collections', 'formDelegate');
@@ -3701,6 +3709,12 @@ define([
             this.listenTo(this.model, 'change', this.triggerMethod.bind(this, 'change'));
             this.listenTo(this.model, 'validated', this.onModelValidated);
             this.listenTo(this.model, 'invalid', this.onModelInvalid);
+            
+            this.listenTo(this.model, 'request', this.triggerMethod.bind(this, 'request'));
+            this.listenTo(this.model, 'sync', this.triggerMethod.bind(this, 'sync'));
+            this.listenTo(this.model, 'error', this.triggerMethod.bind(this, 'error'));
+            
+            this.on('destroy', this.destroyOverlay);
             
             if (this.getOption('autoValidate')) this.on('change', this.isValid);
             
@@ -4287,6 +4301,79 @@ define([
         
         toggleSectionEl: function(elem, collapse) {
             collapse ? elem.hide() : elem.show();
+        },
+        
+        // Overlay
+        
+        showOverlay: function(view, options) {
+            view = view || this.getOption('overlayView');
+            if (!this.overlay) this.setupOverlay();
+            if (this.overlay && view instanceof Backbone.View) {
+                return $.when(this.overlay.show(view, options));
+            } else if (this.overlay) {
+                var View = _.isString(view) ? this.getRegisteredView(view) : view;
+                if (_.isObject(view) && view.prototype instanceof Backbone.View) {
+                    var view = new View({ model: this.model, form: this });
+                    return $.when(this.overlay.show(view, options));
+                }
+            }
+            return $.Deferred().reject().promise();
+        },
+        
+        hideOverlay: function(options) {
+            if (this.overlay && this.overlay.hasView()) {
+                return $.when(this.overlay.empty(options)).then(function() {
+                    this.triggerMethod('hide:overlay', this.overlay);
+                }.bind(this));
+            } else {
+                return $.Deferred().reject().promise();
+            }
+        },
+        
+        toggleOverlay: function(view, options) {
+            if (this.overlay && this.overlay.hasView()) {
+                return this.hideOverlay(options);
+            } else {
+                return this.showOverlay(view, options);
+            }
+        },
+        
+        onShowOverlay: function(overlay) {
+            overlay.$el.removeClass('hidden');
+        },
+        
+        onHideOverlay: function(overlay) {
+            overlay.$el.addClass('hidden');
+        },
+        
+        setupOverlay: function() {
+            this.destroyOverlay(); // always cleanup first
+            
+            var regionClass = this.getOption('regionClass') || 'default';
+            if (_.isString(regionClass)) regionClass = resolveNameToClass(regionClass, 'Region');
+            if (_.isObject(regionClass) && (regionClass === Marionette.Region || regionClass.prototype instanceof Marionette.Region)) {
+                var overlayId = _.result(this, 'id') + '-overlay';
+                var $overlay = this.$('#' + overlayId);
+                if ($overlay.length === 0) {
+                    $overlay = $('<div id="' + overlayId + '" class="form-overlay"></div>');
+                    $overlay.appendTo(this.el);
+                }
+                this.overlay = new regionClass(_.extend({}, this.getOption('regionOptions'), { el: $overlay }));
+                this.listenTo(this.overlay, 'all', function(eventName) {
+                    var args = [eventName + ':overlay', this.overlay].concat(_.rest(arguments));
+                    this.triggerMethod.apply(this, args);
+                });
+            } else {
+                throw new Error('Invalid Region');
+            }
+        },
+        
+        destroyOverlay: function() {
+            if (this.overlay) {
+                this.stopListening(this.overlay);
+                this.overlay.destroy();
+                this.overlay = null;
+            }
         },
         
         // Rendering

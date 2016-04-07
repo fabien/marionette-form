@@ -21,6 +21,7 @@ requirejs.config({
         'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
         'jquery.quickselect': 'lib/jquery.quickselect',
+        'js.cookie': 'lib/js.cookie',
         'marionette.sort': 'lib/marionette.sort',
         'marionette.sortable': 'lib/marionette.sortable',
         'intl-tel-input': 'lib/intl-tel-input',

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .custom-overlay {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+            }
+            .custom-overlay h1 {
+                position: absolute;
+                width: 100%;
+                top: 50%;
+                text-align: center;
+                height: 40px;
+                font-size: 40px;
+                margin-top: -20px;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'marionette',
+                'marionette.form'
+            ], function(Backbone, Marionette, Form) {
+                
+                var Overlay = Marionette.Form.OverlayView.extend({
+                    
+                    className: 'custom-overlay',
+                    
+                    template: _.template('<h1>Overlay</h1>')
+                    
+                });
+                
+                var ProfileForm = Form.View.extend({
+                    
+                    prefix: 'profile-',
+                    
+                    layout: 'vertical',
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            console.log('Submit', JSON.stringify(this.getData(), null, 2));
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Profile = Form.Model.extend({});
+                
+                var profile = new Profile({
+                    firstName: 'Andre',
+                    lastName: 'Jones',
+                    active: 'yes'
+                });
+                
+                var form = new ProfileForm({ model: profile });
+                
+                form.collection.reset([
+                    { id: 'firstName', control: 'input', required: true, omit: 'lastName:omit', observe: 'lastName' },
+                    { id: 'lastName', control: 'input', required: true, omit: 'isBlank' },
+                    { id: 'active', control: 'checkbox', omit: true }
+                ]);
+                
+                form.field('submit', { control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true });
+                
+                form.on('show:overlay', function(overlay) {
+                    console.log('Show');
+                });
+                
+                form.on('hide:overlay', function(overlay) {
+                    console.log('Hide');
+                });
+                
+                form.on('change', function() {
+                    console.log('Change', JSON.stringify(form.getData(), null, 2));
+                });
+                
+                form.render();
+                form.$el.appendTo('#layout');
+                
+                $('[data-action="toggle"]').click(function(event) {
+                    $(event.currentTarget).blur();
+                    form.toggleOverlay().then(function() {
+                        console.log('Toggle Overlay');
+                    });
+                });
+                
+                $('[data-action="show-view"]').click(function(event) {
+                    $(event.currentTarget).blur();
+                    var view = new Overlay();
+                    form.showOverlay(view).then(function() {
+                        console.log('Show Overlay');
+                    });
+                });
+                
+                $('[data-action="hide-view"]').click(function(event) {
+                    $(event.currentTarget).blur();
+                    form.hideOverlay().then(function() {
+                        console.log('Hide Overlay');
+                    });
+                });
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with overlay</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+        <div class="container">
+            <button class="btn btn-default" data-action="toggle">Toggle Overlay</button>
+            <button class="btn btn-default" data-action="show-view">Show Custom</button>
+            <button class="btn btn-default" data-action="hide-view">Hide Custom</button>
+        </div>
+    </body>
+</html>
