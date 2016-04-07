@@ -389,7 +389,7 @@ define([
         '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %>">&nbsp;</label><% } %>',
         '<div class="<%= controlsClassName %>">',
         '  <button id="control-<%= id %>" data-action="<%= action %>" type="<%= type %>" name="<%= name %>" class="btn btn-<%= buttonType %>" <%= disabled ? "disabled" : "" %>><%= label %></button>',
-        '  <% if (message) { %><span class="<%= statusClassName %>"><%= message %></span><% } %>',
+        '  <% if (message) { %><span role="message"><%= message %></span><% } %>',
         '</div>'
     ].join('\n'));
     
@@ -1521,7 +1521,9 @@ define([
             },
             
             onAction: function(event) {
-                var action = $(event.currentTarget).data('action') || 'default';
+                var $currentTarget = $(event.currentTarget);
+                $currentTarget.blur();
+                var action = $currentTarget.data('action') || 'default';
                 this.form.triggerMethod('before:action', action, event);
                 this.triggerMethod('before:action', action, event);
                 this.triggerMethod('action:' + action, event);
@@ -2883,27 +2885,31 @@ define([
             extraClasses: []
         },
         
+        ui: {
+            button: 'button'
+        },
+        
         constructor: function() {
             Control.prototype.constructor.apply(this, arguments);
-            this.listenTo(this.model, 'change:status', this.render);
-            this.listenTo(this.model, 'change:message', this.render);
+            this.on('render', this._update);
+            this.listenTo(this.model, 'change:status', this._update);
+            this.listenTo(this.model, 'change:message', this._update);
             if (this.getAttribute('autoDisable')) {
-                this.listenTo(this.form, 'change', this.render);
-                this.listenTo(this.form, 'validated', this.render);
+                this.listenTo(this.form, 'change validated', this._update);
             }
         },
         
         ensureDefaultValue: function() {},
         
-        _serializeData: function(data) {
-            data.statusClassName = 'status';
-            if (data.status === 'error') {
-                data.statusClassName += ' ' + this.getClassName('buttonStatusError');
-            } else if (data.status === 'success') {
-                data.statusClassName += ' ' + this.getClassName('buttonStatusSuccess');
-            }
+        _update: function() {
+            var successClass = this.getClassName('buttonStatusSuccess');
+            var errorClass = this.getClassName('buttonStatusError');
+            var status = this.evaluateAttribute('status');
+            var $message = this.$('[role="message"]').addClass('status');
+            $message.toggleClass(successClass, status === 'success');
+            $message.toggleClass(errorClass, status === 'error');
             if (this.getAttribute('autoDisable')) {
-                data.disabled = this.form.hasErrors();
+                this.ui.button.prop('disabled', this.form.hasErrors());
             }
         }
         

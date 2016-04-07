@@ -16,24 +16,29 @@
     
     var configurableAttributes = [
         'branches', 'mainBranch', 'branchUrl',
-        'branchDiscriminator', 'branchAttributes',
+        'branchIdAttribute', 'branchAttributes',
         'mergeMainBranch', 'sparseBranches',
-        'branchesAttribute'
+        'embedBranches', 'branchesAttribute'
     ]
     
     Backbone.Branch = TrackingModel.extend({
         
         isEmpty: function() {
-            var data = _.omit(this.toBranch(), this.collection.branchDiscriminator);
+            var data = _.omit(this.serialize(), this.collection.branchIdAttribute);
             return _.isEmpty(data);
+        },
+        
+        isCurrentBranch: function() {
+            return this.collection && this.collection.isCurrentBranch(this);
         },
         
         isMainBranch: function() {
             return this.collection && this.collection.isMainBranch(this);
         },
         
-        toBranch: function(options) {
-            return compactObject(this.toJSON(options));
+        serialize: function(options) {
+            var data = this.toJSON(options);
+            return this.collection.isSparse() ? compactObject(data) : data;
         }
         
     });
@@ -56,6 +61,7 @@
             Backbone.Collection.prototype.constructor.apply(this, arguments);
             this.branchesAttribute = options.branchesAttribute || this.branchesAttribute;
             this.listenTo(this.source, 'change', this.commit.bind(this));
+            this.on('remove', this._onRemove);
             if (!_.isEmpty(this.branchesAttribute)) {
                 var eventName = 'change:' + this.branchesAttribute;
                 this.listenTo(this.source, eventName, this.preload.bind(this));
@@ -64,7 +70,7 @@
         },
         
         branch: function(id) {
-            return _.isString(id) ? this.get(id) : this.current;
+            return arguments.length === 1 && _.isString(id) ? this.get(id) : this.current;
         },
         
         default: function() {
@@ -72,22 +78,19 @@
         },
         
         switch: function(branch) {
-            if (!this.isValidBranch(branch)) return this.current;
+            if (!this.isValidBranch(branch) || this.current === branch) {
+                return this.current;
+            }
             this.trigger('before:switch', branch, this.current);
             if (this.current) this.commit(this.source);
             
             this.current = branch;
             
             if (branch.isEmpty()) { // clear all existing values
-                var keys = _.without(_.keys(this.source.attributes), this.source.idAttribute);
-                var branchAttributes = _.result(this, 'branchAttributes') || [];
-                if (_.isArray(branchAttributes) && !_.isEmpty(branchAttributes)) {
-                    keys = _.intersection(keys, branchAttributes);
-                }
-                this.source.set(_.object(keys, []));
+                this.clearSource();
             } else {
                 var attributes = this.getData(this.current);
-                if (!_.result(this, 'sparseBranches')) {
+                if (!this.isSparse()) {
                     this.current.set(attributes);
                     attributes = this.extractData(this.current);
                 }
@@ -105,9 +108,12 @@
         
         preload: function(source) {
             if (!_.isEmpty(this.branchesAttribute)) {
+                var branchIdAttribute = this.branchIdAttribute;
                 var branches = source.get(this.branchesAttribute);
                 if (_.isArray(branches)) {
-                    this.set(branches, { remove: false });
+                    this.set(_.filter(branches, function(obj) {
+                        return _.isObject(obj) && !_.isEmpty(obj[branchIdAttribute]);
+                    }), { remove: false });
                 }
             }
         },
@@ -129,10 +135,23 @@
             }
         },
         
+        build: function(id, attrs, options) {
+            options = _.extend({}, options, { merge: true });
+            var data = {};
+            data[this.branchIdAttribute] = id;
+            return this.add(_.extend({}, attrs, data), options);
+        },
+        
         isMainBranch: function(branch) {
             branch = branch || (_.isString(branch) ? this.get(branch) : this.current);
             if (!this.isValidBranch(branch)) return false;
             return branch.id === this.mainBranch;
+        },
+        
+        isCurrentBranch: function(branch) {
+            branch = branch || (_.isString(branch) ? this.get(branch) : null);
+            if (!this.isValidBranch(branch)) return false;
+            return branch === this.current;
         },
         
         isValidBranchId: function(id) {
@@ -151,6 +170,10 @@
             }
         },
         
+        isSparse: function() {
+            return !_.result(this, 'sparseBranches');
+        },
+        
         hasChanges: function(branch) {
             return this.any(function(branch) { return branch.hasChanges(); });
         },
@@ -159,10 +182,20 @@
             return this.filter(function(branch) { return branch.hasChanges(); });
         },
         
+        clearSource: function() {
+            var keys = _.without(_.keys(this.source.attributes), this.source.idAttribute);
+            var branchAttributes = _.result(this, 'branchAttributes') || [];
+            if (_.isArray(branchAttributes) && !_.isEmpty(branchAttributes)) {
+                keys = _.intersection(keys, branchAttributes);
+            }
+            this.source.set(_.object(keys, []));
+        },
+        
         commit: function(source, options) {
-            if (!this.current) return; // skip
+            source = source || this.source;
+            if (!this.current || !source) return; // skip
             var attrs = this.extractData(source.changedAttributes() || {});
-            attrs = _.omit(attrs, this.branchDiscriminator);
+            attrs = _.omit(attrs, this.branchIdAttribute);
             this.trigger('before:commit', this.current, attrs);
             if (!_.isEmpty(attrs)) {
                 this.current.set(attrs, options);
@@ -170,18 +203,25 @@
             }
         },
         
+        merge: function(branch) {
+            if (_.isString(branch)) branch = this.branch(branch);
+            if (this.current && this.isValidBranch(branch)) {
+                this.current.set(branch.serialize());
+            }
+        },
+        
         serialize: function(branch) {
             branch = branch || (_.isString(branch) ? this.get(branch) : this.current);
             if (!this.isValidBranch(branch)) return null;
-            var data = _.isFunction(branch.toBranch) ? branch.toBranch() : branch.toJSON();
+            var data = branch.serialize();
             this.trigger('serialize', branch, data);
-            var isEmpty = _.isEmpty(_.omit(data, this.branchDiscriminator));
+            var isEmpty = _.isEmpty(_.omit(data, this.branchIdAttribute));
             return isEmpty ? null : data;
         },
         
         serializeAll: function(branchNames) {
             if (!_.isArray(branchNames) || _.isEmpty(branchNames)) {
-                branchNames = _.without(this.pluck(this.branchDiscriminator), this.mainBranch);
+                branchNames = _.without(this.pluck(this.branchIdAttribute), this.mainBranch);
             }
             var branches = [];
             this.each(function(branch) {
@@ -229,20 +269,29 @@
         },
         
         _load: function(id, attrs, options) {
-            options = _.extend({}, options, { merge: true });
-            var data = {};
-            data[this.branchDiscriminator] = id;
-            return this.add(_.extend({}, attrs, data), options);
+            return this.build(id, attrs, options);
         },
         
         _prepareModel: function(attrs, options) {
-            attrs = this.extractData(attrs, [this.branchDiscriminator]);
+            attrs = this.extractData(attrs, [this.branchIdAttribute]);
             return Backbone.Collection.prototype._prepareModel.call(this, attrs, options);
+        },
+        
+        _onRemove: function(branch) {
+            if (this.isCurrentBranch(branch)) {
+                // fix issue whete get()/branch() will still return the removed model
+                this._removeReference(branch);
+                this.switch(this._ensureMainBranch());
+            }
+        },
+        
+        _ensureMainBranch: function(options) {
+            return this.branch(this.mainBranch) || this.build(this.mainBranch);
         }
         
     }, {
         
-        branchDiscriminator: '_version',    // attribute to use as Branch idAttribute
+        branchIdAttribute: 'id',            // attribute to use as Branch idAttribute
         
         branchUrl: '/versions/',            // url prefix
         
@@ -252,17 +301,19 @@
         
         sparseBranches: true,               // when true, keep branch data sparse
         
-        branchesAttribute: null,            // when set, embed branch data
+        branchesAttribute: 'versions',      // embedded branch array attribute
+        
+        embedBranches: false,
         
         mixin: function(model, options) {
             var config = _.extend({}, _.pick(model, configurableAttributes));
             _.extend(config, _.pick(options, configurableAttributes));
             
-            config.branchDiscriminator = config.branchDiscriminator || this.branchDiscriminator;
+            config.branchIdAttribute = config.branchIdAttribute || this.branchIdAttribute;
             config.branchUrl = config.branchUrl || this.branchUrl;
             config.mainBranch = config.mainBranch || this.mainBranch;
             config.branchesAttribute = config.branchesAttribute || this.branchesAttribute;
-            config.comparator = config.branchDiscriminator;
+            config.comparator = config.branchIdAttribute;
             
             config.model = config.model || Backbone.Branch;
             config.model = this.buildBranchModel(config.model, config);
@@ -275,8 +326,8 @@
             
             // Create copy of initial model attrs
             var attrs = model.toJSON();
-            if (_.isEmpty(attrs[config.branchDiscriminator])) {
-                attrs[config.branchDiscriminator] = config.mainBranch;
+            if (_.isEmpty(attrs[config.branchIdAttribute])) {
+                attrs[config.branchIdAttribute] = config.mainBranch;
             }
             
             var Branches = this.extend(config);
@@ -290,15 +341,16 @@
                 this.trigger.apply(this, args);
             });
             
-            model.branches.load(attrs[config.branchDiscriminator], attrs);
+            var branchId = attrs[config.branchIdAttribute] || config.mainBranch;
+            model.branches.load(branchId, attrs);
         },
         
         getDataFromSource: function(source, config, options) {
             getData = source.constructor.prototype.getData || source.toJSON;
             var data = getData.call(source, options);
-            if (options && options.branches && !_.isEmpty(config.branchesAttribute)) {
+            if (((options && options.branches) || config.embedBranches) && !_.isEmpty(config.branchesAttribute)) {
                 _.extend(data, source.branches.serialize(source.branches.default()));
-                delete data[config.branchDiscriminator];
+                delete data[config.branchIdAttribute];
                 data[config.branchesAttribute] = source.branches.serializeAll(options.branches);
             }
             return data;
@@ -306,23 +358,23 @@
         
         buildBranchModel: function(Model, config) {
             return Model.extend(_.extend(_.pick(config, configurableAttributes), {
-                idAttribute: config.branchDiscriminator
+                idAttribute: config.branchIdAttribute
             }));
         },
         
         buildSourceUrl: function(source, config) {
-            var url = source.constructor.prototype.url;
-            url = _.isFunction(url) ? url.call(source) : url;
-            if (source.isNew() || source.branches.isMainBranch() ||
-                !_.isEmpty(config.branchesAttribute)) {
-                return url;
+            if (source.isNew() || source.branches.isMainBranch() || config.embedBranches) {
+                var url = source.constructor.prototype.url;
+                return _.isFunction(url) ? url.call(source) : url;
+            } else {
+                return source.branches.current.url();
             }
-            return url + source.branches.current.url();
         },
         
         buildBranchUrl: function(source, config) {
-            var modelUrl = _.result(source, 'url');
-            return modelUrl + _.result(config, 'branchUrl');
+            var url = source.constructor.prototype.url;
+            url = _.isFunction(url) ? url.call(source) : url;
+            return url + _.result(config, 'branchUrl');
         }
         
     });

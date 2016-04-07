@@ -5,6 +5,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            #list table tr td {
+                cursor: pointer;
+            }
+            #list table tr.active td {
+                background-color: #FFFADF;
+            }
+        </style>
         <!-- load jquery as normal, instead of through requirejs -->
         <script src="/js/vendor/jquery/dist/jquery.js"></script>
         <script src="/js/vendor/requirejs/require.js"></script>
@@ -45,11 +53,24 @@
                     template: '#list-item',
                     
                     triggers: {
-                        'click': 'click'
+                        'click': 'click',
+                        'click [data-action="delete"]': 'delete'
                     },
                     
                     modelEvents: {
                         'change': 'render'
+                    },
+                    
+                    onRender: function() {
+                        this.$el.toggleClass('active', this.model.isCurrentBranch());
+                    },
+                    
+                    serializeData: function() {
+                        var data = Marionette.ItemView.prototype.serializeData.apply(this, arguments);
+                        data.branchId = this.model.id;
+                        data.isMain = this.model.isMainBranch();
+                        data.isCurrent = this.model.isCurrentBranch();
+                        return data;
                     }
                     
                 });
@@ -58,9 +79,13 @@
                     
                     tagName: 'table',
                     
-                    className: 'table table-striped',
+                    className: 'table table-striped table-hover',
                     
-                    childView: ListItem
+                    childView: ListItem,
+                    
+                    collectionEvents: {
+                        'change switch': 'render'
+                    }
                     
                 });
                 
@@ -74,11 +99,15 @@
                     
                     mainBranch: 'en',
                     
-                    mergeMainBranch: false,  // default: false
+                    branchesAttribute: 'versions',  // default
                     
-                    sparseBranches: true,       // default: true
+                    mergeMainBranch: false,         // default: false
                     
-                    branchesAttribute: 'documentVersions',
+                    sparseBranches: true,           // default: true
+                    
+                    embedBranches: true,
+                    
+                    branchIdAttribute: '_version',
                     
                     branchAttributes: ['title', 'body'],
                     
@@ -88,6 +117,9 @@
                         },
                         body: {
                             required: true
+                        },
+                        author: {
+                            required: true
                         }
                     }
                     
@@ -95,7 +127,7 @@
                 
                 _.extend(Document.prototype, Backbone.Validation.mixin);
                 
-                var data = Cookies.getJSON('branching') || {};
+                var data = _.extend({ id: 'doc-a' }, Cookies.getJSON('branching'));
                 
                 var doc = new Document(data);
                 
@@ -170,6 +202,7 @@
                 });
                 
                 form.on('change', function() {
+                    console.log('Current source Url: %s', this.model.url());
                     console.log('Current branch Url: %s', this.model.branches.current.url());
                     console.log('Model has changed branches: %s', this.model.branches.hasChanges() ? 'Y' : 'N');
                     console.log('Changed branches:', _.pluck(this.model.branches.getChanged(), 'id'));
@@ -193,11 +226,12 @@
                 
                 factory.model.on('change:locale', function(model, lc, options) {
                     var previous = model.previous('locale');
-                    var previousBranch = doc.branches.branch(previous);
-                    var isEmpty = previousBranch.isEmpty();
-                    if (isEmpty || form.isValid()) {
-                        if (isEmpty) doc.branches.delete(previous);
-                        doc.branches.load(lc); // switch locale
+                    var isMainBranch = form.model.branches.isMainBranch();
+                    var previousBranch = form.model.branches.branch(previous);
+                    var isEmpty = !previousBranch || previousBranch.isEmpty();
+                    if ((!isMainBranch && isEmpty) || form.isValid()) {
+                        if (isEmpty) form.model.branches.delete(previous);
+                        form.model.branches.load(lc); // switch locale
                     } else {
                         model.set('locale', previous); // revert
                     }
@@ -212,7 +246,20 @@
                 
                 // Plain CollectionView integration
                 
-                var listView = new ListView({ collection: doc.branches });
+                var listView = new ListView({ collection: form.model.branches });
+                
+                listView.collection.on('switch', function(model) {
+                    factory.model.set('locale', model.id);
+                });
+                
+                listView.on('childview:click', function(view, info) {
+                    factory.model.set('locale', info.model.id);
+                });
+                
+                listView.on('childview:delete', function(view, info) {
+                    form.model.branches.delete(info.model.id);
+                });
+                
                 listView.render();
                 listView.$el.appendTo('#list');
                 
@@ -221,7 +268,7 @@
     </head>
     <body>
         <div class="container">
-            <h1>Form <small>with embedded branches</small></h1>
+            <h1>Form <small>using model with embedded branches</small></h1>
         </div>
         <div class="container">
             <div class="row">
@@ -231,7 +278,7 @@
         </div>
         
         <script id="list-item" type="text/template">
-            <td><%- obj._version %></td><td><%- obj.title %></td><td><%- obj.body %></td>
+            <td width="5%"><%- obj.branchId %></td><td><%- obj.title %></td><td class="text-right" width="10%"><button class="btn btn-xs btn-danger" data-action="delete">Delete</button></td>
         </script>
     </body>
 </html>
