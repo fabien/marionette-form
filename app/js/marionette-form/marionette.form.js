@@ -1115,8 +1115,8 @@ define([
             },
             
             isDisabled: function() {
-                if (this.form.isDisabled()) return true;
-                return this.evaluateAttribute('disabled');
+                var isDisabled = this.form.isDisabled(this.getKey());
+                return isDisabled || this.evaluateAttribute('disabled');
             },
             
             isEnabled: function() {
@@ -1128,8 +1128,8 @@ define([
             },
             
             isReadonly: function() {
-                if (this.form.isReadonly()) return true;
-                return this.evaluateAttribute('readonly');
+                var isReadonly = this.form.isReadonly(this.getKey());
+                return isReadonly || this.evaluateAttribute('readonly');
             },
             
             isRequired: function() {
@@ -3772,7 +3772,7 @@ define([
             if (this.options.readonly !== isReadonly) this.children.invoke('render');
         },
         
-        isReadonly: function() {
+        isReadonly: function(key) {
             return Boolean(this.getOption('readonly'));
         },
         
@@ -3782,7 +3782,7 @@ define([
             if (this.options.disabled !== isDisabled) this.children.invoke('render');
         },
         
-        isDisabled: function() {
+        isDisabled: function(key) {
             return Boolean(this.getOption('disabled'));
         },
         

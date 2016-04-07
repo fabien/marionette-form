@@ -3,6 +3,7 @@ var path = require('path');
 var multer = require('multer');
 var mime = require('mime');
 var fs = require('fs');
+var jsonServer = require('json-server');
 
 var fixtures = path.join(__dirname, 'files');
 var dest = path.join(__dirname, 'uploads');
@@ -20,18 +21,10 @@ var upload = multer({ storage: storage });
 
 var app = express();
 
-app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cache-Control');
-    next();
-});
+// Set default middlewares (logger, static, cors and no-cache)
+app.use(jsonServer.defaults());
 
-app.get('/', function(req, res) {
-    res.send('<h1>Index</h1>');
-});
-
-app.post('/', upload.single('file'), function(req, res) {
+app.post('/files', upload.single('file'), function(req, res) {
     if (!req.file) return res.status(500).end();
     res.json({
         id: req.file.filename,
@@ -64,5 +57,12 @@ app.delete('/files/:filename', function(req, res, next) {
         })
     });
 });
+
+app.all('/:primary/:id/:secondary/:fk', function(req, res, next) {
+    req.url = '/' + req.params.secondary + '/' + req.params.fk;
+    next();
+});
+
+app.use(jsonServer.router('db.json'));
 
 app.listen(5000);

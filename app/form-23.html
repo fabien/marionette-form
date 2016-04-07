@@ -21,14 +21,13 @@
         <script src="/js/requirejs.config.js"></script>
         <script type="text/javascript">
             require([
-                'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.0/js.cookie.js',
                 'backbone',
                 'marionette',
                 'marionette.form',
                 'marionette.form.control.text',
                 'backbone.validation',
                 'backbone.branches'
-            ], function(Cookies, Backbone, Marionette, Form) {
+            ], function(Backbone, Marionette, Form) {
                 
                 var verbose = false;
                 
@@ -93,23 +92,15 @@
                 
                 var Document = Backbone.BranchedModel.extend({
                     
-                    urlRoot: '/documents',
+                    urlRoot: 'http://localhost:5000/documents',
                     
                     branches: _.pluck(acceptedLocales, 'id'),
                     
                     mainBranch: 'en',
                     
-                    branchesAttribute: 'versions',  // default
-                    
-                    mergeMainBranch: false,         // default: false
-                    
-                    sparseBranches: true,           // default: true
-                    
-                    embedBranches: true,
-                    
                     branchIdAttribute: '_version',
                     
-                    branchAttributes: ['title', 'body'],
+                    branchAttributes: ['title', 'body', 'documentId'],
                     
                     validation: {
                         title: {
@@ -127,9 +118,7 @@
                 
                 _.extend(Document.prototype, Backbone.Validation.mixin);
                 
-                var data = _.extend({ id: 'doc-a' }, Cookies.getJSON('branching'));
-                
-                var doc = new Document(data);
+                var doc = new Document({ id: 1 });
                 
                 doc.on('branches:add', function(branch) {
                     logVerbose('Added branch: %s (%s)', branch.version, doc.branches.length);
@@ -167,6 +156,16 @@
                     logVerbose('Serializing branch: %s', branch.version);
                 });
                 
+                doc.on('sync', function() {
+                    this.branches.fetch().then(function() {
+                        console.log('Loaded branches for document: %s', doc.id);
+                    });
+                });
+                
+                doc.fetch().then(function() {
+                    console.log('Loaded document: %s', doc.id);
+                });
+                
                 // Form
                 
                 var ExampleForm = Form.View.extend({
@@ -183,9 +182,16 @@
                     onSubmit: function(control, event) {
                         event.preventDefault();
                         if (this.commit()) {
-                            var data = this.getData({ branches: true });
-                            Cookies.set('branching', data);
-                            console.log('Submit', JSON.stringify(data, null, 2));
+                            if (this.model.branches.isMainBranch()) {
+                                this.model.save();
+                                console.log('Saving to: %s', this.model.url());
+                                console.log('Data', JSON.stringify(this.model.toJSON(), null, 2));
+                            } else {
+                                var branch = this.model.branches.branch();
+                                branch.save({ patch: true });
+                                console.log('Saving %s branch to: %s', branch.version, branch.url());
+                                console.log('Data', JSON.stringify(branch.toJSON(), null, 2));
+                            }
                         } else {
                             console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
                         }
@@ -202,7 +208,7 @@
                 });
                 
                 form.on('change', function() {
-                    console.log('Change', JSON.stringify(this.getData({ branches: true }), null, 2));
+                    console.log('Change', JSON.stringify(this.getData(), null, 2));
                 });
                 
                 form.render();
@@ -240,6 +246,24 @@
                 control.render();
                 control.$el.appendTo('#list');
                 
+                // Disable controls depending on the branch
+                
+                doc.on('branches:switch', function(branch) {
+                    var branchAttributes = doc.branches.branchAttributes || [];
+                    if (_.isEmpty(branchAttributes)) return;
+                    if (branch.isMainBranch()) {
+                        form.children.each(function(control) {
+                            if (control instanceof Form.ButtonControl) return;
+                            control.setAttribute('disabled', false);
+                        });
+                    } else {
+                        form.children.each(function(control) {
+                            if (control instanceof Form.ButtonControl) return;
+                            control.setAttribute('disabled', !_.include(branchAttributes, control.getKey()));
+                        });
+                    }
+                });
+                
                 // Plain CollectionView integration
                 
                 var listView = new ListView({ collection: form.model.branches });
@@ -253,7 +277,7 @@
                 });
                 
                 listView.on('childview:delete', function(view, info) {
-                    form.model.branches.delete(info.model.version);
+                    info.model.destroy();
                 });
                 
                 listView.render();
@@ -264,7 +288,7 @@
     </head>
     <body>
         <div class="container">
-            <h1>Form <small>using model with embedded branches</small></h1>
+            <h1>Form <small>using model with related branches</small></h1>
         </div>
         <div class="container">
             <div class="row">

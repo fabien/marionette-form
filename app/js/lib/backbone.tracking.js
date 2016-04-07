@@ -27,7 +27,11 @@
             },
             
             hasChanges: function() {
-                return !_.isEmpty(this.unsavedChanges) || this.isNew();
+                return !_.isEmpty(this.unsavedChanges) || this.isUnsaved();
+            },
+            
+            isUnsaved: function() {
+                return this.isNew();
             },
             
             revert: function(options) {

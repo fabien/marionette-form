@@ -32,6 +32,7 @@
                 });
                 
                 var mediaHost = 'http://localhost:5000';
+                var uploadUrl = mediaHost + '/files';
                 
                 var Preview = Marionette.ItemView.extend({
                     
@@ -54,13 +55,13 @@
                         {
                             key: 'attachments', label: 'Dropzone', control: 'dropzone',
                             accept: 'image/png, image/jpeg, image/gif',
-                            url: mediaHost, visible: '!isNew', omit: true,
+                            url: uploadUrl, visible: '!isNew', omit: true,
                             show: false, remove: false
                         },
                         {
                             key: 'attachments', label: 'Upload', control: 'upload',
                             accept: 'image/png, image/jpeg, image/gif',
-                            url: mediaHost, visible: '!isNew', omit: true
+                            url: uploadUrl, visible: '!isNew', omit: true
                         },
                         {
                             key: 'attachments', control: 'collection', sortable: true,
