@@ -1730,6 +1730,7 @@ define([
                 });
                 this.view.render();
                 if (_.isString(this.childViewContainer)) {
+                    Control.prototype._renderTemplate.apply(this, arguments);
                     this.$(this.childViewContainer).html(this.view.el);
                 } else {
                     this.attachElContent(this.view.el);
