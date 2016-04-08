@@ -10,10 +10,10 @@ define([
     Dropzone.autoDiscover = false;
     
     Form.Templates.DropzoneControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <div class="dropzone"></div>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     

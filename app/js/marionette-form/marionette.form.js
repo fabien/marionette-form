@@ -264,9 +264,9 @@ define([
     var Templates = Marionette.Form.Templates = {};
     
     Templates.Control = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
-        '  <span class="<%= controlClassName %> immutable">',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
+        '  <span class="<%- controlClassName %> immutable">',
         '    <%= _.isArray(obj.value) ? obj.value.join(", ") : obj.value %>',
         '  </span>',
         '</div>'
@@ -277,92 +277,92 @@ define([
     ].join('\n'));
     
     Templates.BaseControl = Templates.LayoutControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>" data-region="main"></div>'
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>" data-region="main"></div>'
     ].join('\n'));
     
     Templates.HtmlControl = _.template([
-      '<% if (obj.label) { %><label class="<%= labelClassName %>"><%= obj.label %></label><% } %>',
-      '<div class="<%= controlsClassName %>">',
+      '<% if (obj.label) { %><label class="<%- labelClassName %>"><%= obj.label %></label><% } %>',
+      '<div class="<%- controlsClassName %>">',
       '  <%= html %>',
       '</div>'
     ].join('\n'));
     
     Templates.StaticControl = _.template([
-      '<label class="<%= labelClassName %>"><%= label %></label>',
-      '<div class="<%= controlsClassName %>">',
+      '<label class="<%- labelClassName %>"><%= label %></label>',
+      '<div class="<%- controlsClassName %>">',
       '  <p class="form-control-static"><%= text %></p>',
       '</div>'
     ].join('\n'));
     
     Templates.HelpControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
-        '  <span class="<%= helpClassName %>"><%= text %></span>',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
+        '  <span class="<%- helpClassName %>"><%= text %></span>',
         '</div>'
     ].join('\n'));
     
     Templates.HeaderControl = _.template([
-        '<div class="<%= labelClassName %>"></div>',
-        '<div class="<%= controlsClassName %>" data-action="collapse">',
-        '  <h<%= level %>><%= label %> <% if (smallLabel) { %><small><%= smallLabel %><% } %></small>',
+        '<div class="<%- labelClassName %>"></div>',
+        '<div class="<%- controlsClassName %>" data-action="collapse">',
+        '  <h<%- level %>><%= label %> <% if (smallLabel) { %><small><%= smallLabel %><% } %></small>',
         '  <% if (collapse) { %><span class="section-caret"></span><% } %>',
-        '  </h<%= level %>>',
+        '  </h<%- level %>>',
         '</div>'
     ].join('\n'));
     
     Templates.SpacerControl = _.template([
-      '<label class="<%= labelClassName %>">&nbsp;</label>',
-      '<div class="<%= controlsClassName %>"><% if (rule) { %><hr /><% } %></div>'
+      '<label class="<%- labelClassName %>">&nbsp;</label>',
+      '<div class="<%- controlsClassName %>"><% if (rule) { %><hr /><% } %></div>'
     ].join('\n'));
     
     Templates.RuleControl = _.template(['<hr />'].join('\n'));
     
     Templates.InputControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="<%= type %>" maxlength="<%= maxlength %>" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '  <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" type="<%- type %>" <%= maxlength ? (\'maxlength="\' + maxlength + \'"\') : "" %> value="<%- value %>" placeholder="<%- placeholder %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.HiddenControl = _.template([
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>"/>',
+        '  <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" type="hidden" value="<%- value %>"/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>'
     ].join('\n'));
     
     Templates.TextareaControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <textarea id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" rows="<%= rows %>" maxlength="<%= maxlength %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>><%- value %></textarea>',
+        '  <textarea id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" rows="<%- rows %>" <%= maxlength ? (\'maxlength="\' + maxlength + \'"\') : "" %> placeholder="<%- placeholder %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>><%- value %></textarea>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.SelectControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <select id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" value="<%- value %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>></select>',
+        '  <select id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" value="<%- value %>" <%- multiple ? "multiple" : "" %> <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>></select>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.SelectControlItem = _.template('<%- label %>');
     
     Templates.BooleanControl = _.template([
-        '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %>" for="control-<%= id %>"><%= controlLabel %></label><% } %>',
-        '<div class="<%= controlsClassName %>">',
+        '<% if (form.layout !== "vertical") { %><label class="<%- labelClassName %>" for="control-<%- id %>"><%= controlLabel %></label><% } %>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="checkbox">',
         '    <label>',
-        '      <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="<%= type %>" <%= value ? \'checked="checked"\' : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '      <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" type="<%- type %>" <%= value ? \'checked="checked"\' : "" %> <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '      <%= label %>',
         '    </label>',
         '  </div>',
@@ -371,71 +371,71 @@ define([
     ].join('\n'));
     
     Templates.MultiControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="control-options"></div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.MultiControlItem = _.template([
-        '<input name="<%= control.name %>" type="<%= control.type %>" value="<%= value %>" <%= selected ? \'checked="checked"\' : "" %> <%= disabled ? "disabled" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '<input name="<%- control.name %>" type="<%- control.type %>" value="<%- value %>" <%= selected ? \'checked="checked"\' : "" %> <%- disabled ? "disabled" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '<%- label %>'
     ].join('\n'));
     
     Templates.ButtonControl = _.template([
-        '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %>">&nbsp;</label><% } %>',
-        '<div class="<%= controlsClassName %>">',
-        '  <button id="control-<%= id %>" data-action="<%= action %>" type="<%= type %>" name="<%= name %>" class="btn btn-<%= buttonType %>" <%= disabled ? "disabled" : "" %>><%= label %></button>',
+        '<% if (form.layout !== "vertical") { %><label class="<%- labelClassName %>">&nbsp;</label><% } %>',
+        '<div class="<%- controlsClassName %>">',
+        '  <button id="control-<%- id %>" data-action="<%- action %>" type="<%- type %>" name="<%- name %>" class="btn btn-<%- buttonType %>" <%- disabled ? "disabled" : "" %>><%= label %></button>',
         '  <% if (message) { %><span role="message"><%= message %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.ListControl = _.template([
-        '<% if (form.layout !== "vertical" || !_.isEmpty(label)) { %><label class="<%= labelClassName %>"><%= label %></label><% } %>',
+        '<% if (form.layout !== "vertical" || !_.isEmpty(label)) { %><label class="<%- labelClassName %>"><%= label %></label><% } %>',
         '<% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '<div class="<%= controlsClassName %> nested-controls"></div>',
+        '<div class="<%- controlsClassName %> nested-controls"></div>',
         '<% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>'
     ].join('\n'));
     
-    Templates.EmptyListControl = _.template('<span class="form-control immutable">No <%= parentLabel || "items" %></span>');
+    Templates.EmptyListControl = _.template('<span class="form-control immutable">No <%- parentLabel || "items" %></span>');
     
     Templates.NestedControl = _.template([
-        '<div class="<%= controlsClassName %> nested-controls"></div>'
+        '<div class="<%- controlsClassName %> nested-controls"></div>'
     ].join('\n'));
     
     Templates.DateControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <div class="input-group date">',
-        '    <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="picker <%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> readonly/>',
+        '    <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="picker <%- controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> readonly/>',
         '    <div class="input-group-addon" data-target="picker"><span class="glyphicon glyphicon-calendar fa fa-calendar" aria-hidden="true"></span></div>',
         '  </div>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.FileControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '  <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="file" placeholder="<%- placeholder %>" accept="<%- accept %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '  <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" type="file" placeholder="<%- placeholder %>" accept="<%- accept %>" <%- multiple ? "multiple" : "" %> <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Templates.ImageControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="preview well well-lg">',
-        '    <% if (value) { %><img src="<%= value %>" class="img-responsive center-block img-<%= style %>"><% } %>',
+        '    <% if (value) { %><img src="<%- value %>" class="img-responsive center-block img-<%- style %>"><% } %>',
         '  </div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (caption && caption.length) { %><span class="<%= helpClassName %>"><%= caption %></span><% } %>',
+        '  <% if (caption && caption.length) { %><span class="<%- helpClassName %>"><%= caption %></span><% } %>',
         '</div>'
     ].join('\n'));
     
@@ -727,7 +727,7 @@ define([
     
     var DebugView = Marionette.Form.DebugView = Marionette.ItemView.extend({
         
-        template: _.template('<pre><%= JSON.stringify(obj, null, 4) %></pre>'),
+        template: _.template('<pre><%- JSON.stringify(obj, null, 4) %></pre>'),
         
         initialize: function() {
             this.model = this.model || new NestedModel();
@@ -2033,7 +2033,7 @@ define([
         defaults: {
             type: 'text',
             label: '',
-            maxlength: 255,
+            maxlength: 512,
             extraClasses: [],
             helpMessage: null
         },
@@ -2122,13 +2122,18 @@ define([
         defaults: {
             label: '',
             rows: 5,
-            maxlength: 4096,
+            maxlength: 0,
             extraClasses: [],
             helpMessage: null
         },
         
         ui: {
             control: 'textarea'
+        },
+        
+        onRender: function() {
+            console.log('EH?')
+            console.log(this.$el.html())
         }
         
     });
@@ -3684,7 +3689,9 @@ define([
             
             if (this.model instanceof Backbone.Model) {
                 this.modelConstructor = this.model.constructor;
-            } else if (!(this.model instanceof Backbone.Model)) {
+            }
+            
+            if (!(this.model instanceof Backbone.Model)) {
                 this.model = new this.modelConstructor();
             } else if (!_.isEmpty(rootKey)) {
                 var source = this.model;

@@ -10,8 +10,8 @@ define([
     
     Form.Templates.ObjectList = _.template([
         '<div class="list-items">',
-        '  <label class="<%= labelClassName %>"><%= label %></label>',
-        '  <div class="<%= controlsClassName %> nested-controls"></div>',
+        '  <label class="<%- labelClassName %>"><%= label %></label>',
+        '  <div class="<%- controlsClassName %> nested-controls"></div>',
         '</div>',
         '<% if (create) { %>',
         '<div class="list-controls">',

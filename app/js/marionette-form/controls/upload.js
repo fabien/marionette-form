@@ -13,21 +13,21 @@ define([
     // Thing = FileUpload.extend(Thing, ['file', 'photos']);
     
     Form.Templates.UploadControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="upload-control">',
         '    <span class="btn btn-success fileinput-button">',
-        '      <i class="<%= buttonIcon %>"></i>',
+        '      <i class="<%- buttonIcon %>"></i>',
         '      <span><%= buttonLabel %></span>',
-        '      <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="file" placeholder="<%- placeholder %>" accept="<%- accept %>" <%= multiple ? "multiple" : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '      <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" type="file" placeholder="<%- placeholder %>" accept="<%- accept %>" <%- multiple ? "multiple" : "" %> <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '    </span>',
         '    <div class="progress hidden">',
         '      <div class="progress-bar progress-bar-success"></div>',
         '    </div>',
         '  </div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     

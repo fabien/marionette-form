@@ -45,13 +45,13 @@
                         },
                         // Control with input field and scrollable pane
                         {
-                              control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
-                              defaultLabel: '<em>All provinces</em>', input: true, placeholder: 'Search province',
-                              columns: 3
-                          },
+                            control: 'filter', key: 'province', collection: 'provinces', scrollable: true,
+                            defaultLabel: '<em>All provinces</em>', input: true, placeholder: 'Search province',
+                            columns: 3
+                        },
                         // Readonly
                         {
-                            control: 'filter', key: 'province', label: 'Selected Province', collection: 'provinces', 
+                            id: 'province-readonly', control: 'filter', key: 'province', label: 'Selected Province', collection: 'provinces', 
                             defaultLabel: '<em>All provinces</em>', readonly: true, open: false, columns: 3
                         },
                         // Controls with dependencies
@@ -72,7 +72,7 @@
                             collapseTrigger: '*', // selector for elements that trigger collapse,
                             observe: 'style', visible: 'colorEnabled', omit: '!isVisible', columns: 3,
                             item: {
-                                template: '<i class="icon <%= icon %>"></i> <span><%= label %> (#<%= item.hex %>)</span>'
+                                template: '<i class="icon <%- icon %>"></i> <span><%= label %> (#<%- item.hex %>)</span>'
                             }
                         },
                         {

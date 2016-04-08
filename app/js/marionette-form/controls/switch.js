@@ -8,11 +8,11 @@ define([
 ], function($, _, Backbone, Marionette, Form) {
     
     Form.Templates.SwitchControl = _.template([
-        '<% if (form.layout !== "vertical") { %><label class="<%= labelClassName %> toggle-switch" for="control-<%= id %>"><%= controlLabel %></label><% } %>',
-        '<div class="<%= controlsClassName %>">',
+        '<% if (form.layout !== "vertical") { %><label class="<%- labelClassName %> toggle-switch" for="control-<%- id %>"><%= controlLabel %></label><% } %>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="checkbox">',
-        '      <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" class="<%= controlClassName %>" type="<%= type %>" <%= value ? \'checked="checked"\' : "" %> <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '      <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" class="<%- controlClassName %>" type="<%- type %>" <%= value ? \'checked="checked"\' : "" %> <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '  </div>',
         '<% if (obj.label) { %>  <label class="toggle-switch"><%= label %></label><% } %>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',

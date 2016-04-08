@@ -8,29 +8,29 @@ define([
     
     Form.Templates.Filter = _.template([
         '<div class="filter-label">',
-        '  <label class="<%= labelClassName %>"><%= label %></label>',
+        '  <label class="<%- labelClassName %>"><%= label %></label>',
         '  <% if (subLabel && subLabel.length) { %><span class="sub-label" data-action="show:details"><%= subLabel %></span><% } %>',
         '</div>',
-        '<div class="<%= controlsClassName %>">',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (synopsis && synopsis.length) { %><div class="synopsis form-control-static"><%= synopsis %></div><% } %>',
-        '  <div class="filter-list<%= scrollable ? " scrollable" : "" %>">',
-        '    <% if (input) { %><div class="filter-input"><input type="text" placeholder="<%= placeholder %>" class="<%= controlClassName %>"></div><% } %>',
-        '    <div class="nested-controls-wrapper <%= scrollable ? " scroll" : "" %>">',
+        '  <div class="filter-list<%- scrollable ? " scrollable" : "" %>">',
+        '    <% if (input) { %><div class="filter-input"><input type="text" placeholder="<%- placeholder %>" class="<%- controlClassName %>"></div><% } %>',
+        '    <div class="nested-controls-wrapper <%- scrollable ? " scroll" : "" %>">',
         '      <div class="nested-controls"></div>',
         '    </div>',
-        '    <% if (helpMessage && helpMessage.length) { %><div class="<%= helpClassName %>"><%= helpMessage %></div><% } %>',
+        '    <% if (helpMessage && helpMessage.length) { %><div class="<%- helpClassName %>"><%= helpMessage %></div><% } %>',
         '  </div>',
         '</div>'
     ].join('\n'));
     
     Form.Templates.FilterItem = _.template([
-        '<i class="icon <%= icon %>"></i> <span class="item-label"><%- label %></span>',
+        '<i class="icon <%- icon %>"></i> <span class="item-label"><%- label %></span>',
         '<% if (obj.count > 0) { %> <span class="badge"><%- obj.count %></span><% } %>'
     ].join('\n'));
     
     Form.Templates.FilterSet = _.template([
-        '<div class="filter-item-header <%= collapsed ? " collapsed-set" : "" %>">',
-        '  <i class="icon <%= icon %>"></i> <span><%- label %></span>',
+        '<div class="filter-item-header <%- collapsed ? " collapsed-set" : "" %>">',
+        '  <i class="icon <%- icon %>"></i> <span><%- label %></span>',
         '  <% if (collapsibleSets) { %><span class="toggle-collapse"></span><% } %>',
         '</div>',
         '<div class="filter-items"></div>'
@@ -772,7 +772,8 @@ define([
         
         collapseList: function(options, callback) {
             if (_.isFunction(options)) callback = options, options = {};
-            if (this.isCollapsible() && !this.isCollapsed() && this.children.length > 0) {
+            var isCollapsible = this.isCollapsible() || this.isImmutable();
+            if (isCollapsible && !this.isCollapsed() && this.children.length > 0) {
                 this.triggerMethod('before:collapse', false);
                 var promise = this.performCollapse(options);
                 $.when(promise).done(function() {
@@ -872,13 +873,14 @@ define([
         },
         
         applyDisplayState: function() {
-            this.$el.toggleClass('collapsible', this.isCollapsible());
+            var isCollapsible = this.isCollapsible();
+            this.$el.toggleClass('collapsible', isCollapsible);
             this.$el.toggleClass('empty', this.collection.length === 0);
             this.ui.scrollContainer.scrollTop(this._scrollPosition || 0);
             var isCollapsed = this._isCollapsed;
             if (this.isOpen()) {
                 this.uncollapseList(0);
-            } else if (isCollapsed) {
+            } else if (isCollapsed || !isCollapsible) {
                 this.collapseList(0);
             }
         }

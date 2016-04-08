@@ -9,7 +9,7 @@ define([
     
     var JsonView = Marionette.Form.JsonView = Marionette.ItemView.extend({
         
-        template: _.template('<textarea class="form-control" rows="20"><%= JSON.stringify(obj, null, 4) %></textarea>'),
+        template: _.template('<textarea class="form-control" rows="20"><%- JSON.stringify(obj, null, 4) %></textarea>'),
         
         initialize: function() {
             this.model = this.model || new Form.Model();

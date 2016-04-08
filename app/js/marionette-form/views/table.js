@@ -7,7 +7,7 @@ define([
 ], function(moment, Backbone, Marionette, Form, Sort) {
     
     Form.Templates.TableView = _.template([
-        '<table class="<%= tableClass %>">',
+        '<table class="<%- tableClass %>">',
         '  <% if (obj.header) { %><thead></thead><% } %>',
         '  <tbody></tbody>',
         '</table>'

@@ -8,35 +8,35 @@ define([
 ], function($, _, Backbone, Marionette, Form) {
     
     Form.Templates.DropdownControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <% if (obj.wrap) { %><div class="btn-group"><% } %>',
-        '    <button type="button" class="btn btn-<%= buttonClass %><%= buttonSize ? " btn-" + buttonSize : "" %> dropdown-toggle" <% if (!readonly) { %>data-toggle="dropdown"<% } %> aria-haspopup="true" aria-expanded="false" <%= disabled ? "disabled" : "" %>>',
+        '    <button type="button" class="btn btn-<%- buttonClass %><%- buttonSize ? " btn-" + buttonSize : "" %> dropdown-toggle" <% if (!readonly) { %>data-toggle="dropdown"<% } %> aria-haspopup="true" aria-expanded="false" <%- disabled ? "disabled" : "" %>>',
         '    <% if (synopsis && synopsis.length) { %><span class="synopsis"><%= synopsis %></span><% } %> <% if (!readonly) { %><span class="caret"></span><% } %>',
         '    </button>',
         '    <ul class="dropdown-menu"></ul>',
         '  <% if (obj.wrap) { %></div><% } %>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><div class="<%= helpClassName %>"><%= helpMessage %></div><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><div class="<%- helpClassName %>"><%= helpMessage %></div><% } %>',
         '</div>'
     ].join('\n'));
     
     Form.Templates.InputDropdownControl = _.template([
-        '<label class="<%= labelClassName %>"><%= label %></label>',
+        '<label class="<%- labelClassName %>"><%= label %></label>',
         '<% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
-        '<div class="<%= controlsClassName %> input-group nested-controls"></div>',
+        '<div class="<%- controlsClassName %> input-group nested-controls"></div>',
         '<% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '<% if (helpMessage && helpMessage.length) { %><div class="<%= helpClassName %>"><%= helpMessage %></div><% } %>'
+        '<% if (helpMessage && helpMessage.length) { %><div class="<%- helpClassName %>"><%= helpMessage %></div><% } %>'
     ].join('\n'));
     
     Form.Templates.DropdownControlItem = _.template([
-        '<i class="icon <%= icon %>"></i> <span><%- label %></span>'
+        '<i class="icon <%- icon %>"></i> <span><%- label %></span>'
     ].join('\n'));
     
     Form.Templates.MenuControlItem = _.template([
-        '<a href="<%= obj.href ? obj.href : "#" %>">',
-        '  <% if (control.icons) { %><i class="icon <%= icon %>"></i><% } %>',
+        '<a href="<%- obj.href ? obj.href : "#" %>">',
+        '  <% if (control.icons) { %><i class="icon <%- icon %>"></i><% } %>',
         '  <span><%- label %></span>',
         '</a>'
     ].join('\n'));

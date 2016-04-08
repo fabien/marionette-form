@@ -157,11 +157,11 @@
         </script>
         
         <script id="demo-template" type="text/template">
-        <div class="form-control-static"><%= control.form.data.name.first %> <%= control.form.data.name.last %></div>
+        <div class="form-control-static"><%- control.form.data.name.first %> <%- control.form.data.name.last %></div>
         </script>
         
         <script id="side-template" type="text/template">
-        <div class="form-control immutable"><%= control.form.data.name.first %> <%= control.form.data.name.last %></div>
+        <div class="form-control immutable"><%- control.form.data.name.first %> <%- control.form.data.name.last %></div>
         </script>
     </body>
 </html>

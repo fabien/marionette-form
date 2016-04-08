@@ -102,11 +102,11 @@ define([
                         this.triggerMethod('resolve:fail', model);
                     }
                 };
-                var resolve = resolve.bind(this);
+                var resolveFn = resolve.bind(this);
                 if (collection.cache && _.isFunction(collection.cache.done)) {
-                    collection.cache.done(function() { setTimeout(resolve, 0); });
+                    collection.cache.done(function() { setTimeout(resolveFn, 0); });
                 } else {
-                    setTimeout(resolve, 0);
+                    setTimeout(resolveFn, 0);
                 }
             } else {
                 this.triggerMethod('resolve:fail', this.itemModel);

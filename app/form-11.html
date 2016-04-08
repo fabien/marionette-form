@@ -160,10 +160,10 @@
         <div id="layout" class="container"></div>
         
         <script id="attachment" type="text/template">
-        <div class="<%= controlsClassName %>">
+        <div class="<%- controlsClassName %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable">
-              <strong><%= value.filename %></strong> <span class="pull-right"><%= formatSize(value.filesize) %></span>
+            <span role="control" class="<%- controlClassName %> immutable">
+              <strong><%- value.filename %></strong> <span class="pull-right"><%- formatSize(value.filesize) %></span>
             </span>
             <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
             <div class="input-group-btn" role="group">
@@ -175,7 +175,7 @@
         </script>
         
         <script id="preview" type="text/template">
-        <img src="<%= mediaHost + url %>" alt="<%= filename %>, <%= formatSize(filesize) %>" class="img-responsive center-block" />
+        <img src="<%- mediaHost + url %>" alt="<%- filename %>, <%- formatSize(filesize) %>" class="img-responsive center-block" />
         </script>
     </body>
 </html>

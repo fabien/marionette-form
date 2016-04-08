@@ -70,16 +70,16 @@ define([
     ].join('\n')),
     
     Form.Templates.UploadcareControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="control-inputs">',
         '    <div class="input-group disabled-control hidden">',
         '      <% if (obj.input) { %>',
-        '      <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '      <input id="control-<%- id %>-disabled" class="<%- controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
         '      <% } else { %>',
-        '      <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
-        '        <% if (obj.icon) { %><span class="<%= icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
+        '      <div id="control-<%- id %>-synopsis" class="form-control immutable" role="control">',
+        '        <% if (obj.icon) { %><span class="<%- icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
         '        <span class="synopsis"><%= obj.synopsis %></span>',
         '      </div>',
         '      <% } %>',
@@ -87,24 +87,24 @@ define([
         '        <button data-action="show" type="button" class="btn btn-default"><span class="<%- showIcon %>" aria-hidden="true"></span></button>',
         '      </div>',
         '    </div>',
-        '    <input id="control-<%= id %>" name="<%= name %>" data-key="<%= key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
+        '    <input id="control-<%- id %>" name="<%- name %>" data-key="<%- key %>" type="hidden" value="<%- value %>" role="uploadcare-uploader"/>',
         '  </div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
     Form.Templates.UploadcareStaticControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div class="control-inputs">',
         '    <div class="input-group">',
         '      <% if (obj.input) { %>',
-        '      <input id="control-<%= id %>-disabled" class="<%= controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
+        '      <input id="control-<%- id %>-disabled" class="<%- controlClassName %>" type="text" value="<%- value %>" placeholder="<%- placeholder %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %> role="uploadcare-disabled"/>',
         '      <% } else { %>',
-        '      <div id="control-<%= id %>-synopsis" class="form-control immutable" role="control">',
-        '        <% if (obj.icon) { %><span class="<%= icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
+        '      <div id="control-<%- id %>-synopsis" class="form-control immutable" role="control">',
+        '        <% if (obj.icon) { %><span class="<%- icon %> icon" aria-hidden="true" <% if (obj.copy) { %>data-action="copy" title="Copy URL to clipboard"<% } %> role="uploadcare-icon"></span><% } %>',
         '        <span class="synopsis"><%= obj.synopsis %></span>',
         '      </div>',
         '      <% } %>',
@@ -114,7 +114,7 @@ define([
         '    </div>',
         '  </div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     
@@ -176,7 +176,7 @@ define([
         '    <% if (obj.thumbnailUrl) { %>',
         '    <img class="media-object" src="<%- obj.thumbnailUrl %>" alt="<%- obj.name %>"/>',
         '    <% } else { %>',
-        '    <span class="<%= icon %> media-object media-object-icon" aria-hidden="true"></span>',
+        '    <span class="<%- icon %> media-object media-object-icon" aria-hidden="true"></span>',
         '    <% } %>',
         '  </a>',
         '</div>',
@@ -191,7 +191,7 @@ define([
         '  <% if (obj.thumbnailUrl) { %>',
         '  <img class="media-object img-responsive" src="<%- obj.thumbnailUrl %>" alt="<%- obj.name %>"/>',
         '  <% } else { %>',
-        '  <span class="<%= icon %> media-object media-object-icon" aria-hidden="true"></span>',
+        '  <span class="<%- icon %> media-object media-object-icon" aria-hidden="true"></span>',
         '  <% } %>',
         '</a>',
     ].join('\n'));
@@ -205,12 +205,12 @@ define([
     ].join('\n'));
     
     Form.Templates.UploadcarePanelControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <% if (obj.prependHtml) { %><%= obj.prependHtml %><% } %>',
         '  <div data-region="main"></div>',
         '  <% if (obj.appendHtml) { %><%= obj.appendHtml %><% } %>',
-        '  <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>',
+        '  <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>',
         '</div>'
     ].join('\n'));
     

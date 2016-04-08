@@ -117,7 +117,7 @@
                         // Display control with interpolated text and keys to observe
                         {   
                             id: 'username', control: 'dynamic', label: 'Name', observe: ['firstName', 'lastName'],
-                            text: '<%= form.data.firstName %> <%= form.data.lastName %>',
+                            text: '<%- form.data.firstName %> <%- form.data.lastName %>',
                             section: 'main'
                         },
                         // Collection control with custom templates - from predefined custom control
@@ -339,8 +339,8 @@
         
         <script id="friends" type="text/template">
         <div>
-          <label class="<%= labelClassName %>"><%= label %></label>
-          <div class="<%= controlsClassName %> nested-controls"></div>
+          <label class="<%- labelClassName %>"><%= label %></label>
+          <div class="<%- controlsClassName %> nested-controls"></div>
         </div>
         <div class="list-controls">
           <div class="col-sm-9 col-sm-offset-3">
@@ -350,14 +350,14 @@
         </script>
         
         <script id="friend" type="text/template">
-        <div class="<%= controlsClassName %>">
+        <div class="<%- controlsClassName %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable drag-handle">
-              <%= value.firstName %> <%= value.lastName %>
+            <span role="control" class="<%- controlClassName %> immutable drag-handle">
+              <%- value.firstName %> <%- value.lastName %>
             </span>
             <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
             <div class="input-group-addon" data-action="star">
-              <span class="glyphicon glyphicon-star<%= value.starred ? '' : '-empty' %>" aria-hidden="true"></span>
+              <span class="glyphicon glyphicon-star<%- value.starred ? '' : '-empty' %>" aria-hidden="true"></span>
             </div>
             <div class="input-group-btn" role="group">
               <button type="button" data-action="edit" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
@@ -372,13 +372,13 @@
         </script>
         
         <script id="country" type="text/template">
-        <div class="<%= controlsClassName %><%= value.__resolving ? ' loading' : '' %>">
+        <div class="<%- controlsClassName %><%- value.__resolving ? ' loading' : '' %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable">
+            <span role="control" class="<%- controlClassName %> immutable">
               <% if (value.__resolving) { %>
               Loading ...
               <% } else { %>
-              <%= value.name %>
+              <%- value.name %>
               <% } %>
             </span>
             <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
@@ -390,7 +390,7 @@
         </script>
         
         <script id="list-item" type="text/template">
-        <td><%= firstName %></td><td><%= lastName %></td><td><%= starred ? 'Yes' : 'No' %></td>
+        <td><%- firstName %></td><td><%- lastName %></td><td><%- starred ? 'Yes' : 'No' %></td>
         </script>
         
     </body>

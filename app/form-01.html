@@ -297,7 +297,7 @@
                         // List control - renders a single input for each item
                         { 
                             key: 'notes', label: 'Notes', control: 'list',
-                            itemLabel: 'Note <%= index + 1 %>',
+                            itemLabel: 'Note <%- index + 1 %>',
                             itemControl: 'textarea',
                             itemKey: 'body'
                         },
@@ -537,20 +537,20 @@
         <div id="layout" class="container"></div>
         
         <script id="name-template" type="text/template">
-        <div class="<%= form.layout === "vertical" ? 'row' : '' %>">
+        <div class="<%- form.layout === "vertical" ? 'row' : '' %>">
           <% var cls = form.layout === "vertical" ? 'col-xs-6' : 'col-xs-12' %>
-          <div data-control="firstname" class="<%= cls %>"></div>
-          <div data-control="lastname" class="<%= cls %>"></div>
+          <div data-control="firstname" class="<%- cls %>"></div>
+          <div data-control="lastname" class="<%- cls %>"></div>
         </div>
         </script>
         
         <script id="select-result" type="text/template">
-        <span style="background-color: <%= label %>">&nbsp;</span> <%= label %>
+        <span style="background-color: <%- label %>">&nbsp;</span> <%= label %>
         </script>
         
         <script id="address" type="text/template">
-        <label class="<%= labelClassName %>"><%= label %></label>
-        <div class="<%= controlsClassName %> nested-form">
+        <label class="<%- labelClassName %>"><%= label %></label>
+        <div class="<%- controlsClassName %> nested-form">
           <div class="form-group">
             <input type="text" name="address1" class="form-control" placeholder="Address">
           </div>
@@ -587,16 +587,16 @@
           <div class="form-group">
             <textarea name="notes" class="form-control" maxlength="4096" placeholder="Notes"></textarea>
           </div>
-          <% if (helpMessage && helpMessage.length) { %><span class="<%= helpClassName %>"><%= helpMessage %></span><% } %>
+          <% if (helpMessage && helpMessage.length) { %><span class="<%- helpClassName %>"><%= helpMessage %></span><% } %>
         </div>
         </script>
         
         <script id="display" type="text/template">
-        <label class="<%= labelClassName %>"><%= label %></label>
-        <div class="<%= controlsClassName %>">
+        <label class="<%- labelClassName %>"><%= label %></label>
+        <div class="<%- controlsClassName %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable">
-            <%= value.salutation %>. <%= value.firstName %> <%= value.lastName %>, <%= value.address.city %>
+            <span role="control" class="<%- controlClassName %> immutable">
+            <%- value.salutation %>. <%- value.firstName %> <%- value.lastName %>, <%- value.address.city %>
             </span>
             <div class="input-group-btn" role="group">
               <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
@@ -607,10 +607,10 @@
         </script>
         
         <script id="friend" type="text/template">
-        <div class="<%= controlsClassName %>">
+        <div class="<%- controlsClassName %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable">
-              <%= value.firstName %> <%= value.lastName %>
+            <span role="control" class="<%- controlClassName %> immutable">
+              <%- value.firstName %> <%- value.lastName %>
             </span>
             <div class="input-group-addon drag-handle"><span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span></div>
             <div class="input-group-btn" role="group">
@@ -626,12 +626,12 @@
         </script>
         
         <script id="color" type="text/template">
-        <div class="<%= controlsClassName %>">
+        <div class="<%- controlsClassName %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable">
-              <%= value.label %>
+            <span role="control" class="<%- controlClassName %> immutable">
+              <%- value.label %>
             </span>
-            <div class="input-group-addon" style="background-color: <%= value.label %>">
+            <div class="input-group-addon" style="background-color: <%- value.label %>">
               <span class="glyphicon glyphicon-tint" aria-hidden="true" style="color: #fff"></span>
             </div>
             <div class="input-group-btn" role="group">

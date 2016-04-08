@@ -8,24 +8,24 @@ define([
 ], function($, _, Backbone, Marionette, Form) {
     
     Form.Templates.GeoControl = _.template([
-        '<label class="<%= labelClassName %>" for="control-<%= id %>"><%= label %></label>',
-        '<div class="<%= controlsClassName %>">',
+        '<label class="<%- labelClassName %>" for="control-<%- id %>"><%= label %></label>',
+        '<div class="<%- controlsClassName %>">',
         '  <div data-region="map"></div>',
         '  <div class="row geo-controls">',
         '    <div class="col-sm-6">',
         '      <div class="input-group">',
         '        <span class="input-group-addon" title="Latitude">Lat</span>',
-        '        <input id="control-<%= id %>-lat" name="lat" class="<%= controlClassName %> geo-lat" type="text" value="<%- value.lat %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '        <input id="control-<%- id %>-lat" name="lat" class="<%- controlClassName %> geo-lat" type="text" value="<%- value.lat %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '      </div>',
         '    </div>',
         '    <div class="col-sm-6">',
         '      <div class="input-group">',
         '        <span class="input-group-addon" title="Longitude">Lng</span>',
-        '        <input id="control-<%= id %>-lng" name="lng" class="<%= controlClassName %> geo-lng" type="text" value="<%- value.lng %>" <%= disabled ? "disabled" : "" %> <%= required ? "required" : "" %> <%= readonly ? "readonly" : "" %>/>',
+        '        <input id="control-<%- id %>-lng" name="lng" class="<%- controlClassName %> geo-lng" type="text" value="<%- value.lng %>" <%- disabled ? "disabled" : "" %> <%- required ? "required" : "" %> <%- readonly ? "readonly" : "" %>/>',
         '      </div>',
         '    </div>',
         '  </div>',
-        '  <div class="<%= helpClassName %>"><%= helpMessage %></div>',
+        '  <div class="<%- helpClassName %>"><%= helpMessage %></div>',
         '</div>'
     ].join('\n'));
     

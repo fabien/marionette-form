@@ -167,9 +167,9 @@
         <div id="layout" class="container"></div>
         
         <script id="category" type="text/template">
-        <div class="<%= controlsClassName %><%= value.__resolving ? ' loading' : '' %>">
+        <div class="<%- controlsClassName %><%- value.__resolving ? ' loading' : '' %>">
           <div class="input-group">
-            <span role="control" class="<%= controlClassName %> immutable" title="Category: <%= value.id %>">
+            <span role="control" class="<%- controlClassName %> immutable" title="Category: <%- value.id %>">
               <% if (value.__resolving) { %>
               Loading ...
               <% } else { %>
