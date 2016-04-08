@@ -2129,11 +2129,6 @@ define([
         
         ui: {
             control: 'textarea'
-        },
-        
-        onRender: function() {
-            console.log('EH?')
-            console.log(this.$el.html())
         }
         
     });
