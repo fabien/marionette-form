@@ -1,0 +1,65 @@
+{
+  "documents": [
+    {
+      "id": 1,
+      "title": "Title (English)",
+      "body": "Text (English)",
+      "author": "Fred Flintstone",
+      "published": true
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Product A",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n",
+      "price": 2500,
+      "active": true
+    }
+  ],
+  "versions": [
+    {
+      "title": "Titel (Deutsch)",
+      "body": "Text (Deutsch)",
+      "documentId": 1,
+      "id": 1,
+      "_version": "de"
+    },
+    {
+      "title": "Titel (Nederlands)",
+      "body": "Tekst (Nederlands)",
+      "documentId": 1,
+      "id": 2,
+      "_version": "nl"
+    },
+    {
+      "title": "Title (Français)",
+      "body": "Text (Français)",
+      "documentId": 1,
+      "id": 3,
+      "_version": "fr",
+      "patch": true
+    },
+    {
+      "name": "Produkt A (Deutsch)",
+      "description": "Produktbeschreibung auf Deutsch",
+      "id": 4,
+      "_version": "de",
+      "productId": 1
+    },
+    {
+      "id": 5,
+      "name": "Produit A (Français)",
+      "description": "Description en Français",
+      "_version": "de",
+      "productId": 1
+    },
+    {
+      "id": 6,
+      "name": "Produkt A (Nederlands)",
+      "description": "Produktbeschrijving in het Nederlands",
+      "_version": "de",
+      "productId": 1
+    }
+  ]
+}

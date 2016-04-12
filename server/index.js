@@ -58,6 +58,16 @@ app.delete('/files/:filename', function(req, res, next) {
     });
 });
 
+app.all('/products/:id/versions/:version', function(req, res, next) {
+    var lookup = {};
+    lookup['de'] = 4;
+    lookup['fr'] = 5;
+    lookup['nl'] = 6;
+    lookup['es'] = 7;
+    req.url = '/versions/' + lookup[req.params.version];
+    next();
+});
+
 app.all('/:primary/:id/:secondary/:fk', function(req, res, next) {
     req.url = '/' + req.params.secondary + '/' + req.params.fk;
     next();

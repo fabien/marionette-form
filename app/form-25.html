@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'marionette.form.view.branched',
+                'backbone.validation',
+                'backbone.tracking',
+                'autoNumeric'
+            ], function(Backbone, Marionette, Form) {
+                
+                var acceptedLocales = [
+                    { id: 'en', label: 'English (EN)' },
+                    { id: 'de', label: 'Deutsch (DE)' },
+                    { id: 'es', label: 'Español (ES)' },
+                    { id: 'fr', label: 'Français (FR)' },
+                    { id: 'nl', label: 'Nederlands (NL)' },
+                    { id: 'no', label: 'Norwegian (NO)' }
+                ];
+                
+                var ProductForm = Form.View.extend({
+                    
+                    prefix: 'product-',
+                    
+                    layout: 'vertical',
+                    
+                    fields: [
+                        { id: 'name', control: 'input', required: true, branch: true },
+                        { id: 'description', control: 'textarea', required: true, branch: true },
+                        { id: 'price', control: 'input', formatter: 'cents', default: 0, required: true, numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
+                        { id: 'active', control: 'checkbox', omit: true }
+                    ],
+                    
+                    initialize: function() {
+                        this.on('control:change', function(control) {
+                            this.resetErrors();
+                        });
+                    },
+                    
+                    onBeforeShowBranch: function(name, containerView) {
+                        // console.log('Before show branch: %s', name);
+                    },
+                    
+                    onShowBranch: function(name, containerView) {
+                        // console.log('Show branch: %s', name);
+                    },
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            this.model.save().then(function() {
+                                console.log('Saved product: %s', this.model.id);
+                            }.bind(this), function(error) {
+                                console.log('Failed to save product', error);
+                            });
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Product = Backbone.TrackingModel.mixin(Form.Model.extend({
+                    
+                    urlRoot: 'http://localhost:5000/products',
+                    
+                    validation: {
+                        name: {
+                            required: true
+                        },
+                        description: {
+                            required: true
+                        },
+                        price: {
+                            required: true
+                        },
+                        active: {
+                            required: true
+                        }
+                    }
+                    
+                }));
+                
+                _.extend(Product.prototype, Backbone.Validation.mixin);
+                
+                var product = new Product({ id: 1 });
+                
+                var View = Form.Branched.extend({
+                    
+                    formView: ProductForm,
+                    
+                    mainBranch: 'en',
+                    
+                    onChangeBranch: function(name, options) {
+                        console.log('Switching branch from [%s] to [%s]', name, options.previous);
+                        var view = this.getCurrentView();
+                        var isNew = view.model.isNew();
+                        var isBlank = view.model.isBlank('_version');
+                        var hasChanges = view.model.hasChanges() && (!isNew || (isNew && !isBlank));
+                        if (hasChanges) console.log('Branch %s changes:', name, this.getData());
+                        var preserveChanges = hasChanges && !window.confirm('Continue without saving?');
+                        if (preserveChanges || name === 'no') return $.Deferred().reject().promise();
+                    },
+                    
+                    onBeforeShowBranch: function(name, view, options) {
+                        console.log('Before show branch: %s', name, this.isMainBranch(name) ? '(main)' : '');
+                        return (name === 'no') ? $.Deferred().reject().promise() : view.model.fetch();;
+                    },
+                    
+                    onShowBranch: function(name, view, options) {
+                        console.log('Shown branch: %s', name, this.isMainBranch(name) ? '(main)' : '');
+                    },
+                    
+                    onEnsureBranch: function(name, view, options) {
+                        console.log('Creating new branch: %s', name);
+                        return this.showBranchView(view, options);
+                    },
+                    
+                    onRejectBranch: function(name, view, options) {
+                        console.log('Failed to show branch: %s', name);
+                    }
+                    
+                });
+                
+                var view = new View({ model: product });
+                
+                view.branches.reset(acceptedLocales);
+                
+                view.on('before:show:branch', function(name, view) {
+                    console.log('View: before show branch: %s', name);
+                });
+                
+                view.on('show:branch', function(name, view) {
+                    console.log('View: show branch: %s', name);
+                });
+                
+                view.form.field('submit', {
+                    control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true, branch: true
+                });
+                
+                view.form.on('change', function() {
+                    console.log('Change', JSON.stringify(view.form.getData(), null, 2));
+                });
+                
+                view.render();
+                view.$el.appendTo('#layout');
+                
+                // view.showBranch('de').then(function() {
+                //     console.log('Showing branch: %s', view.currentBranch);
+                // });
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with branches</small></h1>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

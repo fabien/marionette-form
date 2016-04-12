@@ -1,6 +1,5 @@
 .DS_Store
 app/js/vendor
-server/db.json
 server/uploads
 
 # Logs

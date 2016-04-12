@@ -26,6 +26,11 @@
                 this.enableTracking(options.tracking !== false);
             },
             
+            isBlank: function() {
+                omit = _.flatten(arguments).concat(this.idAttribute);
+                return _.isEmpty(compactObject(_.omit(this.attributes, omit)));
+            },
+            
             hasChanges: function() {
                 return !_.isEmpty(this.unsavedChanges) || this.isUnsaved();
             },
@@ -89,5 +94,17 @@
     Backbone.TrackingModel.mixin = mixin;
     
     return Backbone.TrackingModel;
+    
+    function compactObject(o, voidOnly) {
+        var clone = _.clone(o);
+        _.each(clone, function(v, k) {
+            if (voidOnly) {
+                if (_.isNull(v) || _.isUndefined(v)) delete clone[k];
+            } else if(!v) {
+                delete clone[k];
+            }
+        });
+        return clone;
+    };
     
 }));

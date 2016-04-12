@@ -3674,7 +3674,8 @@ define([
             var rootKey = this.getOption('rootKey');
             
             var fields = this.collection || options.fields || _.result(this, 'fields');
-            if (!(fields instanceof Backbone.Collection)) {
+            var isProxy = _.isObject(fields) && _.isObject(fields._superset);
+            if (!(fields instanceof Backbone.Collection) && !isProxy) {
                 fields = new Fields(fields);
             }
             if (_.isArray(options.fields)) {
@@ -3708,6 +3709,8 @@ define([
                     this.set(rootKey, model.toJSON(), options);
                 });
             }
+            
+            this.bindValidation(this.model);
             
             this.listenTo(this.model, 'change', this.triggerMethod.bind(this, 'change'));
             this.listenTo(this.model, 'validated', this.onModelValidated);
@@ -3878,6 +3881,13 @@ define([
             return this.children.find(function(field) {
                 return field.getKey() === key;
             });
+        },
+        
+        getKeys: function() {
+            var keys = this.children.map(function(field) {
+                return field.getKey();
+            });
+            return _.compact(_.uniq(keys));
         },
         
         getControl: function(name) {
@@ -4123,6 +4133,23 @@ define([
         },
         
         // Validation
+        
+        bindValidation: function(model) {
+            var form = this;
+            if (_.isFunction(model.validation)) {
+                var validation = model.validation;
+                model.validation = function() {
+                    var rules = validation.apply(this, arguments);
+                    if (_.isObject(rules)) rules = _.pick(rules, form.getKeys());
+                    return rules;
+                };
+            } else if (_.isObject(model.validation)) {
+                var rules = _.extend({}, model.validation);
+                model.validation = function() {
+                    return _.pick(rules, form.getKeys());
+                };
+            }
+        },
         
         validate: function(key, options) {
             // Hook method - use set/addError
@@ -4807,6 +4834,7 @@ define([
     function joinUrl(url) {
         var segments = _.compact(_.flatten(arguments));
         return _.map(segments, function(segment, index) {
+            segment = String(segment);
             if (index > 0 && segment.indexOf('/') === 0) segment = segment.slice(1);
             if (segment.lastIndexOf('/') === segment.length -1) segment = segment.slice(0, -1);
             return segment;
