@@ -42,11 +42,20 @@ define([
             this.initOptions = _.extend({}, options);
             options = _.extend({}, options, { branch: this.getOption('mainBranch') });
             Marionette.LayoutView.prototype.constructor.call(this, this.initOptions);
-            this.branches = new Backbone.Collection();
+            
             this.model = new Backbone.NestedModel(); // internal state
             this.form = new this.formView(options);
             this.fields = new FilteredCollection(this.form.collection);
             this.fields.filterBy(this.fieldFilter.bind(this));
+            
+            if (options.branches instanceof Backbone.Collection) {
+                this.branches = options.branches;
+            } else if (_.isString(options.branches)) {
+                this.branches = Form.getCollection(options.branches) ||
+                    new Backbone.Collection();
+            } else {
+                this.branches = new Backbone.Collection();
+            }
             
             this.on('render', this._setupRegions);
             this.listenTo(this.model, 'change:branch', function(model, name, options) {
@@ -66,10 +75,8 @@ define([
         getData: function(options) {
             var view = this.getCurrentView();
             if (!view) return null;
-            var data = view.getData(options);
-            
-            
-            return data;
+            var keys = [this.getOption('branchIdAttribute')].concat(view.getKeys());
+            return _.pick(view.getData(options), keys);
         },
         
         getBranch: function() {

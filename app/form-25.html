@@ -102,11 +102,11 @@
                     
                     onChangeBranch: function(name, options) {
                         console.log('Switching branch from [%s] to [%s]', name, options.previous);
+                        console.log('Branch data:', name, this.getData());
                         var view = this.getCurrentView();
                         var isNew = view.model.isNew();
                         var isBlank = view.model.isBlank('_version');
                         var hasChanges = view.model.hasChanges() && (!isNew || (isNew && !isBlank));
-                        if (hasChanges) console.log('Branch %s changes:', name, this.getData());
                         var preserveChanges = hasChanges && !window.confirm('Continue without saving?');
                         if (preserveChanges || name === 'no') return $.Deferred().reject().promise();
                     },
@@ -135,11 +135,11 @@
                 
                 view.branches.reset(acceptedLocales);
                 
-                view.on('before:show:branch', function(name, view) {
+                view.on('before:show:branch', function(name, view, options) {
                     console.log('View: before show branch: %s', name);
                 });
                 
-                view.on('show:branch', function(name, view) {
+                view.on('show:branch', function(name, view, options) {
                     console.log('View: show branch: %s', name);
                 });
                 
@@ -147,8 +147,10 @@
                     control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true, branch: true
                 });
                 
-                view.form.on('change', function() {
-                    console.log('Change', JSON.stringify(view.form.getData(), null, 2));
+                view.on('childview:change', function(childView) {
+                    if (childView instanceof Form.View) {
+                        console.log('Change', JSON.stringify(childView.getData(), null, 2));
+                    }
                 });
                 
                 view.render();
