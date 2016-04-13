@@ -13,7 +13,7 @@
         <script type="text/javascript">
             require([
                 'backbone',
-                'marionette',
+                'marionette.morphdom',
                 'marionette.form',
                 'marionette.form.view.table',
                 'select2'
@@ -100,8 +100,6 @@
                 
                 list.render();
                 list.$el.appendTo('#layout');
-                
-                list.listenTo(collection, 'change', list.render); // re-render on changes
                 
             });
         </script>
