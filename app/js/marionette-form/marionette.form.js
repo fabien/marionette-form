@@ -154,7 +154,7 @@ define([
     
     Marionette.Form.CollectionMixin = CollectionMixin;
     
-    // A modal view can implement the following interface methods to comply with ModalViewMixin:
+    // A modal view can implement the following interface methods to comply with ModalControlMixin:
     // 
     // - getData() - to retrieve the view's data
     // - setData() - to set the view's data
@@ -163,46 +163,72 @@ define([
     
     var ModalViewMixin = {
         
-        showModal: function(event) {
-            if (event instanceof $.Event) {
+        showModal: function(options) {
+            if (options instanceof $.Event) {
                 event.preventDefault();
-                $(event.currentTarget).blur();
+                $(options.currentTarget).blur();
+                options = $(options.currentTarget).data();
             }
-            if (this.modal || this.isBlank()) return; // singleton
-            var view = this.createModalView();
+            if (this.modal) return; // singleton
+            var view = this.createModalView(null, options);
             var dfd = $.Deferred();
-            this.modal = this.openModalWithView(view, function(dialog) {
-                dfd.resolve(dialog);
-            }.bind(this)).fail(function(err) {
-                dfd.reject(err);
-            }).always(function() {
+            var promises = [];
+            
+            this.modal = this.openModalWithView(view);
+            
+            this.modal.done(function(view, dialog, options) {
+                promises.push(view.triggerMethod('modal:resolve', dialog, this, options));
+                promises.push(this.triggerMethod('modal:resolve', dialog, view, options));
+                $.when.apply($, promises).then(function() {
+                    dfd.resolve(dialog, view, options);
+                });
+            }.bind(this));
+            
+            this.modal.fail(function(view, dialog, options, err) {
+                promises.push(view.triggerMethod('modal:reject', dialog, this, options, err));
+                promises.push(this.triggerMethod('modal:reject', dialog, view, options, err));
+                $.when.apply($, promises).then(function() {
+                    dfd.reject(dialog, view, options, err);
+                });
+            }.bind(this));
+            
+            this.modal.always(function() {
                 delete this.modal;
             }.bind(this));
+            
             return dfd.promise();
         },
         
-        getModalViewContstructor: function(viewClass, attributeName) {
-            attributeName = attributeName || 'modal';
-            viewClass = viewClass || this.getAttribute(attributeName + 'View') || this.getAttribute(attributeName);
+        getModalViewContstructor: function(viewClass, options) {
+            var attributeName = (_.isObject(options) && options.attributeName) || 'modal';
             viewClass = viewClass || this.getOption(attributeName + 'View');
-            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
             viewClass = _.isFunction(viewClass) ? viewClass : Marionette.Form.DebugView;
             return viewClass;
         },
         
+        getModalViewId: function(options) {
+            return _.uniqueId();
+        },
+        
         getModalViewData: function() {
-            if (this.itemModel instanceof Backbone.Model) {
-                return this.itemModel.toJSON();
+            if (this.model instanceof Backbone.Model) {
+                return this.model.toJSON();
             } else {
-                return this.getValue(true);
+                return {};
             }
         },
         
-        createModalView: function(viewClass, options) {
+        getModalViewOptions: function(options) {
             var attributeName = (_.isObject(options) && options.attributeName) || 'modal';
             var optionsAttributeName = attributeName + 'ViewOptions';
-            options = _.extend({}, _.result(this, optionsAttributeName), this.getAttribute(optionsAttributeName), options);
-            viewClass = this.getModalViewContstructor(viewClass, attributeName);
+            return _.extend({}, _.result(this, optionsAttributeName), options, {
+                attributeName: attributeName
+            });
+        },
+        
+        createModalView: function(viewClass, options) {
+            options = this.getModalViewOptions(options);
+            viewClass = this.getModalViewContstructor(viewClass, options);
             this.triggerMethod('modal:view:options', options, viewClass);
             var view = new viewClass(options);
             this.triggerMethod('modal:view', view, options);
@@ -211,13 +237,12 @@ define([
         
         openModalWithView: function(view, modalOptions, callback) {
             if (_.isFunction(modalOptions)) callback = modalOptions, modalOptions = {};
-            modalOptions = _.extend({}, _.result(this, 'modalOptions'), this.getAttribute('modalOptions'), modalOptions);
+            modalOptions = this.getModalViewOptions(modalOptions);
             _.extend(modalOptions, _.result(view, 'modalOptions'));
-            callback = callback || _.noop;
             var dfd = $.Deferred();
             var BootstrapModal = this.bootstrapModal;
             var dialog = new BootstrapModal(_.extend({
-                id: 'dialog-' + this.getId(),
+                id: 'dialog-' + this.getModalViewId(modalOptions),
                 content: view, enterTriggersOk: true,
                 focusOk: false, animate: true
             }, modalOptions));
@@ -227,36 +252,82 @@ define([
                 view.triggerMethod.apply(view, ['modal:' + eventName, dialog, this].concat(args));
             }.bind(this));
             dialog.on('shown', function() {
-                view.$(':input:enabled:visible:first').focus();
+                view.$(':input:enabled:visible:not([readonly]):first').focus();
             });
-            dialog.once('close', function(action) {
-                if (action === 'cancel') {
-                    dfd.reject(view);
-                } else {
-                    dfd.resolve(view);
-                }
-            }.bind(this));
+            
+            dialog.once('ok', function() {
+                modalOptions.action = 'ok';
+                dfd.resolve(view, dialog, modalOptions);
+            });
+            
+            dialog.once('delete', function() {
+                modalOptions.action = 'delete';
+                dfd.resolve(view, dialog, modalOptions);
+            });
+            
+            dialog.once('cancel', function() {
+                modalOptions.action = 'cancel';
+                dfd.reject(view, dialog, modalOptions);
+            });
+            
             if (_.isFunction(view.setData)) view.setData(this.getModalViewData());
             this.triggerMethod('modal:init', dialog, view, modalOptions);
             view.triggerMethod('modal:init', dialog, this, modalOptions);
+            
+            if (_.isFunction(callback)) dfd.done(callback);
+            
             if (_.isObject(view.deferred) && _.isFunction(view.deferred.promise)) {
                 this.triggerMethod('modal:load:start', dialog, view);
                 view.deferred.always(function() {
                     this.triggerMethod('modal:load:stop', dialog, view);
                 }.bind(this));
-                view.deferred.done(function() {
-                    dialog.open(callback.bind(null, dialog));
-                }.bind(this));
-                view.deferred.fail(dfd.reject.bind(dfd, view));
+                view.deferred.done(function() { dialog.open(); });
+                view.deferred.fail(dfd.reject.bind(dfd, view, dialog, modalOptions));
             } else {
-                dialog.open(callback.bind(null, dialog));
+                dialog.open();
             }
+            
             return dfd.promise();
         }
         
     };
     
     Marionette.Form.ModalViewMixin = ModalViewMixin;
+    
+    var ModalControlMixin = _.extend({}, ModalViewMixin, {
+        
+        getModalViewId: function(options) {
+            return this.getId() || _.uniqueId();
+        },
+        
+        getModalViewContstructor: function(viewClass, options) {
+            var attributeName = (_.isObject(options) && options.attributeName) || 'modal';
+            viewClass = viewClass || this.getAttribute(attributeName + 'View') || this.getAttribute(attributeName);
+            viewClass = viewClass || this.getOption(attributeName + 'View');
+            if (_.isString(viewClass)) viewClass = this.form.getRegisteredView(viewClass);
+            viewClass = _.isFunction(viewClass) ? viewClass : Marionette.Form.DebugView;
+            return viewClass;
+        },
+        
+        getModalViewOptions: function(options) {
+            var attributeName = (_.isObject(options) && options.attributeName) || 'modal';
+            var optionsAttributeName = attributeName + 'ViewOptions';
+            return _.extend({}, _.result(this, optionsAttributeName), this.getAttribute(optionsAttributeName), options, {
+                attributeName: attributeName
+            });
+        },
+        
+        getModalViewData: function() {
+            if (this.itemModel instanceof Backbone.Model) {
+                return this.itemModel.toJSON();
+            } else {
+                return this.getValue(true);
+            }
+        }
+        
+    });
+    
+    Marionette.Form.ModalControlMixin = ModalControlMixin;
     
     Marionette.Form.Model = NestedModel;
     Marionette.Form.Collection = NestedCollection;
@@ -1112,6 +1183,15 @@ define([
                 return isBlank(this.getValue(true));
             },
             
+            isInput: function() {
+                return Boolean(this.ui.control && this.ui.control.is(':input:enabled:visible:not([readonly])') &&
+                    this.ui.control.not('input[type="button"]') && this.ui.control.not('input[type="submit"]'));
+            },
+            
+            isBranched: function() {
+                return this.getAttribute('branch') === true;
+            },
+            
             isEditable: function() {
                 return !this.isDisabled() && !this.isReadonly() && this.isVisible();
             },
@@ -1267,7 +1347,8 @@ define([
                     readonly: this.isReadonly(),
                     visible:  this.isVisible(),
                     ignore:   this.isIgnored(),
-                    omit:     this.isOmitted()
+                    omit:     this.isOmitted(),
+                    branched: this.isBranched()
                 });
                 
                 data.error = this.form.getError(data.key);
@@ -1354,6 +1435,7 @@ define([
                 this.enableClassName('disabled', this.isDisabled());
                 this.enableClassName('readonly', this.isReadonly());
                 this.enableClassName('omit', this.isOmitted());
+                this.enableClassName('branched', this.isBranched());
             },
             
             render: function() {
@@ -2130,6 +2212,13 @@ define([
         
         ui: {
             control: 'textarea'
+        },
+        
+        constructor: function() {
+            Control.prototype.constructor.apply(this, arguments);
+            this.on('label:click', function(event) {
+                this.ui.control.focus();
+            });
         }
         
     });
@@ -4471,6 +4560,29 @@ define([
                 }
             });
             return dfd.promise();
+        }
+        
+    });
+    
+    // LayoutView
+    
+    var LayoutView = Marionette.Form.LayoutView = Marionette.LayoutView.extend({
+        
+        constructor: function() {
+            Marionette.LayoutView.prototype.constructor.apply(this, arguments);
+            this.on('render', this._setupRegions);
+        },
+        
+        _setupRegions: function() {
+            var regions = _.result(this, 'regionNames');
+            var defaults = { regionClass: this.getOption('regionClass') };
+            var instances = _.map(regions, function(name) {
+                var el = this.$('[data-region="' + name + '"]');
+                var region = this.addRegion(name, _.extend({}, defaults, { el: el }));
+                this.triggerMethod('setup:' + name + ':region', region);
+                return region;
+            }.bind(this));
+            this.triggerMethod('setup:regions', instances);
         }
         
     });

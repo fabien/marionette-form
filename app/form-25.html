@@ -5,6 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
         <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .form-group.branched .control-label {
+                color: #008FBD;
+                cursor: pointer;
+            }
+        </style>
         <script src="/js/vendor/requirejs/require.js"></script>
         <script src="/js/requirejs.config.js"></script>
         <script type="text/javascript">
@@ -19,12 +25,12 @@
             ], function(Backbone, Marionette, Form) {
                 
                 var acceptedLocales = [
-                    { id: 'en', label: 'English (EN)' },
-                    { id: 'de', label: 'Deutsch (DE)' },
-                    { id: 'es', label: 'Español (ES)' },
-                    { id: 'fr', label: 'Français (FR)' },
-                    { id: 'nl', label: 'Nederlands (NL)' },
-                    { id: 'no', label: 'Norwegian (NO)' }
+                    { id: 'en', label: 'English' },
+                    { id: 'de', label: 'Deutsch' },
+                    { id: 'es', label: 'Español' },
+                    { id: 'fr', label: 'Français' },
+                    { id: 'nl', label: 'Nederlands' },
+                    { id: 'no', label: 'Norsk' }
                 ];
                 
                 var ProductForm = Form.View.extend({
@@ -92,17 +98,34 @@
                 
                 _.extend(Product.prototype, Backbone.Validation.mixin);
                 
-                var product = new Product({ id: 1 });
-                
-                var View = Form.Branched.extend({
+                var View = Form.BranchedView.extend({
                     
                     formView: ProductForm,
                     
                     mainBranch: 'en',
                     
+                    showControlInModal: function(control, options) {
+                        if (this.isMainBranch()) return $.Deferred().reject().promise();
+                        var fields = [control.getKey()];
+                        return this.showModal(_.extend({ fields: fields }, options));
+                    },
+                    
+                    showInModal: function(options) {
+                        var form = this.getCurrentView();
+                        if (this.isMainBranch() || !form) return $.Deferred().reject().promise();
+                        var fields = [];
+                        form.children.each(function(control) {
+                            if (control.getAttribute('branch') && control.isInput()) {
+                                fields.push(control.getKey());
+                            }
+                        });
+                        return this.showModal(_.extend({ fields: fields }, options));
+                    },
+                    
+                    // Branch event handlers
+                    
                     onChangeBranch: function(name, options) {
                         console.log('Switching branch from [%s] to [%s]', name, options.previous);
-                        console.log('Branch data:', name, this.getData());
                         var view = this.getCurrentView();
                         var isNew = view.model.isNew();
                         var isBlank = view.model.isBlank('_version');
@@ -127,9 +150,18 @@
                     
                     onRejectBranch: function(name, view, options) {
                         console.log('Failed to show branch: %s', name);
+                    },
+                    
+                    // Form event handlers
+                    
+                    onChildviewControlLabelClick: function(form, control, event) {
+                        if (this.isMainBranch()) return; // skip
+                        return this.showControlInModal(control);
                     }
                     
                 });
+                
+                var product = new Product({ id: 1 });
                 
                 var view = new View({ model: product });
                 
@@ -141,6 +173,7 @@
                 
                 view.on('show:branch', function(name, view, options) {
                     console.log('View: show branch: %s', name);
+                    $('[data-action="show-modal"]').prop('disabled', name === 'en');
                 });
                 
                 view.form.field('submit', {
@@ -148,7 +181,7 @@
                 });
                 
                 view.on('childview:change', function(childView) {
-                    if (childView instanceof Form.View) {
+                    if (childView instanceof this.formView) {
                         console.log('Change', JSON.stringify(childView.getData(), null, 2));
                     }
                 });
@@ -160,6 +193,10 @@
                 //     console.log('Showing branch: %s', view.currentBranch);
                 // });
                 
+                $('[data-action="show-modal"]').click(function() {
+                    view.showInModal();
+                });
+                
             });
         </script>
     </head>
@@ -168,5 +205,8 @@
             <h1>Form <small>with branches</small></h1>
         </div>
         <div id="layout" class="container"></div>
+        <div class="container">
+            <button class="btn btn-default" data-action="show-modal">Show Modal</button>
+        </div>
     </body>
 </html>

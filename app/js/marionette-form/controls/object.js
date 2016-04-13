@@ -79,7 +79,7 @@ define([
             }.bind(this));
         }
         
-    }, Form.ModalViewMixin));
+    }, Form.ModalControlMixin));
     
     return ObjectControl;
     

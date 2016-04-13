@@ -42,8 +42,17 @@ form .nested-controls.row > .col {
 }
 
 .form-group.required .control-label:after {
-   content: "*";
-   color: red;
+    content: "*";
+    color: red;
+}
+
+.form-group .control-label em {
+    font-style: normal;
+    color: #858585;
+}
+
+.form-group .control-label em:before {
+    content: " - ";
 }
 
 .form-horizontal .nested-form .form-group,
@@ -663,4 +672,11 @@ th.sort.sort-desc .sort-dir:after {
     display: block;
     margin: 0 auto;
     border-radius: 6px;
+}
+
+@media screen and (min-width: 768px) {
+    .split-branch-modal .modal-dialog {
+        width: auto;
+        margin: 10px;
+    }
 }

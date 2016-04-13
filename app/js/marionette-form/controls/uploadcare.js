@@ -654,7 +654,7 @@ define([
             return this.setValue(data);
         },
         
-        // ModalViewMixin integration
+        // ModalControlMixin integration
         
         setData: function(source) {
             return this.setValue(source).then(this.deferred.resolve.bind(this.deferred));
@@ -1126,7 +1126,7 @@ define([
             this.ui.synopsisIcon.attr('class', this.getIcon() || '');
         }
         
-    }, Form.ModalViewMixin), {
+    }, Form.ModalControlMixin), {
         
         // Global settings
         

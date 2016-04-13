@@ -2,14 +2,22 @@ define([
     'backbone',
     'marionette',
     'marionette.form',
-    'backbone.filtered-collection'
+    'backbone.filtered-collection',
+    'backbone.bootstrap-modal'
 ], function(Backbone, Marionette, Form, FilteredCollection) {
     
     var utils = Form.utils;
     
-    Form.Templates.Branched = _.template([
+    Form.Templates.BranchedView = _.template([
         '<div data-region="header"></div>',
         '<div data-region="main"></div>'
+    ].join('\n'));
+    
+    Form.Templates.BranchedSplitView = _.template([
+        '<div class="row">',
+        '  <div class="col col-md-6" data-region="primary"></div>',
+        '  <div class="col col-md-6" data-region="secondary"></div>',
+        '</div>'
     ].join('\n'));
     
     Form.BranchedHeaderView = Form.View.extend({
@@ -20,33 +28,164 @@ define([
         
     });
     
-    Form.Branched = Marionette.LayoutView.extend({
+    Form.PartialView = Form.LayoutView.extend({
         
-        branchIdAttribute: '_version',      // attribute to use as Branch idAttribute
+        // Base Layout with a source form and derived forms (partial fields)
         
-        branchUrl: '/versions/',            // url prefix
-        
-        mainBranch: 'main',
-        
-        template: Form.Templates.Branched,
-        
-        headerView: Form.BranchedHeaderView,
+        constructor: function(options) {
+            options = _.extend({}, options);
+            this.initOptions = _.omit(options, 'form');
+            Form.LayoutView.prototype.constructor.call(this, this.initOptions);
+            this.model = new Backbone.NestedModel(); // internal state
+            if (options.form instanceof this.formView) {
+                this.form = options.form;
+            } else {
+                this.form = new this.formView(options);
+            }
+            this.fields = new FilteredCollection(this.form.collection);
+            this.fields.filterBy(this.fieldFilter.bind(this));
+        },
         
         formView: Form.View,
         
-        branchModel: null,
+        fieldFilter: function(model) {
+            return true;
+        },
+        
+        getCurrentView: function() {
+            var region = this.getRegion('main');
+            return region.hasView() && region.currentView;
+        },
+        
+        createPartialForm: function(name, options) {
+            options = _.extend({}, options);
+            var formOptions = _.extend({}, this.initOptions);
+            formOptions.branch = name;
+            formOptions.fields = this.fields;
+            formOptions.model = options.model || this.createPartialModel(name);
+            return new this.formView(_.extend(formOptions, options));
+        },
+        
+        createPartialModel: function(name) {
+            var Model = this.form.model.constructor;
+            return new Model();
+        }
+        
+    });
+    
+    Form.BranchedSplitView = Form.PartialView.extend({
+        
+        className: 'split-branch-view',
+        
+        template: Form.Templates.BranchedSplitView,
+        
+        regionNames: ['primary', 'secondary'],
+        
+        constructor: function(options) {
+            Form.PartialView.prototype.constructor.apply(this, arguments);
+            this.options.fields = [].concat(this.options.fields || []);
+        },
+        
+        fieldFilter: function(model) {
+            return _.include(this.options.fields, model.get('key'));
+        },
+        
+        showBranch: function(name, options) {
+            var containerView = this;
+            var isMainBranch = name === this.getOption('mainBranch');
+            var model = isMainBranch ? this.form.model : this.getOption('branchModel');
+            if (model && this.getOption('clone')) model = model.clone();
+            var regionName = isMainBranch ? 'primary' : 'secondary';
+            
+            options = _.extend({ layout: 'vertical', model: model, isMainBranch: isMainBranch }, options);
+            var view = this.createPartialForm(name, options);
+            
+            return $.when(containerView.beforeShowBranch(name, view, options)).then(function() {
+                return $.when(containerView.showChildView(regionName, view, options)).then(function() {
+                    return containerView.afterShowBranch(name, view, options);
+                });
+            });
+        },
+        
+        onSetupRegions: function(regions) {
+            this.showBranch(this.getOption('mainBranch'));
+            this.showBranch(this.getOption('branch'));
+        },
+        
+        onBeforeShowBranch: function(name, view, options) {
+            if (options.isMainBranch) view.setReadonly(true);
+        },
+        
+        onChildviewControlRenderControl: function(childView, control) {
+            var branchId = childView.getOption('branch');
+            var branch = this.options.branches.get(branchId);
+            var branchName = (branch && branch.get('label')) || branchId;
+            if (branchName) {
+                var $label = control.$('label.control-label');
+                $label.find('em').remove();
+                $label.append(' <em>' + branchName + '</em>');
+            }
+        },
+        
+        beforeShowBranch: function(name, view, options) {
+            var promises = [];
+            promises.push(this.triggerMethod('before:show:branch', name, view, options));
+            promises.push(view.triggerMethod('before:show:branch', name, this, options));
+            return $.when.apply($, promises);
+        },
+        
+        afterShowBranch: function(name, view, options) {
+            var promises = [];
+            promises.push(this.triggerMethod('show:branch', name, view, options));
+            promises.push(view.triggerMethod('show:branch', name, this, options));
+            return $.when.apply($, promises);
+        },
+        
+        // Modal
+        
+        modalOptions: {
+            className: 'modal split-branch-modal',
+        },
+        
+        onModalResolve: function(dialog, view, options) {
+            var branchModel = this.getOption('branchModel');
+            var form = this.getRegion('secondary').currentView;
+            if (options.action === 'ok' && form && branchModel) {
+                if (form.commit()) {
+                    branchModel.set(form.getData());
+                } else {
+                    dialog.preventClose();
+                }
+            }
+        }
+        
+    });
+    
+    Form.BranchedView = Form.PartialView.extend(_.extend({
+        
+        className: 'branched-view',
+        
+        bootstrapModal: Backbone.BootstrapModal,
+        
+        template: Form.Templates.BranchedView,
         
         regionNames: ['header', 'main'],
         
+        headerView: Form.BranchedHeaderView,
+        
+        modalView: Form.BranchedSplitView,
+        
+        branchIdAttribute: '_version',
+        
+        branchUrl: '/versions/',
+        
+        mainBranch: 'main',
+        
+        branchModelConstructor: null,
+        
         constructor: function(options) {
-            this.initOptions = _.extend({}, options);
-            options = _.extend({}, options, { branch: this.getOption('mainBranch') });
-            Marionette.LayoutView.prototype.constructor.call(this, this.initOptions);
-            
-            this.model = new Backbone.NestedModel(); // internal state
-            this.form = new this.formView(options);
-            this.fields = new FilteredCollection(this.form.collection);
-            this.fields.filterBy(this.fieldFilter.bind(this));
+            Form.PartialView.prototype.constructor.apply(this, arguments);
+            this.form.options.branch = this.getOption('mainBranch');
             
             if (options.branches instanceof Backbone.Collection) {
                 this.branches = options.branches;
@@ -57,7 +196,6 @@ define([
                 this.branches = new Backbone.Collection();
             }
             
-            this.on('render', this._setupRegions);
             this.listenTo(this.model, 'change:branch', function(model, name, options) {
                 this.changeBranch(name, options);
             });
@@ -65,11 +203,6 @@ define([
         
         fieldFilter: function(model) {
             return model.get('branch') === true;
-        },
-        
-        getCurrentView: function() {
-            var region = this.getRegion('main');
-            return region.hasView() && region.currentView;
         },
         
         getData: function(options) {
@@ -137,7 +270,7 @@ define([
                 if (name === mainBranch) {
                     view = this.form;
                 } else {
-                    view = this.createBranchView(name);
+                    view = this.createPartialForm(name);
                 }
                 
                 $.when(containerView.beforeShowBranch(name, view, options)).then(function() {
@@ -204,18 +337,10 @@ define([
         
         // Branch View/Model
         
-        createBranchView: function(name) {
-            var formOptions = _.extend({}, this.initOptions);
-            formOptions.branch = name;
-            formOptions.fields = this.fields;
-            formOptions.model = this.createBranchModel(name); // create new
-            return new this.formView(formOptions);
-        },
-        
-        createBranchModel: function(name) {
+        createPartialModel: function(name) {
             var self = this;
             var branchIdAttribute = this.getOption('branchIdAttribute');
-            var Base = this.getOption('branchModel') || this.form.model.constructor;
+            var Base = this.getOption('branchModelConstructor') || this.form.model.constructor;
             
             var Model = Base.extend({
                 
@@ -252,6 +377,18 @@ define([
             }
         },
         
+        // Modal
+        
+        modalViewOptions: function() {
+            var currentView = this.getCurrentView();
+            var options = { form: this.form, clone: true };
+            options.branches = this.branches;
+            options.mainBranch = this.getOption('mainBranch');
+            options.branch = this.getBranch();
+            options.branchModel = currentView && currentView.model;
+            return options;
+        },
+        
         // Regions
         
         onSetupHeaderRegion: function(region) {
@@ -266,20 +403,10 @@ define([
         
         onSetupMainRegion: function(region) {
             this.showBranch(this.getOption('branch') || this.getOption('mainBranch'));
-        },
-        
-        _setupRegions: function() {
-            var regions = _.result(this, 'regionNames');
-            var defaults = { regionClass: this.getOption('regionClass') };
-            _.each(regions, function(name) {
-                var el = this.$('[data-region="' + name + '"]');
-                var region = this.addRegion(name, _.extend({}, defaults, { el: el }));
-                this.triggerMethod('setup:' + name + ':region', region);
-            }.bind(this));
         }
         
-    });
+    }, Form.ModalViewMixin));
     
-    return Form.Branched;
+    return Form.BranchedView;
     
 });
