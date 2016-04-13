@@ -63,7 +63,9 @@ define([
             formOptions.branch = name;
             formOptions.fields = this.fields;
             formOptions.model = options.model || this.createPartialModel(name);
-            return new this.formView(_.extend(formOptions, options));
+            var form = new this.formView(_.extend(formOptions, options));
+            form.$el.attr('data-branch', name);
+            return form;
         },
         
         createPartialModel: function(name) {
@@ -186,6 +188,7 @@ define([
         constructor: function(options) {
             Form.PartialView.prototype.constructor.apply(this, arguments);
             this.form.options.branch = this.getOption('mainBranch');
+            this.form.$el.attr('data-branch', this.form.options.branch);
             
             if (options.branches instanceof Backbone.Collection) {
                 this.branches = options.branches;

@@ -10,6 +10,34 @@
                 color: #008FBD;
                 cursor: pointer;
             }
+            
+            form[data-branch="en"] .form-group.branched .control-label {
+                cursor: default;
+            }
+            
+            form[data-branch="de"]:before,
+            form[data-branch="nl"]:before,
+            form[data-branch="fr"]:before {
+                display: block;
+                margin: 0 0 10px 0;
+                content: "";
+                height: 15px;
+                width: 25px;
+                float: right;
+            }
+            
+            form[data-branch="de"]:before {
+                background: linear-gradient(to bottom, black 33.33%, #DF1424 33.33%, #DF1424 66.66%, #FFC500 66.66%);
+            }
+            
+            form[data-branch="nl"]:before {
+                background: linear-gradient(to bottom, #D50000 33.33%, #FAFBFC 33.33%, #FAFBFC 66.66%, #0F25B4 66.66%);
+            }
+            
+            form[data-branch="fr"]:before {
+                background: linear-gradient(to right, #0F25B4 33.33%, #FAFBFC 33.33%, #FAFBFC 66.66%, #D50000 66.66%);
+            }
+            
         </style>
         <script src="/js/vendor/requirejs/require.js"></script>
         <script src="/js/requirejs.config.js"></script>
@@ -136,6 +164,7 @@
                     
                     onBeforeShowBranch: function(name, view, options) {
                         console.log('Before show branch: %s', name, this.isMainBranch(name) ? '(main)' : '');
+                        if (this.isMainBranch(name) && view.model.isNew()) return;
                         return (name === 'no') ? $.Deferred().reject().promise() : view.model.fetch();;
                     },
                     
@@ -189,12 +218,16 @@
                 view.render();
                 view.$el.appendTo('#layout');
                 
-                // view.showBranch('de').then(function() {
-                //     console.log('Showing branch: %s', view.currentBranch);
-                // });
-                
                 $('[data-action="show-modal"]').click(function() {
-                    view.showInModal();
+                    view.showInModal().then(function() {
+                        console.log('Showing model');
+                    });
+                });
+                
+                $('[data-action="show-branch"]').click(function() {
+                    view.showBranch('de').then(function() {
+                        console.log('Showing branch: %s', view.getBranch());
+                    });
                 });
                 
             });
@@ -207,6 +240,7 @@
         <div id="layout" class="container"></div>
         <div class="container">
             <button class="btn btn-default" data-action="show-modal">Show Modal</button>
+            <button class="btn btn-default" data-action="show-branch">Show Branch</button>
         </div>
     </body>
 </html>
