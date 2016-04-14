@@ -102,16 +102,20 @@ define([
             className: 'modal split-branch-modal',
         },
         
-        onModalResolve: function(dialog, view, options) {
-            var branchModel = this.getOption('branchModel');
+        onModalResolve: function(dialog, containerView, options) {
             var form = this.getRegion('secondary').currentView;
-            if (options.action === 'ok' && form && branchModel) {
+            if (form && options.action === 'ok') {
                 if (form.commit()) {
-                    branchModel.set(form.getData());
+                    this.applyModalData(form.getData());
                 } else {
                     dialog.preventClose();
                 }
             }
+        },
+        
+        applyModalData: function(data) {
+            var branchModel = this.getOption('branchModel');
+            if (branchModel) branchModel.set(data);
         }
         
     });
