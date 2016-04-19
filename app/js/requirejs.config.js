@@ -63,7 +63,7 @@ requirejs.config({
         'marionette.form.view.json': 'marionette-form/views/json',
         'marionette.form.view.partial': 'marionette-form/views/partial',
         'marionette.form.view.table': 'marionette-form/views/table',
-        'marionette.form.view.wizard': 'marionette-form/views/wizard',
+        'marionette.form.view.pane': 'marionette-form/views/pane',
         'marionette.control.binding': 'marionette-form/controls/binding',
         'marionette.form.control.code': 'marionette-form/controls/code',
         'marionette.form.control.combobox': 'marionette-form/controls/combobox',

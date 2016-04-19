@@ -4571,6 +4571,13 @@ define([
         constructor: function() {
             Marionette.LayoutView.prototype.constructor.apply(this, arguments);
             this.on('render', this._setupRegions);
+            this.on('add:region', this._listenToRegion);
+            this.on('remove:region', this._stopListeningToRegion);
+        },
+        
+        getCurrentView: function(regionName) {
+            var region = this.getRegion(regionName || 'main');
+            return region.hasView() && region.currentView;
         },
         
         _setupRegions: function() {
@@ -4583,6 +4590,25 @@ define([
                 return region;
             }.bind(this));
             this.triggerMethod('setup:regions', instances);
+        },
+        
+        _listenToRegion: function(name, region) {
+            var observe = this.getOption('observeRegions');
+            if (!observe || (_.isArray(observe) && !_.include(observe, name))) return;
+            this.listenTo(region, 'show', function(view) {
+                region.stopListening(view);
+                region.listenTo(view, 'all', function(eventName) {
+                    var args = [eventName].concat(_.rest(arguments));
+                    region.triggerMethod.apply(region, args);
+                });
+            });
+            this.listenTo(region, 'empty', function(view) {
+                region.stopListening(view);
+            });
+        },
+        
+        _stopListeningToRegion: function(name, region) {
+            this.stopListening(region);
         }
         
     });

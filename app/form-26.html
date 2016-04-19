@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Form View</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        <style type="text/css" media="screen">
+            .pane-view {
+                padding: 20px 0;
+            }
+        </style>
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'marionette',
+                'marionette.form',
+                'marionette.form.view.pane',
+                'backbone.validation'
+            ], function(Backbone, Marionette, Form) {
+                
+                var ProductForm = Form.View.extend({
+                    
+                    prefix: 'product-',
+                    
+                    layout: 'vertical',
+                    
+                    fields: [
+                        { id: 'name', control: 'input', required: true, pane: ['main', 'misc'] },
+                        { id: 'description', control: 'textarea', required: true, pane: ['main'] },
+                        { id: 'color', control: 'input', required: true, pane: 'details' },
+                        { id: 'material', control: 'input', required: true, pane: 'details' },
+                        { id: 'notes', control: 'textarea', pane: 'misc' },
+                        { id: 'active', control: 'checkbox' }
+                    ],
+                    
+                    initialize: function() {
+                        this.on('control:change', function(control) {
+                            this.resetErrors();
+                        });
+                    },
+                    
+                    onSubmit: function(control, event) {
+                        event.preventDefault();
+                        if (this.commit()) {
+                            this.model.save().then(function() {
+                                console.log('Saved product: %s', this.model.id);
+                            }.bind(this), function(error) {
+                                console.log('Failed to save product', error);
+                            });
+                        } else {
+                            console.log('Invalid fields: %s', _.keys(this.getErrors()).join(', '));
+                        }
+                    }
+                    
+                });
+                
+                var Product = Form.Model.extend({
+                    
+                    urlRoot: 'http://localhost:5000/products',
+                    
+                    validation: {
+                        name: {
+                            required: true
+                        },
+                        description: {
+                            required: true
+                        },
+                        color: {
+                            required: true
+                        },
+                        material: {
+                            required: true
+                        }
+                    }
+                    
+                });
+                
+                _.extend(Product.prototype, Backbone.Validation.mixin);
+                
+                var View = Form.PaneView.extend({
+                    
+                    formView: ProductForm,
+                    
+                    onChangePane: function(name, options) {
+                        if (options.previous) {
+                            console.log('Change pane from: %s to: %s', options.previous, name);
+                        } else {
+                            console.log('Change pane: %s', name);
+                        }
+                    },
+                    
+                    onBeforeShowPane: function(name, view, options) {
+                        console.log('Before show pane: %s', name);
+                    },
+                    
+                    onShowPane: function(name, view, options) {
+                        console.log('Show pane: %s', name);
+                    }
+                    
+                });
+                
+                var product = new Product({ id: 3 });
+                
+                var view = new View({ model: product });
+                
+                view.on('before:show:pane', function(name, view, options) {
+                    console.log('View: before show pane: %s', name);
+                });
+                
+                view.on('show:pane', function(name, view, options) {
+                    console.log('View: show pane: %s', name);
+                });
+                
+                view.form.field('submit', {
+                    control: 'button', label: 'Save', type: 'submit', buttonType: 'success', autoDisable: true, pane: 'misc'
+                });
+                
+                view.on('form:change', function(childView) {
+                    if (childView instanceof ProductForm) {
+                        console.log('Change', JSON.stringify(childView.getData(), null, 2));
+                    }
+                });
+                
+                view.render();
+                view.$el.appendTo('#layout');
+                
+                product.fetch().then(function() {
+                    console.log('Fetched product: %s', product.id);
+                });
+                
+                $('[role="tab"]').click(function() {
+                    var $anchor = $(this);
+                    var pane = $anchor.attr('aria-controls');
+                    view.changePane(pane).done(function() {
+                        $anchor.closest('ul').children('li').removeClass('active');
+                        $anchor.closest('li').addClass('active');
+                    });
+                });
+                
+                $('[aria-controls="' + view.getPane() + '"]').closest('li').addClass('active');
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form <small>with separate panes</small></h1>
+        </div>
+        <div class="container">
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation"><a href="#main" aria-controls="main" role="tab">Main</a></li>
+                <li role="presentation"><a href="#details" aria-controls="details" role="tab">Details</a></li>
+                <li role="presentation"><a href="#misc" aria-controls="misc" role="tab">Misc</a></li>
+            </ul>
+        </div>
+        <div id="layout" class="container"></div>
+    </body>
+</html>

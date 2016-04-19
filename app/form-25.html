@@ -76,7 +76,7 @@
                         { id: 'name', control: 'input', required: true, branch: true },
                         { id: 'description', control: 'textarea', required: true, branch: true },
                         { id: 'price', control: 'input', formatter: 'cents', default: 0, required: true, numeric: { aSep: '.', aDec: ',', aSign: '€ '} },
-                        { id: 'active', control: 'checkbox', omit: true }
+                        { id: 'active', control: 'checkbox' }
                     ],
                     
                     initialize: function() {
@@ -169,7 +169,12 @@
                     
                     onBeforeShowBranch: function(name, view, options) {
                         console.log('Before show branch: %s', name, this.isMainBranch(name) ? '(main)' : '');
-                        if ((this.isMainBranch(name) && view.model.isNew()) || name === 'no') {
+                        var isMainBranch = this.isMainBranch(name);
+                        var isNew = this.form.model.isNew();
+                        
+                        if (isMainBranch && isNew) {
+                            return $.Deferred().resolve().promise();
+                        } else if ((!isMainBranch && isNew) || name === 'no') {
                             return $.Deferred().reject().promise();
                         } else {
                             return view.model.fetch();

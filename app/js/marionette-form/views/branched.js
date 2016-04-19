@@ -36,15 +36,6 @@ define([
         
         regionNames: ['primary', 'secondary'],
         
-        constructor: function(options) {
-            Form.PartialView.prototype.constructor.apply(this, arguments);
-            this.options.fields = [].concat(this.options.fields || []);
-        },
-        
-        fieldFilter: function(model) {
-            return _.include(this.options.fields, model.get('key'));
-        },
-        
         showBranch: function(name, options) {
             var containerView = this;
             var isMainBranch = name === this.getOption('mainBranch');
@@ -297,7 +288,7 @@ define([
         
         // Branch View/Model
         
-        createPartialModel: function(name) {
+        getPartialModel: function(name) {
             var self = this;
             var branchIdAttribute = this.getOption('branchIdAttribute');
             var Base = this.getOption('branchModelConstructor') || this.form.model.constructor;
@@ -322,7 +313,9 @@ define([
                 
             });
             
-            return new Model();
+            var data = {};
+            data[branchIdAttribute] = name;
+            return new Model(data);
         },
         
         getBranchUrl: function(name, branch, options) {
@@ -352,7 +345,8 @@ define([
         // Regions
         
         onSetupHeaderRegion: function(region) {
-            var view = new this.headerView({
+            var HeaderView = this.getOption('headerView');
+            var view = new HeaderView({
                 layout: this.form.getOption('layout'),
                 model: this.model,
                 container: this
