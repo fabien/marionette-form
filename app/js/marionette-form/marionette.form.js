@@ -2303,6 +2303,18 @@ define([
             this.bindCollection(this.collection);
             this.render();
             this.form.triggerChange();
+        },
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
         }
         
     }, CollectionMixin), function(options) {
@@ -3173,6 +3185,18 @@ define([
         
         unbindCollection: function(collection) {
             this.stopListening(collection);
+        },
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
         }
         
     }, CollectionMixin), function(options) {
@@ -3431,7 +3455,19 @@ define([
         
         initChildView: function() {},
         
-        observeKey: function() {}
+        observeKey: function() {},
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
+        }
         
     }, function(options) {
         var fields = this.collection || this.getAttribute('fields');
@@ -4756,6 +4792,18 @@ define([
         
         _renderChildren: function() {
             _.defer(Marionette.CompositeView.prototype._renderChildren.bind(this));
+        },
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
         }
         
     });

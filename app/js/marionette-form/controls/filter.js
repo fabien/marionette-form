@@ -340,6 +340,18 @@ define([
             var partial = this.getSelectionState() === 1;
             this.$el.toggleClass('partial-selection', partial);
             this.$el.toggleClass('empty', this.collection.length === 0);
+        },
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
         }
         
     }, FilterItemMixin));
@@ -430,6 +442,18 @@ define([
         isVisibleItem: function(model) {
             if (!model.has(this.visibleKey)) return true;
             return Boolean(model.get(this.visibleKey));
+        },
+        
+        // Core optimization
+        
+        attachElContent: function(html) {
+            if (_.isString(html)) {
+                this.el.innerHTML = html;
+                return this;
+            }
+            
+            this.$el.html(html);
+            return this;
         }
         
     }, Form.CollectionMixin), function(options) {
