@@ -5,6 +5,7 @@ define([
     'marionette',
     'marionette.form',
     'marionette.form.control.modal',
+    'backbone.bootstrap-modal',
     'marionette.sortable'
 ], function($, _, Backbone, Marionette, Form) {
     
@@ -41,6 +42,8 @@ define([
         template: Form.Templates.ObjectList,
         
         defaultControl: ObjectControl,
+        
+        bootstrapModal: Backbone.BootstrapModal,
         
         modalView: Form.View,
         

@@ -141,7 +141,7 @@ define([
         
         onActionEdit: function(event) {
             if (this.modal) return; // singleton - only one dialog at a time
-            var view = this.createModalView(); 
+            var view = this.createModalView();
             this.modal = this.openModalWithView(view, function(dialog) {
                 dialog.once('close', this.updateValueFromModalView.bind(this, dialog, view));
             }.bind(this)).always(function() {

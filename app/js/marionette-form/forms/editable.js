@@ -52,6 +52,8 @@ define([
             'keypress @ui.valueField': 'onKeyPress'
         },
         
+        bootstrapModal: Backbone.BootstrapModal,
+        
         modalViewOptions: {
             layout: 'vertical',
             dragMirrorContainer: false

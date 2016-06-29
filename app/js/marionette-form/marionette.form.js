@@ -239,18 +239,23 @@ define([
             if (_.isFunction(modalOptions)) callback = modalOptions, modalOptions = {};
             modalOptions = this.getModalViewOptions(modalOptions);
             _.extend(modalOptions, _.result(view, 'modalOptions'));
+            callback = callback || _.noop;
+            
             var dfd = $.Deferred();
             var BootstrapModal = this.bootstrapModal;
+            
             var dialog = new BootstrapModal(_.extend({
                 id: 'dialog-' + this.getModalViewId(modalOptions),
                 content: view, enterTriggersOk: true,
                 focusOk: false, animate: true
             }, modalOptions));
+            
             dialog.on('all', function(eventName) {
                 var args = _.rest(arguments);
                 this.triggerMethod.apply(this, ['modal:' + eventName, dialog, view].concat(args));
                 view.triggerMethod.apply(view, ['modal:' + eventName, dialog, this].concat(args));
             }.bind(this));
+            
             dialog.on('shown', function() {
                 view.$(':input:enabled:visible:not([readonly]):first').focus();
             });
@@ -274,17 +279,17 @@ define([
             this.triggerMethod('modal:init', dialog, view, modalOptions);
             view.triggerMethod('modal:init', dialog, this, modalOptions);
             
-            if (_.isFunction(callback)) dfd.done(callback);
+            callback = callback.bind(null, dialog);
             
             if (_.isObject(view.deferred) && _.isFunction(view.deferred.promise)) {
                 this.triggerMethod('modal:load:start', dialog, view);
                 view.deferred.always(function() {
                     this.triggerMethod('modal:load:stop', dialog, view);
                 }.bind(this));
-                view.deferred.done(function() { dialog.open(); });
+                view.deferred.done(function() { dialog.open(callback); });
                 view.deferred.fail(dfd.reject.bind(dfd, view, dialog, modalOptions));
             } else {
-                dialog.open();
+                dialog.open(callback);
             }
             
             return dfd.promise();
