@@ -374,6 +374,16 @@ form .nested-controls.row > .col {
     padding-right: 0;
 }
 
+.control-dropdown > .control-label {
+    display: none;
+}
+
+.control-dropdown .col-controls > button {
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
 /* scroll pane */
 
 .form-group .scrollable .scroll {
