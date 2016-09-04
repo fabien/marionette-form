@@ -31,6 +31,9 @@ requirejs.config({
         'object-path': 'lib/object-path',
         'rison': 'lib/rison',
         'urlify': 'lib/urlify',
+        // Customized Select2
+        'select4': 'select4/select4',
+        'select4-i18n': 'select4/i18n',
         // Vendor dependencies (should be kept in sync in mano-client)
         'backbone-tree-model': 'vendor/backbone-tree-model/src/backbone.treemodel',
         'backbone-tree-view': 'vendor/backbone-tree-view/lib/backbone-tree-view',
