@@ -36,6 +36,12 @@
                 
                 var facets = [
                     {
+                        type: 'String',
+                        name: 'name',
+                        label: 'Name',
+                        sort: 100
+                    },
+                    {
                         type: 'select',
                         name: 'select',
                         label: 'Select',
@@ -50,7 +56,7 @@
                     },
                     {
                         type: 'number',
-                        name: 'numberop',
+                        name: 'number',
                         label: 'Number',
                         min: 0,
                         max: 100,
@@ -64,7 +70,6 @@
                         name: 'select_multi',
                         label: 'Select Multi Int',
                         multiple: true,
-                        sort: 5,
                         options: [ 
                             { value: 1, label: 'One' },
                             { value: 2, label: 'Two' },
@@ -73,10 +78,26 @@
                             { value: 42, label: 'The answer' },
                             { value: 666, label: 'Evil!' }
                         ],
-                        modify: function(value, facet){
+                        modify: function(value, facet, raw){
                             return _.map([].concat(value), function(v) {
                                 return parseInt(v, 10);
                             });
+                        }
+                    },
+                    {
+                        type: 'array',
+                        name: 'array',
+                        label: 'Array',
+                        multiple: true,
+                        options: function(currentSelection, facet, done) {
+                            setTimeout( function(){
+                                done([
+                                    { value: 1, label: 'Fred' },
+                                    { value: 2, label: 'Wilma' },
+                                    { value: 3, label: 'Barney' },
+                                    { value: 4, label: 'Betty' }
+                                ]);
+                            }, 500);
                         }
                     },
                     {
@@ -124,22 +145,30 @@
                 });
                 
                 iggy.update({
-                    'numberop': { value: 55, operator: '!=' },
+                    'number': { value: 55, operator: '!=' },
                     'select': { value: 'Hamburg' },
                     'select_multi': { value: [1, 2] }
                 });
                 
                 setTimeout(function() {
-                    iggy.update('numberop', { value: 100, operator: '==' });
-                }, 1000)
+                    iggy.update('number', { value: 100, operator: '==' });
+                }, 1000);
                 
                 setTimeout(function() {
                     iggy.update('select', 'Cologne');
-                }, 2000)
+                }, 1500);
                 
                 setTimeout(function() {
                     iggy.update('select_multi', [13, 42]);
-                }, 3000)
+                }, 2000);
+                
+                setTimeout(function() {
+                    iggy.update('name', 'Fred');
+                }, 2500);
+                
+                setTimeout(function() {
+                    iggy.update('array', [3, 4]);
+                }, 3000);
                 
             });
         </script>
