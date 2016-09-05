@@ -2088,6 +2088,7 @@ FacetSubsNumber = (function(superClass) {
       this.$inpOp.select4("destroy");
       this.$inpOp.remove();
       this.$inpOp = null;
+      this.selectedOP = false;
     }
     FacetSubsNumber.__super__.close.apply(this, arguments);
   };

@@ -32,6 +32,32 @@
                 
                 window.moment = moment;
                 
+                // Loopback Where filter support
+                
+                var operators = {
+                    '!=': 'neq',
+                    '<': 'lt', '>': 'gt',
+                    '<=': 'lte', '>=': 'gte'
+                };
+                
+                function toLoopbackQuery(query) {
+                    return _.reduce(query, function(hash, cond) {
+                        if (_.isArray(cond.value) && 
+                            (cond.type === 'range' || cond.type === 'daterange')) {
+                            hash[cond.name] = { between: cond.value };
+                        } else if (_.isArray(cond.value)) {
+                            hash[cond.name] = { inq: cond.value };
+                        } else if (cond.operator && operators[cond.operator]) {
+                            var op = operators[cond.operator];
+                            hash[cond.name] = {};
+                            hash[cond.name][op] = cond.value;
+                        } else {
+                            hash[cond.name] = cond.value;
+                        }
+                        return hash;
+                    }, {});
+                };
+                
                 // Facet types: string, select, array, number, range, daterange, event
                 
                 var facets = [
@@ -63,7 +89,7 @@
                         step: 1,
                         sort: 10,
                         operator: '==',
-                        operators: [ '==', '!=' ]
+                        operators: ['==', '!=', '<', '>', '<=', '>=']
                     },
                     {
                         type: 'select',
@@ -126,26 +152,21 @@
                     dir: 'asc', sortby: 'label'
                 });
                 
-                iggy.on('change', function(query) {
-                    console.log(JSON.stringify(query.toJSON(), null, 4));
-                    var q = _.reduce(query.toJSON(), function(hash, cond) {
-                        if (_.isArray(cond.value) && 
-                            (cond.type === 'range' || cond.type === 'daterange')) {
-                            hash[cond.name] = { between: cond.value };
-                        } else if (_.isArray(cond.value)) {
-                            hash[cond.name] = { inq: cond.value };
-                        } else if (cond.operator === '!=') {
-                            hash[cond.name] = { neq: cond.value };
-                        } else {
-                            hash[cond.name] = cond.value;
-                        }
-                        return hash;
-                    }, {});
+                var operators = {
+                    '!=': 'neq',
+                    '<': 'lt', '>': 'gt',
+                    '<=': 'lte', '>=': 'gte'
+                };
+                
+                iggy.on('change', function(qCol) {
+                    var query = qCol.toJSON();
+                    var q = toLoopbackQuery(query);
                     $('#filter').text(JSON.stringify(q, null, 4));
+                    console.log(JSON.stringify(query, null, 4));
                 });
                 
                 iggy.update({
-                    'number': { value: 55, operator: '!=' },
+                    'number': { value: 55, operator: '<' },
                     'select': { value: 'Hamburg' },
                     'select_multi': { value: [1, 2] }
                 });
