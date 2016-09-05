@@ -1,5 +1,5 @@
 /*!
- * Select2 4.0.3
+ * Select4 4.0.3
  * https://select4.github.io
  *
  * Released under the MIT license
@@ -22,7 +22,7 @@
   // returns the AMD loader references.
   var S2 =
 (function () {
-  // Restore the Select2 AMD loader so it can be used
+  // Restore the Select4 AMD loader so it can be used
   // Needed mostly in the language files, where the loader is not inserted
   if (jQuery && jQuery.fn && jQuery.fn.select4 && jQuery.fn.select4.amd) {
     var S2 = jQuery.fn.select4.amd;
@@ -471,8 +471,8 @@ S2.define('jquery',[],function () {
 
   if (_$ == null && console && console.error) {
     console.error(
-      'Select2: An instance of jQuery or a jQuery-compatible library was not ' +
-      'found. Make sure that you are including jQuery before Select2 on your ' +
+      'Select4: An instance of jQuery or a jQuery-compatible library was not ' +
+      'found. Make sure that you are including jQuery before Select4 on your ' +
       'web page.'
     );
   }
@@ -1740,7 +1740,7 @@ S2.define('select4/selection/allowClear',[
     if (this.placeholder == null) {
       if (this.options.get('debug') && window.console && console.error) {
         console.error(
-          'Select2: The `allowClear` option should be used in combination ' +
+          'Select4: The `allowClear` option should be used in combination ' +
           'with the `placeholder` option.'
         );
       }
@@ -2074,7 +2074,7 @@ S2.define('select4/selection/eventRelay',[
       // The parameters should always be an object
       params = params || {};
 
-      // Generate the jQuery event for the Select2 event
+      // Generate the jQuery event for the Select4 event
       var evt = $.Event('select4:' + name, {
         params: params
       });
@@ -3139,7 +3139,7 @@ S2.define('select4/data/select',[
   SelectAdapter.prototype.destroy = function () {
     // Remove anything added to child elements
     this.$element.find('*').each(function () {
-      // Remove any custom data set by Select2
+      // Remove any custom data set by Select4
       $.removeData(this, 'data');
     });
   };
@@ -3459,7 +3459,7 @@ S2.define('select4/data/ajax',[
           // Check to make sure that the response included a `results` key.
           if (!results || !results.results || !$.isArray(results.results)) {
             console.error(
-              'Select2: The AJAX results did not return an array in the ' +
+              'Select4: The AJAX results did not return an array in the ' +
               '`results` key of the response.'
             );
           }
@@ -4390,8 +4390,8 @@ S2.define('select4/dropdown/selectOnClose',[
   };
 
   SelectOnClose.prototype._handleSelectOnClose = function (_, params) {
-    if (params && params.originalSelect2Event != null) {
-      var event = params.originalSelect2Event;
+    if (params && params.originalSelect4Event != null) {
+      var event = params.originalSelect4Event;
 
       // Don't select an item if the close event was triggered from a select or
       // unselect event
@@ -4454,7 +4454,7 @@ S2.define('select4/dropdown/closeOnSelect',[
 
     this.trigger('close', {
       originalEvent: originalEvent,
-      originalSelect2Event: evt
+      originalSelect4Event: evt
     });
   };
 
@@ -4774,10 +4774,10 @@ S2.define('select4/defaults',[
           } catch (ex) {
             // The translation could not be loaded at all. Sometimes this is
             // because of a configuration problem, other times this can be
-            // because of how Select2 helps load all possible translation files.
+            // because of how Select4 helps load all possible translation files.
             if (options.debug && window.console && console.warn) {
               console.warn(
-                'Select2: The language file for "' + name + '" could not be ' +
+                'Select4: The language file for "' + name + '" could not be ' +
                 'automatically loaded. A fallback will be used instead.'
               );
             }
@@ -4963,9 +4963,9 @@ S2.define('select4/options',[
     if ($e.data('select4Tags')) {
       if (this.options.debug && window.console && console.warn) {
         console.warn(
-          'Select2: The `data-select4-tags` attribute has been changed to ' +
+          'Select4: The `data-select4-tags` attribute has been changed to ' +
           'use the `data-data` and `data-tags="true"` attributes and will be ' +
-          'removed in future versions of Select2.'
+          'removed in future versions of Select4.'
         );
       }
 
@@ -4976,9 +4976,9 @@ S2.define('select4/options',[
     if ($e.data('ajaxUrl')) {
       if (this.options.debug && window.console && console.warn) {
         console.warn(
-          'Select2: The `data-ajax-url` attribute has been changed to ' +
+          'Select4: The `data-ajax-url` attribute has been changed to ' +
           '`data-ajax--url` and support for the old attribute will be removed' +
-          ' in future versions of Select2.'
+          ' in future versions of Select4.'
         );
       }
 
@@ -5032,7 +5032,7 @@ S2.define('select4/core',[
   './utils',
   './keys'
 ], function ($, Options, Utils, KEYS) {
-  var Select2 = function ($element, options) {
+  var Select4 = function ($element, options) {
     if ($element.data('select4') != null) {
       $element.data('select4').destroy();
     }
@@ -5045,7 +5045,7 @@ S2.define('select4/core',[
 
     this.options = new Options(options, $element);
 
-    Select2.__super__.constructor.call(this);
+    Select4.__super__.constructor.call(this);
 
     // Set up the tabindex
 
@@ -5114,9 +5114,9 @@ S2.define('select4/core',[
     $element.data('select4', this);
   };
 
-  Utils.Extend(Select2, Utils.Observable);
+  Utils.Extend(Select4, Utils.Observable);
 
-  Select2.prototype._generateId = function ($element) {
+  Select4.prototype._generateId = function ($element) {
     var id = '';
 
     if ($element.attr('id') != null) {
@@ -5133,7 +5133,7 @@ S2.define('select4/core',[
     return id;
   };
 
-  Select2.prototype._placeContainer = function ($container) {
+  Select4.prototype._placeContainer = function ($container) {
     $container.insertAfter(this.$element);
 
     var width = this._resolveWidth(this.$element, this.options.get('width'));
@@ -5143,7 +5143,7 @@ S2.define('select4/core',[
     }
   };
 
-  Select2.prototype._resolveWidth = function ($element, method) {
+  Select4.prototype._resolveWidth = function ($element, method) {
     var WIDTH = /^width:(([-+]?([0-9]*\.)?[0-9]+)(px|em|ex|%|in|cm|mm|pt|pc))/i;
 
     if (method == 'resolve') {
@@ -5190,7 +5190,7 @@ S2.define('select4/core',[
     return method;
   };
 
-  Select2.prototype._bindAdapters = function () {
+  Select4.prototype._bindAdapters = function () {
     this.dataAdapter.bind(this, this.$container);
     this.selection.bind(this, this.$container);
 
@@ -5198,7 +5198,7 @@ S2.define('select4/core',[
     this.results.bind(this, this.$container);
   };
 
-  Select2.prototype._registerDomEvents = function () {
+  Select4.prototype._registerDomEvents = function () {
     var self = this;
 
     this.$element.on('change.select4', function () {
@@ -5254,7 +5254,7 @@ S2.define('select4/core',[
     }
   };
 
-  Select2.prototype._registerDataEvents = function () {
+  Select4.prototype._registerDataEvents = function () {
     var self = this;
 
     this.dataAdapter.on('*', function (name, params) {
@@ -5262,7 +5262,7 @@ S2.define('select4/core',[
     });
   };
 
-  Select2.prototype._registerSelectionEvents = function () {
+  Select4.prototype._registerSelectionEvents = function () {
     var self = this;
     var nonRelayEvents = ['toggle', 'focus'];
 
@@ -5283,7 +5283,7 @@ S2.define('select4/core',[
     });
   };
 
-  Select2.prototype._registerDropdownEvents = function () {
+  Select4.prototype._registerDropdownEvents = function () {
     var self = this;
 
     this.dropdown.on('*', function (name, params) {
@@ -5291,7 +5291,7 @@ S2.define('select4/core',[
     });
   };
 
-  Select2.prototype._registerResultsEvents = function () {
+  Select4.prototype._registerResultsEvents = function () {
     var self = this;
 
     this.results.on('*', function (name, params) {
@@ -5299,7 +5299,7 @@ S2.define('select4/core',[
     });
   };
 
-  Select2.prototype._registerEvents = function () {
+  Select4.prototype._registerEvents = function () {
     var self = this;
 
     this.on('open', function () {
@@ -5381,7 +5381,7 @@ S2.define('select4/core',[
     });
   };
 
-  Select2.prototype._syncAttributes = function () {
+  Select4.prototype._syncAttributes = function () {
     this.options.set('disabled', this.$element.prop('disabled'));
 
     if (this.options.get('disabled')) {
@@ -5395,7 +5395,7 @@ S2.define('select4/core',[
     }
   };
 
-  Select2.prototype._syncSubtree = function (evt, mutations) {
+  Select4.prototype._syncSubtree = function (evt, mutations) {
     var changed = false;
     var self = this;
 
@@ -5439,8 +5439,8 @@ S2.define('select4/core',[
    * Override the trigger method to automatically trigger pre-events when
    * there are events that can be prevented.
    */
-  Select2.prototype.trigger = function (name, args) {
-    var actualTrigger = Select2.__super__.trigger;
+  Select4.prototype.trigger = function (name, args) {
+    var actualTrigger = Select4.__super__.trigger;
     var preTriggerMap = {
       'open': 'opening',
       'close': 'closing',
@@ -5472,7 +5472,7 @@ S2.define('select4/core',[
     actualTrigger.call(this, name, args);
   };
 
-  Select2.prototype.toggleDropdown = function () {
+  Select4.prototype.toggleDropdown = function () {
     if (this.options.get('disabled')) {
       return;
     }
@@ -5484,7 +5484,7 @@ S2.define('select4/core',[
     }
   };
 
-  Select2.prototype.open = function () {
+  Select4.prototype.open = function () {
     if (this.isOpen()) {
       return;
     }
@@ -5492,7 +5492,7 @@ S2.define('select4/core',[
     this.trigger('query', {});
   };
 
-  Select2.prototype.close = function () {
+  Select4.prototype.close = function () {
     if (!this.isOpen()) {
       return;
     }
@@ -5500,15 +5500,15 @@ S2.define('select4/core',[
     this.trigger('close', {});
   };
 
-  Select2.prototype.isOpen = function () {
+  Select4.prototype.isOpen = function () {
     return this.$container.hasClass('select4-container--open');
   };
 
-  Select2.prototype.hasFocus = function () {
+  Select4.prototype.hasFocus = function () {
     return this.$container.hasClass('select4-container--focus');
   };
 
-  Select2.prototype.focus = function (data) {
+  Select4.prototype.focus = function (data) {
     // No need to re-trigger focus events if we are already focused
     if (this.hasFocus()) {
       return;
@@ -5518,11 +5518,11 @@ S2.define('select4/core',[
     this.trigger('focus', {});
   };
 
-  Select2.prototype.enable = function (args) {
+  Select4.prototype.enable = function (args) {
     if (this.options.get('debug') && window.console && console.warn) {
       console.warn(
-        'Select2: The `select4("enable")` method has been deprecated and will' +
-        ' be removed in later Select2 versions. Use $element.prop("disabled")' +
+        'Select4: The `select4("enable")` method has been deprecated and will' +
+        ' be removed in later Select4 versions. Use $element.prop("disabled")' +
         ' instead.'
       );
     }
@@ -5536,11 +5536,11 @@ S2.define('select4/core',[
     this.$element.prop('disabled', disabled);
   };
 
-  Select2.prototype.data = function () {
+  Select4.prototype.data = function () {
     if (this.options.get('debug') &&
         arguments.length > 0 && window.console && console.warn) {
       console.warn(
-        'Select2: Data can no longer be set using `select4("data")`. You ' +
+        'Select4: Data can no longer be set using `select4("data")`. You ' +
         'should consider setting the value instead using `$element.val()`.'
       );
     }
@@ -5554,11 +5554,11 @@ S2.define('select4/core',[
     return data;
   };
 
-  Select2.prototype.val = function (args) {
+  Select4.prototype.val = function (args) {
     if (this.options.get('debug') && window.console && console.warn) {
       console.warn(
-        'Select2: The `select4("val")` method has been deprecated and will be' +
-        ' removed in later Select2 versions. Use $element.val() instead.'
+        'Select4: The `select4("val")` method has been deprecated and will be' +
+        ' removed in later Select4 versions. Use $element.val() instead.'
       );
     }
 
@@ -5577,7 +5577,7 @@ S2.define('select4/core',[
     this.$element.val(newVal).trigger('change');
   };
 
-  Select2.prototype.destroy = function () {
+  Select4.prototype.destroy = function () {
     this.$container.remove();
 
     if (this.$element[0].detachEvent) {
@@ -5617,7 +5617,7 @@ S2.define('select4/core',[
     this.results = null;
   };
 
-  Select2.prototype.render = function () {
+  Select4.prototype.render = function () {
     var $container = $(
       '<span class="select4 select4-container">' +
         '<span class="selection"></span>' +
@@ -5636,7 +5636,7 @@ S2.define('select4/core',[
     return $container;
   };
 
-  return Select2;
+  return Select4;
 });
 
 S2.define('jquery-mousewheel',[
@@ -5652,7 +5652,7 @@ S2.define('jquery.select4',[
 
   './select4/core',
   './select4/defaults'
-], function ($, _, Select2, Defaults) {
+], function ($, _, Select4, Defaults) {
   if ($.fn.select4 == null) {
     // All methods that should return the element
     var thisMethods = ['open', 'close', 'destroy'];
@@ -5664,7 +5664,7 @@ S2.define('jquery.select4',[
         this.each(function () {
           var instanceOptions = $.extend(true, {}, options);
 
-          var instance = new Select2($(this), instanceOptions);
+          var instance = new Select4($(this), instanceOptions);
         });
 
         return this;
@@ -5678,7 +5678,7 @@ S2.define('jquery.select4',[
           if (instance == null && window.console && console.error) {
             console.error(
               'The select4(\'' + options + '\') method was called on an ' +
-              'element that is not using Select2.'
+              'element that is not using Select4.'
             );
           }
 
@@ -5692,7 +5692,7 @@ S2.define('jquery.select4',[
 
         return ret;
       } else {
-        throw new Error('Invalid arguments for Select2: ' + options);
+        throw new Error('Invalid arguments for Select4: ' + options);
       }
     };
   }
@@ -5701,7 +5701,7 @@ S2.define('jquery.select4',[
     $.fn.select4.defaults = Defaults;
   }
 
-  return Select2;
+  return Select4;
 });
 
   // Return the AMD loader configuration so it can be used outside of this file
@@ -5716,10 +5716,10 @@ S2.define('jquery.select4',[
   var select4 = S2.require('jquery.select4');
 
   // Hold the AMD module references on the jQuery function that was just loaded
-  // This allows Select2 to use the internal loader outside of this file, such
+  // This allows Select4 to use the internal loader outside of this file, such
   // as in the language files.
   jQuery.fn.select4.amd = S2;
 
-  // Return the Select2 instance for anyone who is importing it.
+  // Return the Select4 instance for anyone who is importing it.
   return select4;
 }));

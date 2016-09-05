@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Iggy</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="/js/vendor/bootstrap/dist/css/bootstrap.css" type="text/css">
+        <link rel="stylesheet" href="/js/vendor/bootstrap-daterangepicker/daterangepicker.css" type="text/css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        
+        <link rel="stylesheet" href="/css/select4.css" type="text/css">
+        <link rel="stylesheet" href="/css/iggy.css" type="text/css">
+        
+        <link rel="stylesheet" href="/css/forms.css" type="text/css">
+        
+        <style type="text/css" media="screen">
+            .iggy {
+                margin-bottom: 10px;
+            }
+        </style>
+        
+        <script src="/js/vendor/requirejs/require.js"></script>
+        <script src="/js/requirejs.config.js"></script>
+        <script type="text/javascript">
+            require([
+                'backbone',
+                'marionette',
+                'iggy',
+                'moment',
+                'select4',
+                'bootstrap-daterangepicker'
+            ], function(Backbone, Marionette, Iggy, moment) {
+                
+                window.moment = moment;
+                
+                // Facet types: string, select, array, number, range, daterange, event
+                
+                var facets = [
+                    {
+                        type: 'select',
+                        name: 'select',
+                        label: 'Select',
+                        sort: 2,
+                        options: [ 
+                            { value: 'Munich', label: 'München' },
+                            { value: 'Hamburg', label: 'Hamburg' },
+                            { value: 'Berlin', label: 'Berlin' },
+                            { value: 'Cologne', label: 'Köln' },
+                            { value: 'Stuttgart', label: 'Stuttgart' }
+                        ]
+                    },
+                    {
+                        type: 'number',
+                        name: 'numberop',
+                        label: 'Number',
+                        min: 0,
+                        max: 100,
+                        step: 1,
+                        sort: 10,
+                        operator: '==',
+                        operators: [ '==', '!=' ]
+                    },
+                    {
+                        type: 'select',
+                        name: 'select_multi',
+                        label: 'Select Multi Int',
+                        multiple: true,
+                        sort: 5,
+                        options: [ 
+                            { value: 1, label: 'One' },
+                            { value: 2, label: 'Two' },
+                            { value: 13, label: 'Unlucky...' },
+                            { value: 23, label: 'Hack it!' },
+                            { value: 42, label: 'The answer' },
+                            { value: 666, label: 'Evil!' }
+                        ],
+                        modify: function(value, facet){
+                            return _.map([].concat(value), function(v) {
+                                return parseInt(v, 10);
+                            });
+                        }
+                    },
+                    {
+                        type: 'daterange',
+                        label: 'Date Range',
+                        name: 'daterange',
+                        opts: {
+                            format: 'DD.MM.YYYY',
+                            showWeekNumbers : true,
+                            showDropdowns : true,
+                            timePicker: false,
+                            ranges: {
+                                'Today': [moment(), moment()],
+                                'Yesterday': [moment().subtract(1, 'day'), moment().subtract(1, 'day')],
+                                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                                'Last 7 Days': [moment().subtract(6, 'day'), moment()],
+                                'Last 30 Days': [moment().subtract(29, 'day'), moment()],
+                                'Last 90 Days': [moment().subtract(89, 'day'), moment()]                    
+                            }
+                        }
+                    }
+                ];
+                
+                var iggy = new Iggy('#iggy', facets, {
+                    dir: 'asc', sortby: 'label'
+                });
+                
+                iggy.on('change', function(query) {
+                    console.log(JSON.stringify(query.toJSON(), null, 4));
+                    var q = _.reduce(query.toJSON(), function(hash, cond) {
+                        if (_.isArray(cond.value) && 
+                            (cond.type === 'range' || cond.type === 'daterange')) {
+                            hash[cond.name] = { between: cond.value };
+                        } else if (_.isArray(cond.value)) {
+                            hash[cond.name] = { inq: cond.value };
+                        } else if (cond.operator === '!=') {
+                            hash[cond.name] = { neq: cond.value };
+                        } else {
+                            hash[cond.name] = cond.value;
+                        }
+                        return hash;
+                    }, {});
+                    $('#filter').text(JSON.stringify(q, null, 4));
+                });
+                
+                iggy.update({
+                    'numberop': { value: 55, operator: '!=' },
+                    'select': { value: 'Hamburg' },
+                    'select_multi': { value: [1, 2] }
+                });
+                
+                setTimeout(function() {
+                    iggy.update('numberop', { value: 100, operator: '==' });
+                }, 1000)
+                
+                setTimeout(function() {
+                    iggy.update('select', 'Cologne');
+                }, 2000)
+                
+                setTimeout(function() {
+                    iggy.update('select_multi', [13, 42]);
+                }, 3000)
+                
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Iggy <small>Facetted search builder</small></h1>
+        </div>
+        <div id="layout" class="container">
+            <div id="iggy"></div>
+            <pre><code id="filter"></code></pre>
+        </div>
+        
+    </body>
+</html>

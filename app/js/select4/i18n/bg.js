@@ -1,3 +1,3 @@
-/*! Select2 4.0.3 | https://github.com/select4/select4/blob/master/LICENSE.md */
+/*! Select4 4.0.3 | https://github.com/select4/select4/blob/master/LICENSE.md */
 
 (function(){if(jQuery&&jQuery.fn&&jQuery.fn.select4&&jQuery.fn.select4.amd)var e=jQuery.fn.select4.amd;return e.define("select4/i18n/bg",[],function(){return{inputTooLong:function(e){var t=e.input.length-e.maximum,n="Моля въведете с "+t+" по-малко символ";return t>1&&(n+="a"),n},inputTooShort:function(e){var t=e.minimum-e.input.length,n="Моля въведете още "+t+" символ";return t>1&&(n+="a"),n},loadingMore:function(){return"Зареждат се още…"},maximumSelected:function(e){var t="Можете да направите до "+e.maximum+" ";return e.maximum>1?t+="избора":t+="избор",t},noResults:function(){return"Няма намерени съвпадения"},searching:function(){return"Търсене…"}}}),{define:e.define,require:e.require}})();

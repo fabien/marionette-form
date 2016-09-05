@@ -18,6 +18,7 @@ requirejs.config({
         'comparators': 'lib/comparators',
         'countable': 'lib/countable',
         'filesize': 'lib/filesize',
+        'iggy': 'lib/iggy',
         'jquery.affix': 'lib/jquery.affix',
         'jquery.animate-enhanced': 'lib/jquery.animate-enhanced',
         'jquery.maskedinput': 'lib/jquery.maskedinput',
@@ -88,22 +89,25 @@ requirejs.config({
         'marionette.form.control.urlify': 'marionette-form/controls/urlify'
     },
     shim: {
-        autoNumeric: {
+        'autoNumeric': {
             deps: ['jquery']
         },
-        rison: { exports: 'rison' },
-        bootstrap: {
+        'rison': { exports: 'rison' },
+        'bootstrap': {
             deps: ['jquery']
         },
-        backbone: {
+        'backbone': {
             deps: ['jquery', 'underscore'],
             exports: 'Backbone'
         },
-        underscore: {
+        'underscore': {
             exports: '_'
         },
-        select2: {
+        'select2': {
             deps: ['jquery']
+        },
+        'iggy': {
+            deps: ['backbone', 'underscore', 'moment']
         },
         'ion.rangeslider': {
             deps: ['jquery']
